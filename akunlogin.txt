@@ -1,0 +1,5 @@
+3 akun default sudah di-seed:
+superadmin@nicepatrol.id
+abb@nicepatrol.id (PT ABB)
+bsp@nicepatrol.id (PT BSP)
+Password semua akun: password

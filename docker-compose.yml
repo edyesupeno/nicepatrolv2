@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: patrol_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: patrol_db
+      POSTGRES_USER: patrol_user
+      POSTGRES_PASSWORD: patrol_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - patrol_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  patrol_network:
+    driver: bridge
