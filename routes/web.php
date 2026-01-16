@@ -90,6 +90,7 @@ Route::middleware('auth')->group(function () {
         Route::put('karyawans/{karyawan}/update-rekening-bank', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'updateRekeningBank'])->name('karyawans.update-rekening-bank');
         Route::put('karyawans/{karyawan}/update-bpjs', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'updateBpjs'])->name('karyawans.update-bpjs');
         Route::put('karyawans/{karyawan}/update-email', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'updateEmail'])->name('karyawans.update-email');
+        Route::put('karyawans/{karyawan}/update-role', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'updateRole'])->name('karyawans.update-role');
         Route::put('karyawans/{karyawan}/reset-password', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'resetPassword'])->name('karyawans.reset-password');
         Route::post('karyawans/{karyawan}/pengalaman-kerja', [\App\Http\Controllers\Perusahaan\PengalamanKerjaController::class, 'store'])->name('karyawans.pengalaman-kerja.store');
         Route::put('karyawans/{karyawan}/pengalaman-kerja/{pengalaman}', [\App\Http\Controllers\Perusahaan\PengalamanKerjaController::class, 'update'])->name('karyawans.pengalaman-kerja.update');

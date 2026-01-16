@@ -24,12 +24,14 @@
     <div class="bg-white rounded-3xl shadow-xl w-full max-w-md p-10">
         <!-- Logo & Title -->
         <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-blue-600 rounded-2xl mb-4">
-                @if(setting('app_logo'))
-                    <img src="{{ asset('storage/' . setting('app_logo')) }}" alt="Logo" class="h-12 object-contain">
-                @else
-                    <i class="fas fa-shield-alt text-white text-3xl"></i>
-                @endif
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl mb-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-inner">
+                    @if(setting('app_logo'))
+                        <img src="{{ asset('storage/' . setting('app_logo')) }}" alt="Logo" class="h-10 object-contain">
+                    @else
+                        <i class="fas fa-shield-halved text-blue-600 text-3xl"></i>
+                    @endif
+                </div>
             </div>
             <h1 class="text-2xl font-bold text-gray-900 mb-1">{{ setting('app_name', 'Nice Patrol') }}</h1>
             <p class="text-sm text-gray-500">Masuk ke dashboard Anda</p>

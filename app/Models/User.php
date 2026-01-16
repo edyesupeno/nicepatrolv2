@@ -74,18 +74,109 @@ class User extends Authenticatable
         return $this->hasMany(Patroli::class);
     }
 
+    // Role Constants
+    public const ROLE_SUPERADMIN = 'superadmin';
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_SECURITY_OFFICER = 'security_officer';
+    public const ROLE_OFFICE_EMPLOYEE = 'office_employee';
+    public const ROLE_MANAGER_PROJECT = 'manager_project';
+    public const ROLE_ADMIN_PROJECT = 'admin_project';
+    public const ROLE_ADMIN_BRANCH = 'admin_branch';
+    public const ROLE_FINANCE_BRANCH = 'finance_branch';
+    public const ROLE_ADMIN_HSSE = 'admin_hsse';
+    public const ROLE_PETUGAS = 'petugas'; // Backward compatibility
+
+    // Role Check Methods
     public function isSuperAdmin(): bool
     {
-        return $this->role === 'superadmin';
+        return $this->role === self::ROLE_SUPERADMIN;
     }
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isSecurityOfficer(): bool
+    {
+        return $this->role === self::ROLE_SECURITY_OFFICER;
+    }
+
+    public function isOfficeEmployee(): bool
+    {
+        return $this->role === self::ROLE_OFFICE_EMPLOYEE;
+    }
+
+    public function isManagerProject(): bool
+    {
+        return $this->role === self::ROLE_MANAGER_PROJECT;
+    }
+
+    public function isAdminProject(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_PROJECT;
+    }
+
+    public function isAdminBranch(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_BRANCH;
+    }
+
+    public function isFinanceBranch(): bool
+    {
+        return $this->role === self::ROLE_FINANCE_BRANCH;
+    }
+
+    public function isAdminHSSE(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_HSSE;
     }
 
     public function isPetugas(): bool
     {
-        return $this->role === 'petugas';
+        return $this->role === self::ROLE_PETUGAS;
+    }
+
+    // Helper method untuk check multiple roles
+    public function hasRole(string|array $roles): bool
+    {
+        if (is_array($roles)) {
+            return in_array($this->role, $roles);
+        }
+        return $this->role === $roles;
+    }
+
+    // Get role display name
+    public function getRoleDisplayName(): string
+    {
+        return match($this->role) {
+            self::ROLE_SUPERADMIN => 'Super Admin',
+            self::ROLE_ADMIN => 'Admin',
+            self::ROLE_SECURITY_OFFICER => 'Security Officer',
+            self::ROLE_OFFICE_EMPLOYEE => 'Office Employee',
+            self::ROLE_MANAGER_PROJECT => 'Manager Project',
+            self::ROLE_ADMIN_PROJECT => 'Admin Project',
+            self::ROLE_ADMIN_BRANCH => 'Admin Branch',
+            self::ROLE_FINANCE_BRANCH => 'Finance Branch',
+            self::ROLE_ADMIN_HSSE => 'Admin HSSE',
+            self::ROLE_PETUGAS => 'Petugas',
+            default => ucfirst($this->role),
+        };
+    }
+
+    // Get all available roles
+    public static function getAllRoles(): array
+    {
+        return [
+            self::ROLE_SUPERADMIN => 'Super Admin',
+            self::ROLE_ADMIN => 'Admin',
+            self::ROLE_SECURITY_OFFICER => 'Security Officer',
+            self::ROLE_OFFICE_EMPLOYEE => 'Office Employee',
+            self::ROLE_MANAGER_PROJECT => 'Manager Project',
+            self::ROLE_ADMIN_PROJECT => 'Admin Project',
+            self::ROLE_ADMIN_BRANCH => 'Admin Branch',
+            self::ROLE_FINANCE_BRANCH => 'Finance Branch',
+            self::ROLE_ADMIN_HSSE => 'Admin HSSE',
+        ];
     }
 }

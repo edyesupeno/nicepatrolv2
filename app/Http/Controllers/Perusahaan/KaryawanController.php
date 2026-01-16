@@ -109,6 +109,7 @@ class KaryawanController extends Controller
             // Akun Login
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|in:security_officer,office_employee,manager_project,admin_project,admin_branch,finance_branch,admin_hsse',
         ];
 
         // Validasi conditional untuk tanggal_keluar
@@ -156,7 +157,7 @@ class KaryawanController extends Controller
                 'name' => $validated['nama_lengkap'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
-                'role' => 'petugas',
+                'role' => $validated['role'], // Use role from form
                 'is_active' => $validated['is_active'],
             ]);
 
@@ -176,6 +177,8 @@ class KaryawanController extends Controller
                 'tempat_lahir' => $validated['tempat_lahir'],
                 'tanggal_lahir' => $validated['tanggal_lahir'],
                 'jenis_kelamin' => $validated['jenis_kelamin'],
+                'status_perkawinan' => $validated['status_perkawinan'],
+                'jumlah_tanggungan' => $validated['jumlah_tanggungan'],
                 'telepon' => $validated['telepon'],
                 'alamat' => $validated['alamat'],
                 'kota' => $validated['kota'],
@@ -696,6 +699,38 @@ class KaryawanController extends Controller
         }
     }
 
+    public function updateRole(Request $request, $hashId)
+    {
+        $id = \Vinkla\Hashids\Facades\Hashids::decode($hashId)[0] ?? null;
+        
+        if (!$id) {
+            return redirect()->back()->with('error', 'Invalid ID');
+        }
+        
+        $karyawan = Karyawan::with('user')->findOrFail($id);
+
+        if (!$karyawan->user) {
+            return redirect()->back()->with('error', 'Karyawan tidak memiliki akun pengguna');
+        }
+
+        $validated = $request->validate([
+            'role' => 'required|in:security_officer,office_employee,manager_project,admin_project,admin_branch,finance_branch,admin_hsse',
+        ], [
+            'role.required' => 'Role wajib dipilih',
+            'role.in' => 'Role tidak valid',
+        ]);
+
+        try {
+            $karyawan->user->update(['role' => $validated['role']]);
+
+            return redirect()->route('perusahaan.karyawans.show', $karyawan->hash_id)
+                            ->with(['success' => 'Role berhasil diperbarui', 'active_tab' => 'akun-pengguna']);
+        } catch (\Exception $e) {
+            return redirect()->back()
+                            ->with('error', 'Gagal memperbarui role: ' . $e->getMessage());
+        }
+    }
+
     public function resetPassword(Request $request, $hashId)
     {
         $id = \Vinkla\Hashids\Facades\Hashids::decode($hashId)[0] ?? null;
@@ -751,9 +786,12 @@ class KaryawanController extends Controller
     {
         $request->validate([
             'project_id' => 'required|exists:projects,id',
+            'role' => 'required|in:security_officer,office_employee,manager_project,admin_project,admin_branch,finance_branch,admin_hsse',
             'file' => 'required|mimes:xlsx,xls|max:2048',
         ], [
             'project_id.required' => 'Project wajib dipilih',
+            'role.required' => 'Role wajib dipilih',
+            'role.in' => 'Role tidak valid',
             'file.required' => 'File Excel wajib diupload',
             'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
             'file.max' => 'Ukuran file maksimal 2MB',
@@ -761,9 +799,10 @@ class KaryawanController extends Controller
         
         $perusahaanId = auth()->user()->perusahaan_id;
         $projectId = $request->project_id;
+        $role = $request->role;
         
         try {
-            $import = new \App\Imports\KaryawanImport($perusahaanId, $projectId);
+            $import = new \App\Imports\KaryawanImport($perusahaanId, $projectId, $role);
             
             \Maatwebsite\Excel\Facades\Excel::import($import, $request->file('file'));
             

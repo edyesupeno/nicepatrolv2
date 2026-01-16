@@ -973,6 +973,19 @@
                     </div>
                 </div>
 
+                <!-- Role Section -->
+                <div class="border-l-4 rounded-lg p-5" style="border-left-color: #8B5CF6; background: linear-gradient(to right, #F5F3FF 0%, #FFFFFF 100%);">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-500 mb-1">Role / Hak Akses</p>
+                            <p class="text-base font-bold text-purple-700">{{ $karyawan->user->getRoleDisplayName() }}</p>
+                        </div>
+                        <button onclick="openGantiRoleModal()" class="px-4 py-2 text-white rounded-lg hover:shadow-lg transition text-sm font-medium" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
+                            <i class="fas fa-user-shield mr-1"></i>Ganti Role
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Password Section -->
                 <div class="border-l-4 rounded-lg p-5" style="border-left-color: #F59E0B; background: linear-gradient(to right, #FFFBEB 0%, #FFFFFF 100%);">
                     <div class="flex items-center justify-between mb-3">
@@ -2126,6 +2139,62 @@
     </div>
 </div>
 
+<!-- Modal Ganti Role -->
+<div id="gantiRoleModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-[450px] shadow-lg rounded-xl bg-white">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-900">Ganti Role / Hak Akses</h3>
+            <button onclick="closeGantiRoleModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="gantiRoleForm" action="{{ route('perusahaan.karyawans.update-role', $karyawan->hash_id) }}" method="POST">
+            @csrf
+            @method('PUT')
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Role Saat Ini</label>
+                    <input type="text" value="{{ $karyawan->user->getRoleDisplayName() ?? '' }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" disabled>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Role Baru <span class="text-red-500">*</span></label>
+                    <select name="role" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                        <option value="">-- Pilih Role --</option>
+                        <option value="security_officer" {{ $karyawan->user->role == 'security_officer' ? 'selected' : '' }}>Security Officer</option>
+                        <option value="office_employee" {{ $karyawan->user->role == 'office_employee' ? 'selected' : '' }}>Office Employee</option>
+                        <option value="manager_project" {{ $karyawan->user->role == 'manager_project' ? 'selected' : '' }}>Manager Project</option>
+                        <option value="admin_project" {{ $karyawan->user->role == 'admin_project' ? 'selected' : '' }}>Admin Project</option>
+                        <option value="admin_branch" {{ $karyawan->user->role == 'admin_branch' ? 'selected' : '' }}>Admin Branch</option>
+                        <option value="finance_branch" {{ $karyawan->user->role == 'finance_branch' ? 'selected' : '' }}>Finance Branch</option>
+                        <option value="admin_hsse" {{ $karyawan->user->role == 'admin_hsse' ? 'selected' : '' }}>Admin HSSE</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Pilih role sesuai dengan tanggung jawab karyawan</p>
+                </div>
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                Perubahan role akan mempengaruhi hak akses karyawan di sistem.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button type="button" onclick="closeGantiRoleModal()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                    Batal
+                </button>
+                <button type="submit" class="flex-1 px-4 py-2 text-white rounded-lg hover:shadow-lg transition" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Modal Reset Password -->
 <div id="resetPasswordModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-5 border w-[450px] shadow-lg rounded-xl bg-white">
@@ -2673,6 +2742,15 @@ function openGantiEmailModal() {
 function closeGantiEmailModal() {
     document.getElementById('gantiEmailModal').classList.add('hidden');
     document.getElementById('gantiEmailForm').reset();
+}
+
+function openGantiRoleModal() {
+    document.getElementById('gantiRoleModal').classList.remove('hidden');
+}
+
+function closeGantiRoleModal() {
+    document.getElementById('gantiRoleModal').classList.add('hidden');
+    document.getElementById('gantiRoleForm').reset();
 }
 
 function openResetPasswordModal() {

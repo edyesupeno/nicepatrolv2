@@ -429,13 +429,19 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <i class="fas fa-city mr-2" style="color: #3B82C8;"></i>Kota <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="kota" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition" placeholder="Nama kota">
+                        <select name="kota" id="kotaSelect" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition">
+                            <option value="">Ketik untuk mencari atau tambah kota baru...</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Ketik nama kota, jika tidak ada akan otomatis ditambahkan</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <i class="fas fa-map mr-2" style="color: #3B82C8;"></i>Provinsi <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="provinsi" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition" placeholder="Nama provinsi">
+                        <select name="provinsi" id="provinsiSelect" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition">
+                            <option value="">Ketik untuk mencari atau tambah provinsi baru...</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Ketik nama provinsi, jika tidak ada akan otomatis ditambahkan</p>
                     </div>
                 </div>
             </div>
@@ -458,6 +464,22 @@
                         </label>
                         <input type="email" name="email" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition" placeholder="email@example.com">
                         <p class="mt-1 text-xs text-gray-500">Email akan digunakan untuk login</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-user-shield mr-2" style="color: #3B82C8;"></i>Role / Hak Akses <span class="text-red-500">*</span>
+                        </label>
+                        <select name="role" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition">
+                            <option value="">Pilih Role</option>
+                            <option value="security_officer" selected>Security Officer</option>
+                            <option value="office_employee">Office Employee</option>
+                            <option value="manager_project">Manager Project</option>
+                            <option value="admin_project">Admin Project</option>
+                            <option value="admin_branch">Admin Branch</option>
+                            <option value="finance_branch">Finance Branch</option>
+                            <option value="admin_hsse">Admin HSSE</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Tentukan hak akses karyawan di sistem</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -523,7 +545,7 @@
         <form id="importForm" action="{{ route('perusahaan.karyawans.import-excel') }}" method="POST" enctype="multipart/form-data">
             @csrf
             
-            <!-- Step 1: Pilih Project -->
+            <!-- Step 1: Pilih Project & Role -->
             <div id="importStep1">
                 <div class="mb-6">
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -537,6 +559,25 @@
                     </select>
                     <p class="mt-2 text-sm text-gray-500">
                         <i class="fas fa-info-circle mr-1"></i>Semua karyawan yang diimport akan ditambahkan ke project ini
+                    </p>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-user-shield mr-2" style="color: #3B82C8;"></i>Role / Hak Akses <span class="text-red-500">*</span>
+                    </label>
+                    <select name="role" id="import_role" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                        <option value="">-- Pilih Role --</option>
+                        <option value="security_officer" selected>Security Officer</option>
+                        <option value="office_employee">Office Employee</option>
+                        <option value="manager_project">Manager Project</option>
+                        <option value="admin_project">Admin Project</option>
+                        <option value="admin_branch">Admin Branch</option>
+                        <option value="finance_branch">Finance Branch</option>
+                        <option value="admin_hsse">Admin HSSE</option>
+                    </select>
+                    <p class="mt-2 text-sm text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>Semua karyawan yang diimport akan memiliki role yang sama
                     </p>
                 </div>
 
@@ -598,6 +639,7 @@
                                 <li>NIK Karyawan dan Email harus unik</li>
                                 <li>Jabatan harus sesuai dengan yang ada di sistem</li>
                                 <li>Password default untuk semua user: <strong>nicepatrol</strong></li>
+                                <li>Semua karyawan akan memiliki <strong>role yang sama</strong> sesuai pilihan di Step 1</li>
                                 <li>Hapus baris contoh sebelum import</li>
                             </ul>
                         </div>
@@ -638,11 +680,22 @@ function closeImportModal() {
 
 function goToImportStep2() {
     const projectId = document.getElementById('import_project_id').value;
+    const role = document.getElementById('import_role').value;
+    
     if (!projectId) {
         Swal.fire({
             icon: 'warning',
             title: 'Perhatian',
             text: 'Pilih project terlebih dahulu',
+        });
+        return;
+    }
+    
+    if (!role) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Perhatian',
+            text: 'Pilih role terlebih dahulu',
         });
         return;
     }
@@ -701,6 +754,117 @@ document.getElementById('importForm').addEventListener('submit', function(e) {
         didOpen: () => {
             Swal.showLoading();
         }
+    });
+});
+
+// Initialize Select2 for Kota and Provinsi with tagging (add new option)
+$(document).ready(function() {
+    // Data kota dan provinsi Indonesia (sample data)
+    const kotaData = [
+        'Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Makassar', 'Palembang', 
+        'Tangerang', 'Depok', 'Bekasi', 'Bogor', 'Batam', 'Pekanbaru', 'Bandar Lampung',
+        'Padang', 'Malang', 'Denpasar', 'Samarinda', 'Banjarmasin', 'Pontianak', 'Manado',
+        'Balikpapan', 'Jambi', 'Cimahi', 'Surakarta', 'Yogyakarta', 'Serang', 'Mataram',
+        'Kupang', 'Ambon', 'Jayapura', 'Sorong', 'Ternate', 'Bengkulu', 'Palu', 'Kendari'
+    ];
+    
+    const provinsiData = [
+        'Aceh', 'Sumatera Utara', 'Sumatera Barat', 'Riau', 'Kepulauan Riau', 'Jambi',
+        'Sumatera Selatan', 'Kepulauan Bangka Belitung', 'Bengkulu', 'Lampung',
+        'DKI Jakarta', 'Jawa Barat', 'Banten', 'Jawa Tengah', 'DI Yogyakarta', 'Jawa Timur',
+        'Bali', 'Nusa Tenggara Barat', 'Nusa Tenggara Timur', 'Kalimantan Barat',
+        'Kalimantan Tengah', 'Kalimantan Selatan', 'Kalimantan Timur', 'Kalimantan Utara',
+        'Sulawesi Utara', 'Gorontalo', 'Sulawesi Tengah', 'Sulawesi Barat', 'Sulawesi Selatan',
+        'Sulawesi Tenggara', 'Maluku', 'Maluku Utara', 'Papua', 'Papua Barat', 'Papua Tengah',
+        'Papua Pegunungan', 'Papua Selatan', 'Papua Barat Daya'
+    ];
+    
+    // Initialize Kota Select2
+    $('#kotaSelect').select2({
+        tags: true,
+        data: kotaData,
+        placeholder: 'Ketik untuk mencari atau tambah kota baru...',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#wizardModal'),
+        language: {
+            noResults: function() {
+                return "Tidak ditemukan. Ketik dan tekan Enter untuk menambahkan.";
+            },
+            searching: function() {
+                return "Mencari...";
+            }
+        },
+        createTag: function (params) {
+            const term = $.trim(params.term);
+            if (term === '') {
+                return null;
+            }
+            return {
+                id: term,
+                text: term,
+                newTag: true
+            };
+        },
+        templateResult: function(data) {
+            if (data.loading) {
+                return 'Mencari...';
+            }
+            if (data.newTag) {
+                return $('<div class="flex items-center"><i class="fas fa-plus-circle mr-2 text-green-600"></i><span>Tambah: <strong>' + data.text + '</strong></span></div>');
+            }
+            return $('<div>' + data.text + '</div>');
+        },
+        templateSelection: function(data) {
+            return data.text;
+        }
+    });
+    
+    // Initialize Provinsi Select2
+    $('#provinsiSelect').select2({
+        tags: true,
+        data: provinsiData,
+        placeholder: 'Ketik untuk mencari atau tambah provinsi baru...',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#wizardModal'),
+        language: {
+            noResults: function() {
+                return "Tidak ditemukan. Ketik dan tekan Enter untuk menambahkan.";
+            },
+            searching: function() {
+                return "Mencari...";
+            }
+        },
+        createTag: function (params) {
+            const term = $.trim(params.term);
+            if (term === '') {
+                return null;
+            }
+            return {
+                id: term,
+                text: term,
+                newTag: true
+            };
+        },
+        templateResult: function(data) {
+            if (data.loading) {
+                return 'Mencari...';
+            }
+            if (data.newTag) {
+                return $('<div class="flex items-center"><i class="fas fa-plus-circle mr-2 text-green-600"></i><span>Tambah: <strong>' + data.text + '</strong></span></div>');
+            }
+            return $('<div>' + data.text + '</div>');
+        },
+        templateSelection: function(data) {
+            return data.text;
+        }
+    });
+    
+    // Reset Select2 when modal closes
+    $('#wizardModal').on('hidden', function() {
+        $('#kotaSelect').val(null).trigger('change');
+        $('#provinsiSelect').val(null).trigger('change');
     });
 });
 </script>

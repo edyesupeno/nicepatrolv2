@@ -17,14 +17,16 @@ class KaryawanImport implements ToCollection, WithHeadingRow
 {
     protected $perusahaanId;
     protected $projectId;
+    protected $role;
     protected $errors = [];
     protected $successCount = 0;
     protected $skippedCount = 0;
 
-    public function __construct($perusahaanId, $projectId)
+    public function __construct($perusahaanId, $projectId, $role = 'security_officer')
     {
         $this->perusahaanId = $perusahaanId;
         $this->projectId = $projectId;
+        $this->role = $role;
     }
 
     public function collection(Collection $rows)
@@ -165,7 +167,7 @@ class KaryawanImport implements ToCollection, WithHeadingRow
                     'email' => $row['email'],
                     'password' => Hash::make('nicepatrol'), // Default password
                     'perusahaan_id' => $this->perusahaanId,
-                    'role' => 'petugas',
+                    'role' => $this->role, // Use role from import form
                 ]);
                 
                 // Create Karyawan
