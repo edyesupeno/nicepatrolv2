@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'superadmin' => \App\Http\Middleware\SuperadminMiddleware::class,
             'perusahaan' => \App\Http\Middleware\PerusahaanMiddleware::class,
             'role' => \App\Http\Middleware\CheckRole::class,
+            'mobile' => \App\Http\Middleware\CheckMobileRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

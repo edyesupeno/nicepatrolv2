@@ -8,52 +8,24 @@ use Illuminate\Http\Request;
 
 class LokasiController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $lokasis = Lokasi::with('perusahaan')->get();
-        return response()->json($lokasis);
-    }
+        $lokasis = Lokasi::select([
+                'id',
+                'perusahaan_id',
+                'nama_lokasi',
+                'alamat',
+                'latitude',
+                'longitude',
+                'is_active'
+            ])
+            ->where('is_active', true)
+            ->orderBy('nama_lokasi')
+            ->get();
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-            'alamat' => 'nullable|string',
-            'latitude' => 'nullable|string',
-            'longitude' => 'nullable|string',
-            'is_active' => 'boolean',
+        return response()->json([
+            'success' => true,
+            'data' => $lokasis,
         ]);
-
-        $validated['perusahaan_id'] = auth()->user()->perusahaan_id;
-
-        $lokasi = Lokasi::create($validated);
-
-        return response()->json($lokasi, 201);
-    }
-
-    public function show(Lokasi $lokasi)
-    {
-        return response()->json($lokasi->load('checkpoints'));
-    }
-
-    public function update(Request $request, Lokasi $lokasi)
-    {
-        $validated = $request->validate([
-            'nama' => 'string|max:255',
-            'alamat' => 'nullable|string',
-            'latitude' => 'nullable|string',
-            'longitude' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
-
-        $lokasi->update($validated);
-
-        return response()->json($lokasi);
-    }
-
-    public function destroy(Lokasi $lokasi)
-    {
-        $lokasi->delete();
-        return response()->json(['message' => 'Lokasi berhasil dihapus']);
     }
 }

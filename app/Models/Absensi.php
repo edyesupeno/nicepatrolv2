@@ -5,30 +5,26 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 
-class Kehadiran extends Model
+class Absensi extends Model
 {
+    protected $table = 'absensis';
+    
     protected $fillable = [
-        'karyawan_id',
+        'user_id',
         'perusahaan_id',
-        'project_id',
-        'shift_id',
         'tanggal',
         'jam_masuk',
         'jam_keluar',
-        'foto_masuk',
-        'foto_keluar',
+        'status_kehadiran',
+        'keterangan',
         'lokasi_masuk',
         'lokasi_keluar',
-        'status',
-        'keterangan',
-        'durasi_kerja',
-        'on_radius',
-        'sumber_data',
+        'foto_masuk',
+        'foto_keluar',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
-        'on_radius' => 'boolean',
     ];
 
     // Global scope untuk multi-tenancy
@@ -42,23 +38,13 @@ class Kehadiran extends Model
     }
 
     // Relationships
-    public function karyawan()
+    public function user()
     {
-        return $this->belongsTo(Karyawan::class);
+        return $this->belongsTo(User::class);
     }
 
     public function perusahaan()
     {
         return $this->belongsTo(Perusahaan::class);
-    }
-
-    public function project()
-    {
-        return $this->belongsTo(Project::class);
-    }
-
-    public function shift()
-    {
-        return $this->belongsTo(Shift::class);
     }
 }

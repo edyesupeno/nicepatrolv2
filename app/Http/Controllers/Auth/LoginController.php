@@ -10,6 +10,15 @@ class LoginController extends Controller
 {
     public function showLoginForm()
     {
+        // Check if accessing from mobile domain
+        if (request()->getHost() === env('MOBILE_DOMAIN', 'app.nicepatrol.test')) {
+            if (Auth::check()) {
+                return redirect()->route('mobile.home');
+            }
+            return view('mobile.auth.login');
+        }
+        
+        // Dashboard login
         if (Auth::check()) {
             return redirect()->route('dashboard');
         }

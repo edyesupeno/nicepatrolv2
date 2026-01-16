@@ -5,13 +5,31 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
-    return redirect()->route('login');
+    return redirect('/login');
 });
 
-// Auth Routes
-Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+// Dashboard Auth Routes (dash.nicepatrol.test) - MUST BE FIRST
+Route::domain(env('DASHBOARD_DOMAIN', 'dash.nicepatrol.test'))->group(function () {
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+});
+
+// Mobile Auth Routes (for IP access from phone)
+// This handles http://192.168.x.x:8000/login
+Route::get('/login', function() {
+    $host = request()->getHost();
+    // If accessing from IP, show mobile login
+    if (filter_var($host, FILTER_VALIDATE_IP)) {
+        return view('mobile.auth.login');
+    }
+    // If accessing from mobile domain
+    if ($host === env('MOBILE_DOMAIN', 'app.nicepatrol.test')) {
+        return view('mobile.auth.login');
+    }
+    // Otherwise 404
+    abort(404);
+})->name('mobile.login.fallback');
 
 // Protected Routes
 Route::middleware('auth')->group(function () {
@@ -248,4 +266,83 @@ Route::middleware('auth')->group(function () {
             Route::get('kru-change', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'kruChange'])->name('kru-change');
         });
     });
+});
+
+// Mobile PWA Routes - app.nicepatrol.id
+Route::domain(env('MOBILE_DOMAIN', 'app.nicepatrol.id'))->group(function () {
+    // PWA Manifest (dynamic)
+    Route::get('/mobile/manifest', [\App\Http\Controllers\Mobile\ManifestController::class, 'manifest'])->name('mobile.manifest');
+    
+    // Login page (no auth required)
+    Route::get('/login', [\App\Http\Controllers\Mobile\AuthController::class, 'showLogin'])->name('mobile.login');
+    Route::get('/', function() {
+        return redirect()->route('mobile.login');
+    });
+    
+    // Security Officer Views (no auth middleware - handled by JS with token)
+    Route::prefix('security')->name('mobile.security.')->group(function () {
+        Route::get('/home', function() {
+            return view('mobile.security.home');
+        })->name('home');
+        Route::get('/shift-schedule', function() {
+            return view('mobile.security.shift-schedule');
+        })->name('shift-schedule');
+        Route::get('/absensi-schedule', function() {
+            return view('mobile.security.absensi-schedule');
+        })->name('absensi-schedule');
+        Route::get('/patroli', [\App\Http\Controllers\Mobile\PatroliController::class, 'index'])->name('patroli.index');
+        Route::get('/patroli/create', [\App\Http\Controllers\Mobile\PatroliController::class, 'create'])->name('patroli.create');
+        Route::get('/scan-qr', [\App\Http\Controllers\Mobile\ScanController::class, 'index'])->name('scan');
+    });
+    
+    // Office Employee Views (no auth middleware - handled by JS with token)
+    Route::prefix('employee')->name('mobile.employee.')->group(function () {
+        Route::get('/home', function() {
+            return view('mobile.employee.home');
+        })->name('home');
+        Route::get('/kehadiran', [\App\Http\Controllers\Mobile\KehadiranController::class, 'index'])->name('kehadiran.index');
+    });
+    
+    // Shared Views
+    Route::get('/profile', function() {
+        return view('mobile.security.profile');
+    })->name('mobile.profile');
+});
+
+
+// Fallback routes for IP access (mobile testing from phone)
+// This handles http://192.168.x.x:8000/security/home etc
+
+// PWA Manifest for IP access
+Route::get('/mobile/manifest', [\App\Http\Controllers\Mobile\ManifestController::class, 'manifest']);
+
+Route::prefix('security')->group(function () {
+    Route::get('/home', function() {
+        return view('mobile.security.home');
+    });
+    Route::get('/shift-schedule', function() {
+        return view('mobile.security.shift-schedule');
+    });
+    Route::get('/absensi-schedule', function() {
+        return view('mobile.security.absensi-schedule');
+    });
+    Route::get('/patroli', function() {
+        return view('mobile.security.patroli');
+    });
+    Route::get('/scan-qr', function() {
+        return view('mobile.security.scan');
+    });
+});
+
+Route::prefix('employee')->group(function () {
+    Route::get('/home', function() {
+        return view('mobile.employee.home');
+    });
+    Route::get('/kehadiran', function() {
+        return view('mobile.employee.kehadiran');
+    });
+});
+
+Route::get('/profile', function() {
+    return view('mobile.security.profile');
 });

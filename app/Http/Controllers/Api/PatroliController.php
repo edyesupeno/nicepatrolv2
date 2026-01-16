@@ -4,82 +4,84 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Patroli;
-use App\Models\PatroliDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PatroliController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $patrolis = Patroli::with(['lokasi', 'user', 'details.checkpoint'])->get();
-        return response()->json($patrolis);
+        $patrolis = Patroli::select([
+                'id',
+                'perusahaan_id',
+                'user_id',
+                'lokasi_id',
+                'tanggal_patroli',
+                'waktu_mulai',
+                'waktu_selesai',
+                'status',
+                'catatan'
+            ])
+            ->with([
+                'user:id,name',
+                'lokasi:id,nama_lokasi'
+            ])
+            ->orderBy('tanggal_patroli', 'desc')
+            ->orderBy('waktu_mulai', 'desc')
+            ->paginate(20);
+
+        return response()->json([
+            'success' => true,
+            'data' => $patrolis,
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'lokasi_id' => 'required|exists:lokasis,id',
+            'tanggal_patroli' => 'required|date',
+            'waktu_mulai' => 'required',
             'catatan' => 'nullable|string',
         ]);
 
-        $validated['perusahaan_id'] = auth()->user()->perusahaan_id;
-        $validated['user_id'] = auth()->id();
-        $validated['waktu_mulai'] = now();
-        $validated['status'] = 'berlangsung';
+        try {
+            DB::beginTransaction();
 
-        $patroli = Patroli::create($validated);
+            $validated['user_id'] = auth()->id();
+            $validated['perusahaan_id'] = auth()->user()->perusahaan_id;
+            $validated['status'] = 'sedang_patroli';
 
-        return response()->json($patroli->load('lokasi'), 201);
+            $patroli = Patroli::create($validated);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Patroli berhasil dimulai',
+                'data' => $patroli->load(['user:id,name', 'lokasi:id,nama_lokasi']),
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memulai patroli: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function show(Patroli $patroli)
     {
-        return response()->json($patroli->load(['lokasi', 'user', 'details.checkpoint']));
-    }
-
-    public function update(Request $request, Patroli $patroli)
-    {
-        $validated = $request->validate([
-            'status' => 'in:berlangsung,selesai,dibatalkan',
-            'catatan' => 'nullable|string',
+        $patroli->load([
+            'user:id,name',
+            'lokasi:id,nama_lokasi',
+            'details.checkpoint:id,nama_checkpoint'
         ]);
 
-        if ($request->status === 'selesai' && !$patroli->waktu_selesai) {
-            $validated['waktu_selesai'] = now();
-        }
-
-        $patroli->update($validated);
-
-        return response()->json($patroli);
-    }
-
-    public function scanCheckpoint(Request $request, Patroli $patroli)
-    {
-        $validated = $request->validate([
-            'checkpoint_id' => 'required|exists:checkpoints,id',
-            'latitude' => 'nullable|string',
-            'longitude' => 'nullable|string',
-            'catatan' => 'nullable|string',
-            'foto' => 'nullable|image|max:2048',
-            'status' => 'in:normal,bermasalah',
+        return response()->json([
+            'success' => true,
+            'data' => $patroli,
         ]);
-
-        $validated['patroli_id'] = $patroli->id;
-        $validated['waktu_scan'] = now();
-
-        if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('patroli-photos', 'public');
-            $validated['foto'] = $path;
-        }
-
-        $detail = PatroliDetail::create($validated);
-
-        return response()->json($detail->load('checkpoint'), 201);
-    }
-
-    public function destroy(Patroli $patroli)
-    {
-        $patroli->delete();
-        return response()->json(['message' => 'Patroli berhasil dihapus']);
     }
 }
