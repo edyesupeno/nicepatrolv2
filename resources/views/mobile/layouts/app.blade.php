@@ -43,7 +43,7 @@
     @yield('content')
     
     <!-- Scripts -->
-    <script src="/mobile/js/app.js"></script>
+    <script src="/mobile/js/app.js?v={{ time() }}"></script>
     <script>
         // Register Service Worker
         if ('serviceWorker' in navigator) {
