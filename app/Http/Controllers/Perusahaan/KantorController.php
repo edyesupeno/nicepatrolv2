@@ -10,7 +10,7 @@ class KantorController extends Controller
 {
     public function index()
     {
-        $kantors = Kantor::withCount('checkpoints')
+        $kantors = Kantor::select(['id', 'nama', 'alamat', 'telepon', 'email', 'is_pusat', 'is_active'])
             ->paginate(10);
             
         return view('perusahaan.kantors.index', compact('kantors'));

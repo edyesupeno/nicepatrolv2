@@ -13,17 +13,22 @@ class Checkpoint extends Model
 
     protected $fillable = [
         'perusahaan_id',
-        'lokasi_id',
+        'rute_patrol_id',
         'nama',
-        'kode',
+        'qr_code',
         'deskripsi',
         'urutan',
+        'alamat',
+        'latitude',
+        'longitude',
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'urutan' => 'integer',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
     ];
 
     protected $appends = ['hash_id'];
@@ -35,6 +40,19 @@ class Checkpoint extends Model
                 $builder->where('perusahaan_id', auth()->user()->perusahaan_id);
             }
         });
+        
+        // Auto-generate QR code if empty
+        static::creating(function ($checkpoint) {
+            if (empty($checkpoint->qr_code)) {
+                $checkpoint->qr_code = 'CP-' . strtoupper(uniqid());
+            }
+            
+            // Auto-set urutan if empty
+            if (empty($checkpoint->urutan)) {
+                $maxUrutan = static::where('rute_patrol_id', $checkpoint->rute_patrol_id)->max('urutan');
+                $checkpoint->urutan = ($maxUrutan ?? 0) + 1;
+            }
+        });
     }
 
     public function perusahaan(): BelongsTo
@@ -42,14 +60,15 @@ class Checkpoint extends Model
         return $this->belongsTo(Perusahaan::class);
     }
 
-    public function kantor(): BelongsTo
+    public function rutePatrol(): BelongsTo
     {
-        return $this->belongsTo(Kantor::class, 'lokasi_id');
+        return $this->belongsTo(RutePatrol::class);
     }
-    
-    // Alias untuk backward compatibility
-    public function lokasi(): BelongsTo
+
+    public function asets()
     {
-        return $this->kantor();
+        return $this->belongsToMany(AsetKawasan::class, 'aset_checkpoint')
+            ->withPivot('catatan')
+            ->withTimestamps();
     }
 }

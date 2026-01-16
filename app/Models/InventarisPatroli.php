@@ -4,31 +4,24 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\HasHashId;
 
-class Kantor extends Model
+class InventarisPatroli extends Model
 {
     use HasHashId;
-
-    protected $table = 'kantors';
 
     protected $fillable = [
         'perusahaan_id',
         'nama',
-        'alamat',
-        'telepon',
-        'email',
-        'is_pusat',
-        'latitude',
-        'longitude',
+        'kategori',
+        'foto',
+        'catatan',
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'is_pusat' => 'boolean',
     ];
 
     protected $appends = ['hash_id'];
@@ -45,10 +38,5 @@ class Kantor extends Model
     public function perusahaan(): BelongsTo
     {
         return $this->belongsTo(Perusahaan::class);
-    }
-
-    public function projects(): HasMany
-    {
-        return $this->hasMany(Project::class);
     }
 }

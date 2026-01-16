@@ -182,12 +182,60 @@ Route::middleware('auth')->group(function () {
             Route::delete('rute-patrol/{rutePatrol}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'destroyRutePatrol'])->name('rute-patrol.destroy');
             
             Route::get('checkpoint', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'checkpoint'])->name('checkpoint');
+            Route::post('checkpoint', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'storeCheckpoint'])->name('checkpoint.store');
+            Route::get('checkpoint/{checkpoint}/edit', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'editCheckpoint'])->name('checkpoint.edit');
+            Route::put('checkpoint/{checkpoint}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updateCheckpoint'])->name('checkpoint.update');
+            Route::delete('checkpoint/{checkpoint}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'destroyCheckpoint'])->name('checkpoint.destroy');
+            Route::get('checkpoint/{checkpoint}/qr', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'showCheckpointQr'])->name('checkpoint.qr');
+            Route::get('checkpoint/{checkpoint}/aset', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'checkpointAset'])->name('checkpoint.aset');
+            Route::post('checkpoint/{checkpoint}/aset', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'storeCheckpointAset'])->name('checkpoint.aset.store');
+            
             Route::get('aset-kawasan', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'asetKawasan'])->name('aset-kawasan');
+            Route::post('aset-kawasan', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'storeAsetKawasan'])->name('aset-kawasan.store');
+            Route::get('aset-kawasan/{asetKawasan}/edit', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'editAsetKawasan'])->name('aset-kawasan.edit');
+            Route::put('aset-kawasan/{asetKawasan}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updateAsetKawasan'])->name('aset-kawasan.update');
+            Route::delete('aset-kawasan/{asetKawasan}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'destroyAsetKawasan'])->name('aset-kawasan.destroy');
+            
+            Route::get('inventaris-patroli', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'inventarisPatroli'])->name('inventaris-patroli');
+            Route::post('inventaris-patroli', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'storeInventarisPatroli'])->name('inventaris-patroli.store');
+            Route::get('inventaris-patroli/{inventarisPatroli}/edit', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'editInventarisPatroli'])->name('inventaris-patroli.edit');
+            Route::put('inventaris-patroli/{inventarisPatroli}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updateInventarisPatroli'])->name('inventaris-patroli.update');
+            Route::delete('inventaris-patroli/{inventarisPatroli}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'destroyInventarisPatroli'])->name('inventaris-patroli.destroy');
+            
+            Route::get('kuesioner-patroli', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'kuesionerPatroli'])->name('kuesioner-patroli');
+            Route::post('kuesioner-patroli', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'storeKuesionerPatroli'])->name('kuesioner-patroli.store');
+            Route::get('kuesioner-patroli/{kuesionerPatroli}/edit', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'editKuesionerPatroli'])->name('kuesioner-patroli.edit');
+            Route::put('kuesioner-patroli/{kuesionerPatroli}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updateKuesionerPatroli'])->name('kuesioner-patroli.update');
+            Route::delete('kuesioner-patroli/{kuesionerPatroli}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'destroyKuesionerPatroli'])->name('kuesioner-patroli.destroy');
+            Route::get('kuesioner-patroli/{kuesionerPatroli}/pertanyaan', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'kelolaPertanyaan'])->name('kuesioner-patroli.pertanyaan');
+            Route::post('kuesioner-patroli/{kuesionerPatroli}/pertanyaan', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'storePertanyaan'])->name('kuesioner-patroli.pertanyaan.store');
+            Route::put('kuesioner-patroli/{kuesionerPatroli}/pertanyaan/{pertanyaan}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updatePertanyaan'])->name('kuesioner-patroli.pertanyaan.update');
+            Route::delete('kuesioner-patroli/{kuesionerPatroli}/pertanyaan/{pertanyaan}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'destroyPertanyaan'])->name('kuesioner-patroli.pertanyaan.destroy');
+            Route::post('kuesioner-patroli/{kuesionerPatroli}/urutan', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updateUrutanPertanyaan'])->name('kuesioner-patroli.urutan');
+            Route::get('kuesioner-patroli/{kuesionerPatroli}/preview', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'previewKuesioner'])->name('kuesioner-patroli.preview');
+            
+            Route::get('pemeriksaan-patroli', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'pemeriksaanPatroli'])->name('pemeriksaan-patroli');
+            Route::post('pemeriksaan-patroli', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'storePemeriksaanPatroli'])->name('pemeriksaan-patroli.store');
+            Route::get('pemeriksaan-patroli/{pemeriksaanPatroli}/edit', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'editPemeriksaanPatroli'])->name('pemeriksaan-patroli.edit');
+            Route::put('pemeriksaan-patroli/{pemeriksaanPatroli}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updatePemeriksaanPatroli'])->name('pemeriksaan-patroli.update');
+            Route::delete('pemeriksaan-patroli/{pemeriksaanPatroli}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'destroyPemeriksaanPatroli'])->name('pemeriksaan-patroli.destroy');
+            Route::get('pemeriksaan-patroli/{pemeriksaanPatroli}/pertanyaan', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'kelolaPertanyaanPemeriksaan'])->name('pemeriksaan-patroli.pertanyaan');
+            Route::post('pemeriksaan-patroli/{pemeriksaanPatroli}/pertanyaan', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'storePertanyaanPemeriksaan'])->name('pemeriksaan-patroli.pertanyaan.store');
+            Route::put('pemeriksaan-patroli/{pemeriksaanPatroli}/pertanyaan/{pertanyaan}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updatePertanyaanPemeriksaan'])->name('pemeriksaan-patroli.pertanyaan.update');
+            Route::delete('pemeriksaan-patroli/{pemeriksaanPatroli}/pertanyaan/{pertanyaan}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'destroyPertanyaanPemeriksaan'])->name('pemeriksaan-patroli.pertanyaan.destroy');
+            Route::post('pemeriksaan-patroli/{pemeriksaanPatroli}/urutan', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updateUrutanPertanyaanPemeriksaan'])->name('pemeriksaan-patroli.urutan');
+            Route::get('pemeriksaan-patroli/{pemeriksaanPatroli}/preview', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'previewPemeriksaan'])->name('pemeriksaan-patroli.preview');
         });
         
         // Tim Patroli Routes
         Route::prefix('tim-patroli')->name('tim-patroli.')->group(function () {
             Route::get('master', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'master'])->name('master');
+            Route::get('create', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'store'])->name('store');
+            Route::get('{timPatroli}/edit', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'edit'])->name('edit');
+            Route::put('{timPatroli}', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'update'])->name('update');
+            Route::delete('{timPatroli}', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'destroy'])->name('destroy');
+            Route::get('get-data-by-project/{project}', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'getDataByProject'])->name('get-data-by-project');
             Route::get('inventaris', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'inventaris'])->name('inventaris');
         });
         

@@ -8,27 +8,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\HasHashId;
 
-class Kantor extends Model
+class KuesionerPatroli extends Model
 {
     use HasHashId;
 
-    protected $table = 'kantors';
-
     protected $fillable = [
         'perusahaan_id',
-        'nama',
-        'alamat',
-        'telepon',
-        'email',
-        'is_pusat',
-        'latitude',
-        'longitude',
+        'judul',
+        'deskripsi',
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'is_pusat' => 'boolean',
     ];
 
     protected $appends = ['hash_id'];
@@ -47,8 +39,8 @@ class Kantor extends Model
         return $this->belongsTo(Perusahaan::class);
     }
 
-    public function projects(): HasMany
+    public function pertanyaans(): HasMany
     {
-        return $this->hasMany(Project::class);
+        return $this->hasMany(PertanyaanKuesioner::class)->orderBy('urutan');
     }
 }

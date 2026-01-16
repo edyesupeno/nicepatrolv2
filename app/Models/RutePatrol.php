@@ -45,4 +45,9 @@ class RutePatrol extends Model
     {
         return $this->belongsTo(AreaPatrol::class);
     }
+
+    public function checkpoints()
+    {
+        return $this->hasMany(Checkpoint::class);
+    }
 }

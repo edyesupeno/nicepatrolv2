@@ -92,16 +92,21 @@
         </div>
     </form>
 </div>
+
+<!-- Table -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
                     <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                        <i class="fas fa-map mr-2" style="color: #3B82C8;"></i>Nama Area
+                        <i class="fas fa-route mr-2" style="color: #3B82C8;"></i>Nama Rute
                     </th>
                     <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                        <i class="fas fa-project-diagram mr-2" style="color: #3B82C8;"></i>Project
+                        <i class="fas fa-map mr-2" style="color: #3B82C8;"></i>Area Patrol
                     </th>
                     <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                        <i class="fas fa-map-marker-alt mr-2" style="color: #3B82C8;"></i>Lokasi
+                        <i class="fas fa-clock mr-2" style="color: #3B82C8;"></i>Estimasi Waktu
                     </th>
                     <th class="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                         <i class="fas fa-toggle-on mr-2" style="color: #3B82C8;"></i>Status
@@ -121,7 +126,9 @@
                             </div>
                             <div>
                                 <p class="text-sm font-semibold text-gray-900">{{ $rute->nama }}</p>
-                                <p class="text-xs text-gray-500">{{ $rute->deskripsi ?? '-' }}</p>
+                                @if($rute->deskripsi)
+                                    <p class="text-xs text-gray-500">{{ Str::limit($rute->deskripsi, 50) }}</p>
+                                @endif
                             </div>
                         </div>
                     </td>
@@ -140,7 +147,7 @@
                                 <span class="font-medium">{{ $rute->estimasi_waktu }} menit</span>
                             </div>
                         @else
-                            <span class="text-gray-400">-</span>
+                            <span class="text-xs text-gray-400">Belum diset</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 text-center">
