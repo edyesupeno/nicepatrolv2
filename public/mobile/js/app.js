@@ -16,7 +16,7 @@ const API_BASE_URL = (() => {
     }
     
     // Production
-    return 'https://api.nicepatrol.id/api/v1';
+    return 'https://apiv1.nicepatrol.id/api/v1';
 })();
 
 console.log('API Base URL:', API_BASE_URL);

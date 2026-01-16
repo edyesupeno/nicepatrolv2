@@ -53,7 +53,7 @@ $apiRoutes = function () {
 
 // Use domain routing for production, prefix for local
 if (app()->environment('production')) {
-    Route::domain(env('API_DOMAIN', 'api.nicepatrol.id'))->prefix('v1')->group($apiRoutes);
+    Route::domain(env('API_DOMAIN', 'apiv1.nicepatrol.id'))->prefix('v1')->group($apiRoutes);
 } else {
     // Local: accessible from any domain with /api/v1 prefix
     // Note: Laravel already adds 'api' prefix from routes/api.php
