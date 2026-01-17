@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\HasHashId;
 
@@ -63,13 +64,33 @@ class Project extends Model
             ->withTimestamps();
     }
 
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(ProjectContact::class);
+    }
+
+    public function activeContacts(): HasMany
+    {
+        return $this->hasMany(ProjectContact::class)->where('is_active', true);
+    }
+
+    public function karyawans(): HasMany
+    {
+        return $this->hasMany(Karyawan::class);
+    }
+
+    public function activeKaryawans(): HasMany
+    {
+        return $this->hasMany(Karyawan::class)->where('is_active', true);
+    }
+
     /**
      * Get struktur jabatan dengan jumlah karyawan per jabatan
      */
     public function getStrukturJabatanAttribute()
     {
         try {
-            // Get jabatan yang terkait dengan project ini via pivot table
+            // Get all jabatans for this project
             $jabatans = $this->jabatans;
             
             if ($jabatans->isEmpty()) {
@@ -79,21 +100,28 @@ class Project extends Model
             $struktur = [];
 
             foreach ($jabatans as $jabatan) {
-                // Hitung jumlah karyawan dengan jabatan ini di project ini
-                $jumlah = $this->users()
+                // Count karyawans with this jabatan in this project
+                $karyawanCount = \App\Models\Karyawan::where('project_id', $this->id)
+                    ->where('jabatan_id', $jabatan->id)
+                    ->where('is_active', true)
+                    ->count();
+
+                // Count users assigned to this project with this jabatan
+                $userCount = $this->users()
                     ->wherePivot('jabatan_id', $jabatan->id)
                     ->wherePivot('is_active', true)
                     ->count();
 
+                $totalCount = $karyawanCount + $userCount;
+
                 $struktur[] = [
                     'jabatan' => $jabatan->nama,
-                    'jumlah' => $jumlah,
+                    'jumlah' => $totalCount,
                 ];
             }
 
             return $struktur;
         } catch (\Exception $e) {
-            // Return empty array if table doesn't exist or any error
             return [];
         }
     }
@@ -104,11 +132,18 @@ class Project extends Model
     public function getTotalKaryawanAttribute()
     {
         try {
-            return $this->users()
+            // Count karyawans directly assigned to this project
+            $karyawanCount = \App\Models\Karyawan::where('project_id', $this->id)
+                ->where('is_active', true)
+                ->count();
+
+            // Count users assigned to this project via pivot
+            $userCount = $this->users()
                 ->wherePivot('is_active', true)
                 ->count();
+
+            return $karyawanCount + $userCount;
         } catch (\Exception $e) {
-            // Return 0 if table doesn't exist or any error
             return 0;
         }
     }

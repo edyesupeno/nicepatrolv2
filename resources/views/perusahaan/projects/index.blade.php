@@ -49,9 +49,16 @@
                         </span>
                     @endif
                 </div>
-                <button onclick="openEditModal('{{ $project->hash_id }}')" class="text-blue-600 hover:text-blue-800 p-2">
-                    <i class="fas fa-edit text-lg"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('perusahaan.projects.contacts.index', $project->hash_id) }}" 
+                       class="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-green-50 transition" 
+                       title="Kontak Penting">
+                        <i class="fas fa-address-book text-lg"></i>
+                    </a>
+                    <button onclick="openEditModal('{{ $project->hash_id }}')" class="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 transition" title="Edit Project">
+                        <i class="fas fa-edit text-lg"></i>
+                    </button>
+                </div>
             </div>
 
             @if($project->deskripsi)

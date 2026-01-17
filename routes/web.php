@@ -61,6 +61,14 @@ Route::middleware('auth')->group(function () {
         Route::resource('kantors', \App\Http\Controllers\Perusahaan\KantorController::class);
         Route::resource('projects', \App\Http\Controllers\Perusahaan\ProjectController::class);
         Route::get('projects/{project}/jabatans', [\App\Http\Controllers\Perusahaan\ProjectController::class, 'getJabatans'])->name('projects.jabatans');
+        
+        // Project Contacts Routes
+        Route::get('projects/{project}/contacts', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'index'])->name('projects.contacts.index');
+        Route::post('projects/{project}/contacts', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'store'])->name('projects.contacts.store');
+        Route::get('projects/{project}/contacts/{contact}/edit', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'edit'])->name('projects.contacts.edit');
+        Route::put('projects/{project}/contacts/{contact}', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'update'])->name('projects.contacts.update');
+        Route::delete('projects/{project}/contacts/{contact}', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'destroy'])->name('projects.contacts.destroy');
+        Route::get('projects/{project}/contacts/jenis/{jenis}', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'getByJenis'])->name('projects.contacts.by-jenis');
         Route::resource('areas', \App\Http\Controllers\Perusahaan\AreaController::class);
         Route::resource('jabatans', \App\Http\Controllers\Perusahaan\JabatanController::class);
         Route::get('status-karyawan', [\App\Http\Controllers\Perusahaan\StatusKaryawanController::class, 'index'])->name('status-karyawan.index');

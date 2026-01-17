@@ -54,6 +54,14 @@ $apiRoutes = function () {
         // Patroli
         Route::apiResource('patrolis', PatroliController::class);
         Route::post('patrolis/{patroli}/scan', [PatroliController::class, 'scanCheckpoint']);
+
+        // Project Contacts
+        Route::get('projects/{project}/contacts', [\App\Http\Controllers\Api\ProjectContactController::class, 'index']);
+        Route::post('projects/{project}/contacts', [\App\Http\Controllers\Api\ProjectContactController::class, 'store']);
+        Route::get('projects/{project}/contacts/{contact}', [\App\Http\Controllers\Api\ProjectContactController::class, 'show']);
+        Route::put('projects/{project}/contacts/{contact}', [\App\Http\Controllers\Api\ProjectContactController::class, 'update']);
+        Route::delete('projects/{project}/contacts/{contact}', [\App\Http\Controllers\Api\ProjectContactController::class, 'destroy']);
+        Route::get('projects/{project}/contacts/emergency', [\App\Http\Controllers\Api\ProjectContactController::class, 'emergency']);
     });
 };
 
