@@ -32,6 +32,12 @@ $apiRoutes = function () {
         // Absensi
         Route::get('/absensi/summary', [AbsensiController::class, 'summary']);
         Route::get('/absensi/my-schedule', [AbsensiController::class, 'mySchedule']);
+        Route::get('/absensi/lokasi', [AbsensiController::class, 'getLokasiAbsensi']);
+        Route::get('/absensi/today-status', [AbsensiController::class, 'checkTodayStatus']);
+        Route::post('/absensi/check-in', [AbsensiController::class, 'checkIn']);
+        Route::post('/absensi/check-out', [AbsensiController::class, 'checkOut']);
+        Route::post('/absensi/take-break', [AbsensiController::class, 'takeBreak']);
+        Route::post('/absensi/return-from-break', [AbsensiController::class, 'returnFromBreak']);
 
         // Perusahaan (hanya superadmin)
         Route::apiResource('perusahaans', PerusahaanController::class);
@@ -53,9 +59,9 @@ $apiRoutes = function () {
 
 // Use domain routing for production, prefix for local
 if (app()->environment('production')) {
-    Route::domain(env('API_DOMAIN', 'apiv1.nicepatrol.id'))->prefix('v1')->group($apiRoutes);
+    Route::domain(config('app.api_domain'))->prefix('v1')->group($apiRoutes);
 } else {
-    // Local: accessible from any domain with /api/v1 prefix
+    // Local/Development: accessible from any domain with /api/v1 prefix
     // Note: Laravel already adds 'api' prefix from routes/api.php
     Route::prefix('v1')->group($apiRoutes);
 }

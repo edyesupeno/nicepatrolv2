@@ -7,43 +7,75 @@ use Illuminate\Http\Request;
 
 class ManifestController extends Controller
 {
-    public function manifest()
+    public function manifest(Request $request)
     {
-        // Get app icon from settings
-        $appIcon = setting('app_favicon');
-        $iconUrl = $appIcon 
-            ? asset('storage/' . $appIcon) 
-            : asset('favicon.png');
-        
-        // Get app name from settings
+        // Get app settings (you can customize these based on your settings)
         $appName = setting('app_name', 'Nice Patrol');
+        $appDescription = setting('app_description', 'Sistem Manajemen Patroli dan Kehadiran');
+        $themeColor = setting('app_primary_color', '#0071CE');
+        $backgroundColor = setting('app_background_color', '#ffffff');
         
-        // Get theme color from settings or use default
-        $themeColor = setting('app_primary_color', '#0071CE'); // Nice Patrol blue
+        // Get app icon
+        $appIcon = setting('app_favicon') ? asset('storage/' . setting('app_favicon')) : asset('favicon.png');
         
         $manifest = [
             'name' => $appName,
             'short_name' => $appName,
-            'description' => 'Aplikasi Patroli Security',
-            'start_url' => '/login',
-            'scope' => '/',
-            'display' => 'fullscreen',
-            'display_override' => ['fullscreen', 'standalone'],
-            'background_color' => '#ffffff',
+            'description' => $appDescription,
+            'start_url' => '/',
+            'display' => 'standalone',
+            'orientation' => 'portrait',
             'theme_color' => $themeColor,
-            'orientation' => 'portrait-primary',
+            'background_color' => $backgroundColor,
+            'scope' => '/',
+            'lang' => 'id',
+            'categories' => ['business', 'productivity'],
             'icons' => [
                 [
-                    'src' => $iconUrl,
+                    'src' => $appIcon,
                     'sizes' => '192x192',
                     'type' => 'image/png',
                     'purpose' => 'any maskable'
                 ],
                 [
-                    'src' => $iconUrl,
+                    'src' => $appIcon,
                     'sizes' => '512x512',
                     'type' => 'image/png',
                     'purpose' => 'any maskable'
+                ]
+            ],
+            'screenshots' => [
+                [
+                    'src' => asset('images/screenshot-mobile.png'),
+                    'sizes' => '390x844',
+                    'type' => 'image/png',
+                    'form_factor' => 'narrow'
+                ]
+            ],
+            'shortcuts' => [
+                [
+                    'name' => 'Absensi',
+                    'short_name' => 'Absensi',
+                    'description' => 'Lihat kehadiran',
+                    'url' => '/employee/kehadiran',
+                    'icons' => [
+                        [
+                            'src' => $appIcon,
+                            'sizes' => '96x96'
+                        ]
+                    ]
+                ],
+                [
+                    'name' => 'Patroli',
+                    'short_name' => 'Patroli',
+                    'description' => 'Mulai patroli',
+                    'url' => '/security/patroli',
+                    'icons' => [
+                        [
+                            'src' => $appIcon,
+                            'sizes' => '96x96'
+                        ]
+                    ]
                 ]
             ]
         ];

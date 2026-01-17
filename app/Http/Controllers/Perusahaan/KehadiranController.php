@@ -284,10 +284,25 @@ class KehadiranController extends Controller
         }
     }
     
-    public function show($id)
+    public function show(Kehadiran $kehadiran)
     {
-        $kehadiran = Kehadiran::with(['karyawan.jabatan', 'project', 'shift'])
-            ->findOrFail($id);
+        $kehadiran->load(['karyawan.jabatan', 'project', 'shift']);
+        
+        // Ensure Google Maps URLs are included in the response
+        $kehadiran->makeVisible([
+            'map_absen_masuk',
+            'map_absen_keluar',
+            'latitude_masuk',
+            'longitude_masuk',
+            'latitude_keluar',
+            'longitude_keluar',
+            'lokasi_masuk',
+            'lokasi_keluar',
+            'on_radius_masuk',
+            'on_radius_keluar',
+            'jarak_masuk',
+            'jarak_keluar'
+        ]);
         
         return response()->json($kehadiran);
     }
@@ -369,6 +384,103 @@ class KehadiranController extends Controller
         ]);
         
         return back()->with('success', 'Kehadiran berhasil ditambahkan');
+    }
+    
+    public function update(Request $request, Kehadiran $kehadiran)
+    {
+        $request->validate([
+            'jam_masuk' => 'required',
+            'jam_keluar' => 'nullable',
+            'jam_istirahat' => 'nullable',
+            'jam_kembali' => 'nullable',
+            'status' => 'required|in:hadir,terlambat,pulang_cepat,terlambat_pulang_cepat,alpa,izin,sakit,cuti',
+            'keterangan' => 'nullable|string',
+        ], [
+            'jam_masuk.required' => 'Jam masuk wajib diisi',
+            'status.required' => 'Status wajib dipilih',
+        ]);
+        
+        // Get shift from jadwal
+        $jadwalShift = \App\Models\JadwalShift::with('shift')
+            ->where('karyawan_id', $kehadiran->karyawan_id)
+            ->where('tanggal', $kehadiran->tanggal)
+            ->first();
+        
+        $shift = $jadwalShift ? $jadwalShift->shift : null;
+        
+        // Calculate status based on shift time (if shift exists and status is hadir/terlambat/pulang_cepat/terlambat_pulang_cepat)
+        $status = $request->status;
+        if ($shift && in_array($status, ['hadir', 'terlambat', 'pulang_cepat', 'terlambat_pulang_cepat']) && $request->jam_masuk && $request->jam_keluar) {
+            $status = $this->calculateStatus($request->jam_masuk, $request->jam_keluar, $shift->jam_mulai, $shift->jam_selesai);
+        }
+        
+        // Calculate durasi kerja
+        $durasiKerja = null;
+        if ($request->jam_masuk && $request->jam_keluar) {
+            try {
+                $masuk = Carbon::createFromFormat('H:i', $request->jam_masuk);
+                $keluar = Carbon::createFromFormat('H:i', $request->jam_keluar);
+                
+                if ($keluar->lt($masuk)) {
+                    $keluar->addDay();
+                }
+                
+                $durasiKerja = $masuk->diffInMinutes($keluar);
+            } catch (\Exception $e) {
+                // Ignore
+            }
+        }
+        
+        // Calculate durasi istirahat
+        $durasiIstirahat = null;
+        if ($request->jam_istirahat && $request->jam_kembali) {
+            try {
+                $istirahat = Carbon::createFromFormat('H:i', $request->jam_istirahat);
+                $kembali = Carbon::createFromFormat('H:i', $request->jam_kembali);
+                
+                if ($kembali->lt($istirahat)) {
+                    $kembali->addDay();
+                }
+                
+                $durasiIstirahat = $istirahat->diffInMinutes($kembali);
+            } catch (\Exception $e) {
+                // Ignore
+            }
+        }
+        
+        $kehadiran->update([
+            'jam_masuk' => $request->jam_masuk,
+            'jam_keluar' => $request->jam_keluar,
+            'jam_istirahat' => $request->jam_istirahat,
+            'jam_kembali' => $request->jam_kembali,
+            'status' => $status,
+            'keterangan' => $request->keterangan,
+            'durasi_kerja' => $durasiKerja,
+            'durasi_istirahat' => $durasiIstirahat,
+        ]);
+        
+        return back()->with('success', 'Kehadiran berhasil diupdate');
+    }
+    
+    public function destroy(Kehadiran $kehadiran)
+    {
+        // Delete associated photos if they exist
+        if ($kehadiran->foto_masuk && \Storage::disk('public')->exists($kehadiran->foto_masuk)) {
+            \Storage::disk('public')->delete($kehadiran->foto_masuk);
+        }
+        if ($kehadiran->foto_keluar && \Storage::disk('public')->exists($kehadiran->foto_keluar)) {
+            \Storage::disk('public')->delete($kehadiran->foto_keluar);
+        }
+        if ($kehadiran->foto_istirahat && \Storage::disk('public')->exists($kehadiran->foto_istirahat)) {
+            \Storage::disk('public')->delete($kehadiran->foto_istirahat);
+        }
+        if ($kehadiran->foto_kembali && \Storage::disk('public')->exists($kehadiran->foto_kembali)) {
+            \Storage::disk('public')->delete($kehadiran->foto_kembali);
+        }
+        
+        $kehadiran->delete();
+        
+        return back()->with('success', 'Kehadiran berhasil dihapus');
     }
     
     /**

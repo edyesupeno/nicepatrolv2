@@ -1,0 +1,11 @@
+tunnel: 4540bc9a-877a-4085-9c0c-45956f056f97
+credentials-file: /Users/edysw/.cloudflared/4540bc9a-877a-4085-9c0c-45956f056f97.json
+
+ingress:
+  - hostname: devapp.nicepatrol.id
+    service: http://localhost:8000
+  - hostname: devapi.nicepatrol.id  
+    service: http://localhost:8000
+  - hostname: devdash.nicepatrol.id
+    service: http://localhost:8000
+  - service: http_status:404

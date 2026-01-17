@@ -34,12 +34,12 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm opacity-90">Shift: I</p>
-                    <p class="font-semibold text-base">07:00 - 15:00</p>
+                    <p class="text-sm opacity-90" id="shiftName">Shift: I</p>
+                    <p class="font-semibold text-base" id="shiftTime">07:00 - 15:00</p>
                 </div>
             </div>
-            <button class="bg-green-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md">
-                Absen Masuk
+            <button id="absensiButton" onclick="navigateToAbsensi()" class="bg-green-500 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-md">
+                <span id="absensiButtonText">Absen Masuk</span>
             </button>
         </div>
     </div>
@@ -321,6 +321,9 @@
 
 @push('scripts')
 <script>
+let todayShift = null;
+let absensiStatus = null;
+
 // Get greeting based on time
 function getGreeting() {
     const hour = new Date().getHours();
@@ -383,13 +386,108 @@ async function loadUserData() {
     }
 }
 
-// Check authentication
-if (!API.isAuthenticated()) {
-    window.location.href = '/login';
-} else {
-    // Load user data from API
-    loadUserData();
+// Load today's shift
+async function loadTodayShift() {
+    try {
+        const response = await API.get('/shift/today');
+        if (response.success && response.data) {
+            todayShift = response.data;
+            updateShiftInfo();
+        } else {
+            // No shift today
+            document.getElementById('shiftName').textContent = 'Tidak ada shift';
+            document.getElementById('shiftTime').textContent = 'Libur';
+        }
+    } catch (error) {
+        console.error('Error loading shift data:', error);
+    }
 }
+
+// Update shift info
+function updateShiftInfo() {
+    if (!todayShift || !todayShift.shift) return;
+    
+    const shift = todayShift.shift;
+    
+    // Format waktu tanpa detik (hanya jam:menit)
+    const jamMulai = shift.jam_mulai.substring(0, 5); // HH:MM
+    const jamSelesai = shift.jam_selesai.substring(0, 5); // HH:MM
+    const jamFormatted = `${jamMulai} - ${jamSelesai}`;
+    
+    document.getElementById('shiftName').textContent = `Shift: ${shift.nama_shift}`;
+    document.getElementById('shiftTime').textContent = jamFormatted;
+}
+
+// Load today's attendance status
+async function loadTodayAttendanceStatus() {
+    try {
+        const response = await API.get('/absensi/today-status');
+        if (response.success) {
+            absensiStatus = response.data;
+            updateAttendanceButton();
+        }
+    } catch (error) {
+        console.error('Error loading attendance status:', error);
+    }
+}
+
+// Update attendance button based on status
+function updateAttendanceButton() {
+    if (!absensiStatus) return;
+    
+    const button = document.getElementById('absensiButton');
+    const buttonText = document.getElementById('absensiButtonText');
+    
+    if (absensiStatus.can_check_in) {
+        // Can check in
+        button.className = 'bg-green-500 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-md';
+        buttonText.textContent = 'Absen Masuk';
+    } else if (absensiStatus.can_take_break) {
+        // Can take break
+        button.className = 'bg-orange-500 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-md';
+        buttonText.textContent = 'Istirahat';
+    } else if (absensiStatus.can_return_from_break) {
+        // Can return from break
+        button.className = 'bg-blue-500 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-md';
+        buttonText.textContent = 'Lanjut kerja';
+    } else if (absensiStatus.can_check_out) {
+        // Can check out
+        button.className = 'bg-red-500 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-md';
+        buttonText.textContent = 'Absen Pulang';
+    } else {
+        // Already completed
+        button.className = 'bg-gray-400 text-white px-5 py-2.5 rounded-xl text-xs font-semibold cursor-not-allowed';
+        buttonText.textContent = 'Absen Selesai';
+        button.onclick = null;
+    }
+}
+
+// Navigate to attendance page
+function navigateToAbsensi() {
+    window.location.href = '/security/absensi';
+}
+
+// Initialize page
+async function initializePage() {
+    if (!API.isAuthenticated()) {
+        window.location.href = '/login';
+        return;
+    }
+    
+    // Load all data
+    await loadUserData();
+    await loadTodayShift();
+    await loadTodayAttendanceStatus();
+}
+
+// Auto refresh data every 5 minutes
+setInterval(async () => {
+    await loadTodayShift();
+    await loadTodayAttendanceStatus();
+}, 5 * 60 * 1000);
+
+// Initialize when page loads
+initializePage();
 </script>
 @endpush
 @endsection

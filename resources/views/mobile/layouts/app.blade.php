@@ -9,6 +9,11 @@
     <meta name="theme-color" content="{{ $themeColor }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
+    <!-- API Configuration -->
+    <script>
+        window.API_DOMAIN = '{{ config('app.api_domain') }}';
+    </script>
+    
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -45,12 +50,14 @@
     <!-- Scripts -->
     <script src="/mobile/js/app.js?v={{ time() }}"></script>
     <script>
-        // Register Service Worker
+        // Register Service Worker (disabled for development)
+        @if(config('app.env') === 'production')
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/mobile/service-worker.js')
                 .then(reg => console.log('Service Worker registered'))
                 .catch(err => console.log('Service Worker registration failed'));
         }
+        @endif
         
         // CSRF Token for AJAX
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');

@@ -381,13 +381,13 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center justify-center gap-2">
-                                    <button onclick="showDetail({{ $kehadiran->id }})" class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition">
+                                    <button onclick="showDetail('{{ $kehadiran->hash_id }}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition">
                                         <i class="fas fa-eye text-sm"></i>
                                     </button>
-                                    <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition">
+                                    <button onclick="editKehadiran('{{ $kehadiran->hash_id }}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition">
                                         <i class="fas fa-edit text-sm"></i>
                                     </button>
-                                    <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition">
+                                    <button onclick="deleteKehadiran('{{ $kehadiran->hash_id }}', '{{ $kehadiran->karyawan->nama_lengkap }}', '{{ $kehadiran->tanggal->format('d M Y') }}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition">
                                         <i class="fas fa-trash text-sm"></i>
                                     </button>
                                 </div>
@@ -640,6 +640,124 @@
     </div>
 </div>
 
+<!-- Modal: Edit Kehadiran -->
+<div id="modalEditKehadiran" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+        <div class="p-6 border-b border-gray-100 flex-shrink-0" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-edit text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Edit Kehadiran</h3>
+                        <p class="text-orange-100 text-sm">Ubah data kehadiran karyawan</p>
+                    </div>
+                </div>
+                <button onclick="closeEditModal()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <form id="formEditKehadiran" method="POST" class="flex-1 overflow-y-auto">
+            <div class="p-6 space-y-4">
+            @csrf
+            @method('PUT')
+            
+            <!-- Karyawan Info (Read Only) -->
+            <div class="bg-blue-50 rounded-xl p-4">
+                <div class="flex items-center gap-3">
+                    <div id="editKaryawanAvatar" class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        K
+                    </div>
+                    <div class="flex-1">
+                        <h3 id="editKaryawanNama" class="font-bold text-gray-900">-</h3>
+                        <p id="editKaryawanInfo" class="text-sm text-gray-600">-</p>
+                    </div>
+                    <div>
+                        <p id="editTanggal" class="text-sm font-semibold text-blue-700">-</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Jam Masuk -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-clock mr-2" style="color: #F59E0B;"></i>Jam Masuk <span class="text-red-500">*</span>
+                    </label>
+                    <input type="time" name="jam_masuk" id="editJamMasuk" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500">
+                </div>
+                
+                <!-- Jam Keluar -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-clock mr-2" style="color: #F59E0B;"></i>Jam Keluar
+                    </label>
+                    <input type="time" name="jam_keluar" id="editJamKeluar" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Jam Istirahat -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-coffee mr-2" style="color: #F59E0B;"></i>Jam Istirahat
+                    </label>
+                    <input type="time" name="jam_istirahat" id="editJamIstirahat" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500">
+                </div>
+                
+                <!-- Jam Kembali -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-undo mr-2" style="color: #F59E0B;"></i>Jam Kembali
+                    </label>
+                    <input type="time" name="jam_kembali" id="editJamKembali" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500">
+                </div>
+            </div>
+            
+            <!-- Status -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-info-circle mr-2" style="color: #F59E0B;"></i>Status <span class="text-red-500">*</span>
+                </label>
+                <select name="status" id="editStatus" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500">
+                    <option value="hadir">Hadir</option>
+                    <option value="terlambat">Terlambat</option>
+                    <option value="pulang_cepat">Pulang Cepat</option>
+                    <option value="terlambat_pulang_cepat">Terlambat & Pulang Cepat</option>
+                    <option value="alpa">Alpa</option>
+                    <option value="izin">Izin</option>
+                    <option value="sakit">Sakit</option>
+                    <option value="cuti">Cuti</option>
+                </select>
+            </div>
+            
+            <!-- Keterangan -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-comment mr-2" style="color: #F59E0B;"></i>Keterangan
+                </label>
+                <textarea name="keterangan" id="editKeterangan" rows="3" placeholder="Tambahkan keterangan jika diperlukan..." class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500"></textarea>
+            </div>
+            
+            </div>
+        </form>
+        
+        <div class="p-6 border-t border-gray-100 flex-shrink-0 bg-gray-50">
+            <div class="flex gap-3">
+                <button type="submit" form="formEditKehadiran" class="flex-1 px-6 py-3 text-white rounded-xl font-semibold hover:shadow-lg transition" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                    <i class="fas fa-save mr-2"></i>Update
+                </button>
+                <button type="button" onclick="closeEditModal()" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 // Form submit handler for debugging
@@ -787,9 +905,9 @@ document.getElementById('modalImportExcel').addEventListener('click', function(e
 });
 
 // Show detail kehadiran
-async function showDetail(id) {
+async function showDetail(hashId) {
     try {
-        const response = await fetch(`{{ url('perusahaan/kehadiran') }}/${id}/show`);
+        const response = await fetch(`{{ url('perusahaan/kehadiran') }}/${hashId}/show`);
         const data = await response.json();
         
         // Build modal content
@@ -850,12 +968,16 @@ async function showDetail(id) {
                             <p class="text-xs text-green-700 font-semibold mb-2"><i class="fas fa-sign-in-alt mr-1"></i>MASUK</p>
                             <p class="text-2xl font-bold text-green-700 mb-1">${data.jam_masuk || '-'}</p>
                             <p class="text-xs text-green-600">${data.lokasi_masuk ? 'Lokasi: ' + data.lokasi_masuk : 'Tidak ada lokasi'}</p>
+                            ${data.jarak_masuk !== null && data.jarak_masuk !== undefined ? `<p class="text-xs text-green-600"><i class="fas fa-ruler mr-1"></i>Jarak: ${data.jarak_masuk < 1000 ? Math.round(data.jarak_masuk) + ' meter' : (data.jarak_masuk / 1000).toFixed(1) + ' km'}</p>` : ''}
+                            ${data.map_absen_masuk ? `<a href="${data.map_absen_masuk}" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1"><i class="fas fa-map-marker-alt"></i> Lihat di Google Maps</a>` : ''}
                             <div class="mt-3">${fotoMasuk}</div>
                         </div>
                         <div class="bg-red-50 rounded-xl p-4">
                             <p class="text-xs text-red-700 font-semibold mb-2"><i class="fas fa-sign-out-alt mr-1"></i>KELUAR</p>
                             <p class="text-2xl font-bold text-red-700 mb-1">${data.jam_keluar || '-'}</p>
                             <p class="text-xs text-red-600">${data.lokasi_keluar ? 'Lokasi: ' + data.lokasi_keluar : 'Tidak ada lokasi'}</p>
+                            ${data.jarak_keluar !== null && data.jarak_keluar !== undefined ? `<p class="text-xs text-red-600"><i class="fas fa-ruler mr-1"></i>Jarak: ${data.jarak_keluar < 1000 ? Math.round(data.jarak_keluar) + ' meter' : (data.jarak_keluar / 1000).toFixed(1) + ' km'}</p>` : ''}
+                            ${data.map_absen_keluar ? `<a href="${data.map_absen_keluar}" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1"><i class="fas fa-map-marker-alt"></i> Lihat di Google Maps</a>` : ''}
                             <div class="mt-3">${fotoKeluar}</div>
                         </div>
                     </div>
@@ -869,8 +991,11 @@ async function showDetail(id) {
                             <p class="font-semibold">${data.durasi_kerja ? Math.floor(data.durasi_kerja / 60) + ' jam ' + (data.durasi_kerja % 60) + ' menit' : '-'}</p>
                         </div>
                         <div>
-                            <p class="text-gray-600">Radius</p>
-                            <p class="font-semibold">${data.on_radius ? '✓ On Radius' : '✗ Off Radius'}</p>
+                            <p class="text-gray-600">Status Radius</p>
+                            <div class="space-y-1">
+                                ${data.on_radius_masuk !== null && data.on_radius_masuk !== undefined ? `<p class="text-xs ${data.on_radius_masuk ? 'text-green-600' : 'text-red-600'}">${data.on_radius_masuk ? '✓ Masuk: On Radius' : '✗ Masuk: Off Radius'}</p>` : ''}
+                                ${data.on_radius_keluar !== null && data.on_radius_keluar !== undefined ? `<p class="text-xs ${data.on_radius_keluar ? 'text-green-600' : 'text-red-600'}">${data.on_radius_keluar ? '✓ Keluar: On Radius' : '✗ Keluar: Off Radius'}</p>` : ''}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -939,6 +1064,114 @@ async function loadKaryawanByProject(projectId) {
 document.getElementById('modalTambahKehadiran').addEventListener('click', function(e) {
     if (e.target === this) {
         closeTambahModal();
+    }
+});
+
+// Edit Kehadiran Modal
+function openEditModal() {
+    document.getElementById('modalEditKehadiran').classList.remove('hidden');
+}
+
+function closeEditModal() {
+    document.getElementById('modalEditKehadiran').classList.add('hidden');
+    document.getElementById('formEditKehadiran').reset();
+}
+
+// Edit kehadiran function
+async function editKehadiran(hashId) {
+    try {
+        // Fetch kehadiran data
+        const response = await fetch(`{{ url('perusahaan/kehadiran') }}/${hashId}/show`);
+        const data = await response.json();
+        
+        // Populate form
+        document.getElementById('editKaryawanAvatar').textContent = data.karyawan.nama_lengkap.charAt(0);
+        document.getElementById('editKaryawanNama').textContent = data.karyawan.nama_lengkap;
+        document.getElementById('editKaryawanInfo').textContent = `${data.karyawan.nik_karyawan} • ${data.karyawan.jabatan?.nama || '-'}`;
+        document.getElementById('editTanggal').textContent = new Date(data.tanggal).toLocaleDateString('id-ID', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        
+        // Set form values
+        document.getElementById('editJamMasuk').value = data.jam_masuk ? data.jam_masuk.substring(0, 5) : '';
+        document.getElementById('editJamKeluar').value = data.jam_keluar ? data.jam_keluar.substring(0, 5) : '';
+        document.getElementById('editJamIstirahat').value = data.jam_istirahat ? data.jam_istirahat.substring(0, 5) : '';
+        document.getElementById('editJamKembali').value = data.jam_kembali ? data.jam_kembali.substring(0, 5) : '';
+        document.getElementById('editStatus').value = data.status;
+        document.getElementById('editKeterangan').value = data.keterangan || '';
+        
+        // Set form action
+        document.getElementById('formEditKehadiran').action = `{{ url('perusahaan/kehadiran') }}/${hashId}`;
+        
+        // Open modal
+        openEditModal();
+        
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'Gagal memuat data kehadiran',
+            confirmButtonText: 'OK'
+        });
+    }
+}
+
+// Delete kehadiran function
+function deleteKehadiran(hashId, namaKaryawan, tanggal) {
+    Swal.fire({
+        title: 'Yakin ingin menghapus?',
+        html: `
+            <div class="text-left">
+                <p class="mb-2">Data kehadiran yang akan dihapus:</p>
+                <div class="bg-red-50 rounded-lg p-3">
+                    <p class="font-semibold text-red-800">${namaKaryawan}</p>
+                    <p class="text-sm text-red-600">${tanggal}</p>
+                </div>
+                <p class="mt-3 text-sm text-gray-600">Data tidak dapat dikembalikan setelah dihapus!</p>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#DC2626',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Create form and submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `{{ url('perusahaan/kehadiran') }}/${hashId}`;
+            
+            // Add CSRF token
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = '{{ csrf_token() }}';
+            form.appendChild(csrfToken);
+            
+            // Add method override
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'DELETE';
+            form.appendChild(methodInput);
+            
+            // Submit form
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
+
+// Close edit modal when clicking outside
+document.getElementById('modalEditKehadiran').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeEditModal();
     }
 });
 </script>

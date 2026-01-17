@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust proxies for Cloudflare
+        $middleware->trustProxies(at: '*');
+        
         $middleware->alias([
             'superadmin' => \App\Http\Middleware\SuperadminMiddleware::class,
             'perusahaan' => \App\Http\Middleware\PerusahaanMiddleware::class,

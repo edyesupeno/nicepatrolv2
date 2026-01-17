@@ -17,7 +17,7 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::with('karyawan')->where('email', $request->email)->first();
+        $user = User::with(['karyawan.jabatan'])->where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -54,6 +54,12 @@ class AuthController extends Controller
             $foto = asset('storage/' . $user->karyawan->foto);
         }
 
+        // Get jabatan name from karyawan
+        $jabatanName = null;
+        if ($user->karyawan && $user->karyawan->jabatan) {
+            $jabatanName = $user->karyawan->jabatan->nama;
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Login berhasil',
@@ -66,6 +72,7 @@ class AuthController extends Controller
                     'role_display' => $user->getRoleDisplayName(),
                     'perusahaan_id' => $user->perusahaan_id,
                     'foto' => $foto,
+                    'jabatan_name' => $jabatanName,
                     'perusahaan' => $user->perusahaan ? [
                         'id' => $user->perusahaan->id,
                         'nama' => $user->perusahaan->nama_perusahaan,
@@ -88,12 +95,26 @@ class AuthController extends Controller
 
     public function user(Request $request)
     {
-        $user = $request->user()->load('karyawan');
+        $user = $request->user();
+        
+        // Load karyawan dengan jabatan, pastikan global scope jabatan bekerja
+        $user->load(['karyawan' => function($query) use ($user) {
+            $query->with(['jabatan' => function($jabatanQuery) use ($user) {
+                // Pastikan jabatan query menggunakan perusahaan_id yang benar
+                $jabatanQuery->where('jabatans.perusahaan_id', $user->perusahaan_id);
+            }]);
+        }]);
         
         // Get foto from karyawan
         $foto = null;
         if ($user->karyawan && $user->karyawan->foto) {
             $foto = asset('storage/' . $user->karyawan->foto);
+        }
+        
+        // Get jabatan name from karyawan
+        $jabatanName = null;
+        if ($user->karyawan && $user->karyawan->jabatan) {
+            $jabatanName = $user->karyawan->jabatan->nama;
         }
         
         return response()->json([
@@ -106,6 +127,7 @@ class AuthController extends Controller
                 'role_display' => $user->getRoleDisplayName(),
                 'perusahaan_id' => $user->perusahaan_id,
                 'foto' => $foto,
+                'jabatan_name' => $jabatanName,
                 'perusahaan' => $user->perusahaan ? [
                     'id' => $user->perusahaan->id,
                     'nama' => $user->perusahaan->nama_perusahaan,

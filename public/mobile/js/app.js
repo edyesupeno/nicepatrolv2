@@ -1,6 +1,6 @@
 // Mobile PWA JavaScript
 
-// API Configuration - Auto-detect environment
+// API Configuration - Use environment variables
 const API_BASE_URL = (() => {
     const hostname = window.location.hostname;
     const port = window.location.port;
@@ -15,8 +15,9 @@ const API_BASE_URL = (() => {
         return `${protocol}//${hostname}${port ? ':' + port : ''}/api/v1`;
     }
     
-    // Production
-    return 'https://apiv1.nicepatrol.id/api/v1';
+    // For all other domains, use API_DOMAIN from Laravel config
+    // This will be injected by Laravel blade template
+    return window.API_DOMAIN ? `https://${window.API_DOMAIN}/api/v1` : `${protocol}//${hostname}/api/v1`;
 })();
 
 console.log('API Base URL:', API_BASE_URL);

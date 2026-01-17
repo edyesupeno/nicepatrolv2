@@ -69,8 +69,10 @@ Route::middleware('auth')->group(function () {
         Route::get('kehadiran', [\App\Http\Controllers\Perusahaan\KehadiranController::class, 'kehadiran'])->name('kehadiran.index');
         Route::get('kehadiran/rekap-kehadiran', [\App\Http\Controllers\Perusahaan\KehadiranController::class, 'rekap'])->name('kehadiran.rekap-kehadiran');
         Route::get('kehadiran/rekap-kehadiran/export-pdf', [\App\Http\Controllers\Perusahaan\KehadiranController::class, 'rekapPdf'])->name('kehadiran.rekap-kehadiran.export-pdf');
-        Route::get('kehadiran/{id}/show', [\App\Http\Controllers\Perusahaan\KehadiranController::class, 'show'])->name('kehadiran.show');
+        Route::get('kehadiran/{kehadiran}/show', [\App\Http\Controllers\Perusahaan\KehadiranController::class, 'show'])->name('kehadiran.show');
         Route::post('kehadiran', [\App\Http\Controllers\Perusahaan\KehadiranController::class, 'store'])->name('kehadiran.store');
+        Route::put('kehadiran/{kehadiran}', [\App\Http\Controllers\Perusahaan\KehadiranController::class, 'update'])->name('kehadiran.update');
+        Route::delete('kehadiran/{kehadiran}', [\App\Http\Controllers\Perusahaan\KehadiranController::class, 'destroy'])->name('kehadiran.destroy');
         Route::get('karyawan/by-project/{projectId}', [\App\Http\Controllers\Perusahaan\KehadiranController::class, 'getKaryawanByProject'])->name('karyawan.by-project');
         Route::get('kehadiran/download-template', [\App\Http\Controllers\Perusahaan\KehadiranController::class, 'downloadTemplate'])->name('kehadiran.download-template');
         Route::post('kehadiran/import-excel', [\App\Http\Controllers\Perusahaan\KehadiranController::class, 'importExcel'])->name('kehadiran.import-excel');
@@ -290,6 +292,9 @@ Route::domain(env('MOBILE_DOMAIN', 'app.nicepatrol.id'))->group(function () {
         Route::get('/absensi-schedule', function() {
             return view('mobile.security.absensi-schedule');
         })->name('absensi-schedule');
+        Route::get('/absensi', function() {
+            return view('mobile.security.absensi');
+        })->name('absensi');
         Route::get('/patroli', [\App\Http\Controllers\Mobile\PatroliController::class, 'index'])->name('patroli.index');
         Route::get('/patroli/create', [\App\Http\Controllers\Mobile\PatroliController::class, 'create'])->name('patroli.create');
         Route::get('/scan-qr', [\App\Http\Controllers\Mobile\ScanController::class, 'index'])->name('scan');
@@ -300,7 +305,12 @@ Route::domain(env('MOBILE_DOMAIN', 'app.nicepatrol.id'))->group(function () {
         Route::get('/home', function() {
             return view('mobile.employee.home');
         })->name('home');
-        Route::get('/kehadiran', [\App\Http\Controllers\Mobile\KehadiranController::class, 'index'])->name('kehadiran.index');
+        Route::get('/kehadiran', function() {
+            return view('mobile.employee.kehadiran');
+        })->name('kehadiran.index');
+        Route::get('/absensi', function() {
+            return view('mobile.employee.absensi');
+        })->name('absensi');
     });
     
     // Shared Views
@@ -326,6 +336,9 @@ Route::prefix('security')->group(function () {
     Route::get('/absensi-schedule', function() {
         return view('mobile.security.absensi-schedule');
     });
+    Route::get('/absensi', function() {
+        return view('mobile.security.absensi');
+    });
     Route::get('/patroli', function() {
         return view('mobile.security.patroli');
     });
@@ -340,6 +353,9 @@ Route::prefix('employee')->group(function () {
     });
     Route::get('/kehadiran', function() {
         return view('mobile.employee.kehadiran');
+    });
+    Route::get('/absensi', function() {
+        return view('mobile.employee.absensi');
     });
 });
 
