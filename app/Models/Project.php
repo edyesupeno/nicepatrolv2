@@ -84,6 +84,11 @@ class Project extends Model
         return $this->hasMany(Karyawan::class)->where('is_active', true);
     }
 
+    public function areas(): HasMany
+    {
+        return $this->hasMany(Area::class);
+    }
+
     /**
      * Get struktur jabatan dengan jumlah karyawan per jabatan
      */

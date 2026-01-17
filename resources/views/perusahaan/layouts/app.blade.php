@@ -342,6 +342,32 @@
                     </div>
                 </div>
 
+                <!-- Tugas Menu -->
+                <a href="{{ route('perusahaan.tugas.index') }}" class="menu-item flex items-center px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.tugas.*') ? 'active' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                    <i class="fas fa-tasks w-5 text-center mr-3"></i>
+                    <span class="font-medium">Tugas</span>
+                    @php
+                        $overdueCount = \App\Models\Tugas::overdue()->count();
+                        $dueSoonCount = \App\Models\Tugas::dueSoon()->count();
+                        $totalUrgentTugas = $overdueCount + $dueSoonCount;
+                    @endphp
+                    @if($totalUrgentTugas > 0)
+                        <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">{{ $totalUrgentTugas }}</span>
+                    @endif
+                </a>
+
+                <!-- Atensi Menu -->
+                <a href="{{ route('perusahaan.atensi.index') }}" class="menu-item flex items-center px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.atensi.*') ? 'active' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                    <i class="fas fa-bullhorn w-5 text-center mr-3"></i>
+                    <span class="font-medium">Atensi</span>
+                    @php
+                        $urgentCount = \App\Models\Atensi::urgent()->active()->current()->count();
+                    @endphp
+                    @if($urgentCount > 0)
+                        <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">{{ $urgentCount }}</span>
+                    @endif
+                </a>
+
                 <!-- Perusahaan Menu (Collapsible) -->
                 <div class="mb-1">
                     <button onclick="toggleSubmenu('perusahaan')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.profil.*') || request()->routeIs('perusahaan.kantors.*') || request()->routeIs('perusahaan.projects.*') || request()->routeIs('perusahaan.areas.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">

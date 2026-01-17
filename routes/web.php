@@ -69,6 +69,17 @@ Route::middleware('auth')->group(function () {
         Route::put('projects/{project}/contacts/{contact}', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'update'])->name('projects.contacts.update');
         Route::delete('projects/{project}/contacts/{contact}', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'destroy'])->name('projects.contacts.destroy');
         Route::get('projects/{project}/contacts/jenis/{jenis}', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'getByJenis'])->name('projects.contacts.by-jenis');
+        
+        // Tugas Routes
+        Route::resource('tugas', \App\Http\Controllers\Perusahaan\TugasController::class);
+        Route::get('tugas/{tugas}/assignments', [\App\Http\Controllers\Perusahaan\TugasController::class, 'getAssignments'])->name('tugas.assignments');
+        Route::get('tugas-projects/{project}/areas', [\App\Http\Controllers\Perusahaan\TugasController::class, 'getAreasByProject'])->name('tugas.areas-by-project');
+
+        // Atensi Routes
+        Route::resource('atensi', \App\Http\Controllers\Perusahaan\AtensiController::class);
+        Route::get('atensi/{atensi}/recipients', [\App\Http\Controllers\Perusahaan\AtensiController::class, 'getRecipients'])->name('atensi.recipients');
+        Route::get('projects/{project}/areas', [\App\Http\Controllers\Perusahaan\AtensiController::class, 'getAreasByProject'])->name('atensi.areas-by-project');
+        Route::get('atensi-users', [\App\Http\Controllers\Perusahaan\AtensiController::class, 'getUsersByCriteria'])->name('atensi.users-by-criteria');
         Route::resource('areas', \App\Http\Controllers\Perusahaan\AreaController::class);
         Route::resource('jabatans', \App\Http\Controllers\Perusahaan\JabatanController::class);
         Route::get('status-karyawan', [\App\Http\Controllers\Perusahaan\StatusKaryawanController::class, 'index'])->name('status-karyawan.index');
