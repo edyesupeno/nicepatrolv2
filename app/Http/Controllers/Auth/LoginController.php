@@ -56,6 +56,20 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+        // Redirect to appropriate domain based on current host
+        $host = $request->getHost();
+        
+        // If logging out from mobile domain, redirect to mobile login
+        if ($host === env('MOBILE_DOMAIN', 'app.nicepatrol.id')) {
+            return redirect()->to('https://' . env('MOBILE_DOMAIN', 'app.nicepatrol.id') . '/login');
+        }
+        
+        // If logging out from dashboard domain, redirect to dashboard login
+        if ($host === env('DASHBOARD_DOMAIN', 'devdash.nicepatrol.id')) {
+            return redirect()->to('https://' . env('DASHBOARD_DOMAIN', 'devdash.nicepatrol.id') . '/login');
+        }
+        
+        // Fallback to login route (should not happen in normal flow)
         return redirect()->route('login');
     }
 }

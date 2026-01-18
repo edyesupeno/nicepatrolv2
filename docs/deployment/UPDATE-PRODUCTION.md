@@ -245,7 +245,7 @@ git pull origin master
 
 # 7. Update Dependencies
 echo -e "${YELLOW}[7/12] Updating dependencies...${NC}"
-composer install --no-dev --optimize-autoloader
+sudo composer install --no-dev --optimize-autoloader
 
 # 8. Set Permissions
 echo -e "${YELLOW}[8/12] Setting permissions...${NC}"
