@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    'maps' => [
+        'tile_server' => env('MAPS_TILE_SERVER', 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+        'attribution' => env('MAPS_ATTRIBUTION', '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'),
+        'max_zoom' => env('MAPS_MAX_ZOOM', 18),
+        'min_zoom' => env('MAPS_MIN_ZOOM', 1),
+        'default_center_lat' => env('MAPS_DEFAULT_CENTER_LAT', -6.2088),
+        'default_center_lng' => env('MAPS_DEFAULT_CENTER_LNG', 106.8456),
+        'default_zoom' => env('MAPS_DEFAULT_ZOOM', 15),
+        
+        // Adonara Maps for reverse geocoding
+        'reverse_geocoding_url' => env('MAPS_REVERSE_GEOCODING_URL', 'https://maps.adonara.co.id/reverse'),
+    ],
+
 ];

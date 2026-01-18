@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Mobile Login</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <h1>Test Mobile Login</h1>
+    <button onclick="setTestToken()">Set Test Token (Yundi)</button>
+    <button onclick="clearToken()">Clear Token</button>
+    <button onclick="checkAuth()">Check Auth</button>
+    <button onclick="testScanAPI()">Test Scan API</button>
+    
+    <div id="result"></div>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+        
+        // API Helper (simplified)
+        const API = {
+            getToken() {
+                return localStorage.getItem('auth_token');
+            },
+            
+            getUser() {
+                const user = localStorage.getItem('user');
+                return user ? JSON.parse(user) : null;
+            },
+            
+            isAuthenticated() {
+                return !!this.getToken();
+            },
+            
+            async call(endpoint, options = {}) {
+                const token = this.getToken();
+                
+                const defaultOptions = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        ...(token && { 'Authorization': `Bearer ${token}` }),
+                    },
+                };
+                
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    ...defaultOptions,
+                    ...options,
+                    headers: {
+                        ...defaultOptions.headers,
+                        ...options.headers,
+                    },
+                });
+                
+                return response.json();
+            },
+            
+            async post(endpoint, data) {
+                return this.call(endpoint, {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                });
+            },
+        };
+
+        function setTestToken() {
+            // Set test token for Yundi
+            const token = '23|DCOtQkkf12Yta7NORq7EqMac1jBBkASQDJ9d2Zqv4fa3e5ee';
+            const user = {
+                id: 6,
+                name: 'Yundi',
+                email: 'yundi@example.com',
+                role: 'security_officer',
+                perusahaan_id: 1
+            };
+            
+            localStorage.setItem('auth_token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            document.getElementById('result').innerHTML = '<p style="color: green;">Test token set for Yundi</p>';
+        }
+        
+        function clearToken() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user');
+            document.getElementById('result').innerHTML = '<p style="color: red;">Token cleared</p>';
+        }
+        
+        function checkAuth() {
+            const isAuth = API.isAuthenticated();
+            const token = API.getToken();
+            const user = API.getUser();
+            
+            document.getElementById('result').innerHTML = `
+                <h3>Auth Status:</h3>
+                <p>Authenticated: ${isAuth}</p>
+                <p>Token: ${token ? token.substring(0, 20) + '...' : 'None'}</p>
+                <p>User: ${user ? user.name : 'None'}</p>
+            `;
+        }
+        
+        async function testScanAPI() {
+            try {
+                document.getElementById('result').innerHTML = '<p>Testing scan API...</p>';
+                
+                const response = await API.post('/scan-qr', {
+                    qr_code: 'CP-6969E200B85DF',
+                    latitude: -6.2088,
+                    longitude: 106.8456
+                });
+                
+                document.getElementById('result').innerHTML = `
+                    <h3>Scan API Result:</h3>
+                    <p>Success: ${response.success}</p>
+                    <p>Message: ${response.message}</p>
+                    <p>Checkpoint: ${response.data ? response.data.checkpoint.nama : 'N/A'}</p>
+                    <p>Assets: ${response.data ? response.data.checkpoint.asets.length : 'N/A'}</p>
+                    <pre>${JSON.stringify(response, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <h3>Error:</h3>
+                    <p style="color: red;">${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -5,15 +5,15 @@
     <!-- Header -->
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Master Tim Patroli</h1>
-            <p class="text-gray-600">Kelola tim patroli berdasarkan project dan shift kerja</p>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Master Regu Patroli</h1>
+            <p class="text-gray-600">Kelola regu patroli berdasarkan project dan shift kerja</p>
         </div>
         <a 
             href="{{ route('perusahaan.tim-patroli.create') }}"
             class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-900 transition inline-flex items-center justify-center gap-2"
         >
             <i class="fas fa-plus"></i>
-            Tambah Tim
+            Tambah Regu
         </a>
     </div>
 
@@ -45,9 +45,11 @@
                         class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                         <option value="">🕐 Semua Shift</option>
-                        <option value="pagi" {{ request('shift') == 'pagi' ? 'selected' : '' }}>Pagi</option>
-                        <option value="siang" {{ request('shift') == 'siang' ? 'selected' : '' }}>Siang</option>
-                        <option value="malam" {{ request('shift') == 'malam' ? 'selected' : '' }}>Malam</option>
+                        @foreach($shifts as $shift)
+                            <option value="{{ $shift->id }}" {{ request('shift_id') == $shift->id ? 'selected' : '' }}>
+                                {{ $shift->nama_shift }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
 
@@ -82,7 +84,7 @@
             <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nama Tim</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nama Regu</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Shift</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Project</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Area</th>
@@ -103,22 +105,22 @@
                                 <p class="font-semibold text-gray-900">{{ $tim->nama_tim }}</p>
                                 @if($tim->leader)
                                     <p class="text-xs text-gray-500 mt-1">
-                                        <i class="fas fa-user-tie mr-1"></i>{{ $tim->leader->name }}
+                                        <i class="fas fa-user-tie mr-1"></i>Danru: {{ $tim->leader->name }}
                                     </p>
                                 @endif
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            @php
-                                $shiftColors = [
-                                    'pagi' => 'bg-yellow-100 text-yellow-800',
-                                    'siang' => 'bg-orange-100 text-orange-800',
-                                    'malam' => 'bg-indigo-100 text-indigo-800',
-                                ];
-                            @endphp
-                            <span class="px-3 py-1 {{ $shiftColors[$tim->shift] ?? 'bg-gray-100 text-gray-800' }} rounded-full text-xs font-medium capitalize">
-                                {{ $tim->shift }}
-                            </span>
+                            @if($tim->shift)
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                                    {{ $tim->shift->nama_shift }}
+                                    <span class="text-xs opacity-75">({{ $tim->shift->jam_mulai }} - {{ $tim->shift->jam_selesai }})</span>
+                                </span>
+                            @else
+                                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
+                                    Tidak ada shift
+                                </span>
+                            @endif
                         </td>
                         <td class="px-6 py-4">
                             <p class="text-sm text-gray-900">{{ $tim->project->nama ?? '-' }}</p>
@@ -191,6 +193,13 @@
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-center gap-2">
                                 <a 
+                                    href="{{ route('perusahaan.tim-patroli.anggota.index', $tim->hash_id) }}"
+                                    class="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
+                                    title="Anggota Regu"
+                                >
+                                    <i class="fas fa-users"></i>
+                                </a>
+                                <a 
                                     href="{{ route('perusahaan.tim-patroli.edit', $tim->hash_id) }}"
                                     class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                                     title="Edit"
@@ -211,7 +220,7 @@
                     <tr>
                         <td colspan="11" class="px-6 py-12 text-center text-gray-500">
                             <i class="fas fa-users text-4xl mb-3 text-gray-300"></i>
-                            <p>Belum ada tim patroli</p>
+                            <p>Belum ada regu patroli</p>
                         </td>
                     </tr>
                     @endforelse
@@ -264,7 +273,7 @@ function applyFilters() {
     
     const params = new URLSearchParams();
     if (project) params.append('project_id', project);
-    if (shift) params.append('shift', shift);
+    if (shift) params.append('shift_id', shift);
     if (status) params.append('status', status);
     
     window.location.href = '{{ route("perusahaan.tim-patroli.master") }}?' + params.toString();

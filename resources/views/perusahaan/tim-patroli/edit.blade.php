@@ -77,17 +77,21 @@
                                 Shift <span class="text-red-500">*</span>
                             </label>
                             <select 
-                                name="shift" 
-                                id="shift"
+                                name="shift_id" 
+                                id="shift_id"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
                             >
                                 <option value="">Pilih Shift</option>
-                                <option value="pagi" {{ old('shift', $timPatroli->shift) == 'pagi' ? 'selected' : '' }}>Pagi</option>
-                                <option value="siang" {{ old('shift', $timPatroli->shift) == 'siang' ? 'selected' : '' }}>Siang</option>
-                                <option value="malam" {{ old('shift', $timPatroli->shift) == 'malam' ? 'selected' : '' }}>Malam</option>
+                                @if(isset($shifts))
+                                    @foreach($shifts as $shift)
+                                        <option value="{{ $shift->id }}" {{ old('shift_id', $timPatroli->shift_id) == $shift->id ? 'selected' : '' }}>
+                                            {{ $shift->nama_shift }} ({{ $shift->jam_mulai }} - {{ $shift->jam_selesai }})
+                                        </option>
+                                    @endforeach
+                                @endif
                             </select>
-                            @error('shift')
+                            @error('shift_id')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>

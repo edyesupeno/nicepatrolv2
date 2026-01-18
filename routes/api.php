@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\PerusahaanController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\LokasiController;
 use App\Http\Controllers\Api\CheckpointController;
+use App\Http\Controllers\Api\AsetCheckpointController;
 use App\Http\Controllers\Api\PatroliController;
 use App\Http\Controllers\Api\ShiftController;
 use App\Http\Controllers\Api\AbsensiController;
@@ -50,10 +51,14 @@ $apiRoutes = function () {
 
         // Checkpoint
         Route::apiResource('checkpoints', CheckpointController::class);
+        Route::get('checkpoints/{checkpoint}/asets', [AsetCheckpointController::class, 'checkpointAsets']);
+        Route::post('checkpoints/{checkpoint}/aset-status', [AsetCheckpointController::class, 'updateAsetStatus']);
 
         // Patroli
         Route::apiResource('patrolis', PatroliController::class);
         Route::post('patrolis/{patroli}/scan', [PatroliController::class, 'scanCheckpoint']);
+        Route::get('patrolis/{patroli}/gps-locations', [PatroliController::class, 'getGpsLocations']);
+        Route::post('scan-qr', [PatroliController::class, 'scanQRCode']);
 
         // Project Contacts
         Route::get('projects/{project}/contacts', [\App\Http\Controllers\Api\ProjectContactController::class, 'index']);

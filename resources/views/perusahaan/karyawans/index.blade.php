@@ -74,7 +74,7 @@
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <i class="fas fa-search text-gray-400"></i>
             </div>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, email, NIK..." class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-sm" style="focus:ring-color: #3B82C8;">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, email, No Badge..." class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-sm" style="focus:ring-color: #3B82C8;">
         </div>
         <select name="project_id" class="lg:w-48 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 text-sm">
             <option value="">Semua Project</option>
@@ -122,7 +122,7 @@
                         <i class="fas fa-user mr-2" style="color: #3B82C8;"></i>Karyawan
                     </th>
                     <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                        <i class="fas fa-id-card mr-2" style="color: #3B82C8;"></i>NIK
+                        <i class="fas fa-id-card mr-2" style="color: #3B82C8;"></i>No Badge & NIK
                     </th>
                     <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                         <i class="fas fa-user-tie mr-2" style="color: #3B82C8;"></i>Jabatan
@@ -296,7 +296,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-id-badge mr-2" style="color: #3B82C8;"></i>NIK Karyawan <span class="text-red-500">*</span>
+                            <i class="fas fa-id-badge mr-2" style="color: #3B82C8;"></i>No Badge <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="nik_karyawan" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition" placeholder="Contoh: NK001">
                     </div>

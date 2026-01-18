@@ -24,7 +24,7 @@ class TimPatroliController extends Controller
                 'perusahaan_id',
                 'project_id',
                 'nama_tim',
-                'shift',
+                'shift_id',
                 'leader_id',
                 'is_active',
                 'created_at'
@@ -32,6 +32,7 @@ class TimPatroliController extends Controller
             ->with([
                 'project:id,nama', 
                 'leader:id,name',
+                'shift:id,nama_shift,jam_mulai,jam_selesai',
                 'areas:id,nama',
                 'rutes:id,nama',
                 'checkpoints:id,nama',
@@ -55,8 +56,8 @@ class TimPatroliController extends Controller
         }
 
         // Filter by shift
-        if ($request->filled('shift')) {
-            $query->where('shift', $request->shift);
+        if ($request->filled('shift_id')) {
+            $query->where('shift_id', $request->shift_id);
         }
 
         // Filter by status
@@ -71,7 +72,12 @@ class TimPatroliController extends Controller
             ->orderBy('nama')
             ->get();
 
-        return view('perusahaan.tim-patroli.master', compact('timPatrolis', 'projects'));
+        // Get shifts for filter dropdown
+        $shifts = \App\Models\Shift::select('id', 'nama_shift')
+            ->orderBy('nama_shift')
+            ->get();
+
+        return view('perusahaan.tim-patroli.master', compact('timPatrolis', 'projects', 'shifts'));
     }
 
     public function create()
@@ -93,10 +99,43 @@ class TimPatroliController extends Controller
     public function getDataByProject(Request $request, $projectId)
     {
         try {
+            // Get current user's perusahaan_id
+            $perusahaanId = auth()->user()->perusahaan_id ?? null;
+            
+            if (!$perusahaanId) {
+                return response()->json([
+                    'success' => false,
+                    'error' => true,
+                    'message' => 'User tidak memiliki perusahaan yang valid',
+                    'areas' => [],
+                    'rutes' => [],
+                    'checkpoints' => [],
+                    'shifts' => [],
+                    'inventaris' => [],
+                    'kuesioners' => [],
+                    'pemeriksaans' => [],
+                ], 401);
+            }
+
             // Validate project belongs to user's perusahaan
             $project = Project::where('id', $projectId)
-                ->where('perusahaan_id', auth()->user()->perusahaan_id)
-                ->firstOrFail();
+                ->where('perusahaan_id', $perusahaanId)
+                ->first();
+                
+            if (!$project) {
+                return response()->json([
+                    'success' => false,
+                    'error' => true,
+                    'message' => 'Project tidak ditemukan atau tidak memiliki akses',
+                    'areas' => [],
+                    'rutes' => [],
+                    'checkpoints' => [],
+                    'shifts' => [],
+                    'inventaris' => [],
+                    'kuesioners' => [],
+                    'pemeriksaans' => [],
+                ], 404);
+            }
 
             $areas = AreaPatrol::select('id', 'nama')
                 ->where('project_id', $projectId)
@@ -104,32 +143,30 @@ class TimPatroliController extends Controller
                 ->orderBy('nama')
                 ->get();
 
-            $rutes = RutePatrol::select('rute_patrols.id', 'rute_patrols.nama')
-                ->join('area_patrols', 'rute_patrols.area_patrol_id', '=', 'area_patrols.id')
-                ->where('area_patrols.project_id', $projectId)
-                ->where('rute_patrols.is_active', true)
-                ->orderBy('rute_patrols.nama')
-                ->get();
+            // Don't load rutes and checkpoints initially - they will be loaded when areas are selected
+            $rutes = [];
+            $checkpoints = [];
 
-            $checkpoints = Checkpoint::select('checkpoints.id', 'checkpoints.nama', 'checkpoints.rute_patrol_id', 'rute_patrols.nama as rute_nama')
-                ->join('rute_patrols', 'checkpoints.rute_patrol_id', '=', 'rute_patrols.id')
-                ->join('area_patrols', 'rute_patrols.area_patrol_id', '=', 'area_patrols.id')
-                ->where('area_patrols.project_id', $projectId)
-                ->orderBy('rute_patrols.nama')
-                ->orderBy('checkpoints.urutan')
+            // Get shifts for the selected project
+            $shifts = \App\Models\Shift::select('id', 'kode_shift', 'nama_shift', 'jam_mulai', 'jam_selesai')
+                ->where('project_id', $projectId)
+                ->orderBy('nama_shift')
                 ->get();
 
             $inventaris = InventarisPatroli::select('id', 'nama', 'kategori')
+                ->where('perusahaan_id', $perusahaanId)
                 ->where('is_active', true)
                 ->orderBy('nama')
                 ->get();
 
             $kuesioners = KuesionerPatroli::select('id', 'judul')
+                ->where('perusahaan_id', $perusahaanId)
                 ->where('is_active', true)
                 ->orderBy('judul')
                 ->get();
 
             $pemeriksaans = PemeriksaanPatroli::select('id', 'nama', 'frekuensi')
+                ->where('perusahaan_id', $perusahaanId)
                 ->where('is_active', true)
                 ->orderBy('nama')
                 ->get();
@@ -139,6 +176,7 @@ class TimPatroliController extends Controller
                 'areas' => $areas,
                 'rutes' => $rutes,
                 'checkpoints' => $checkpoints,
+                'shifts' => $shifts,
                 'inventaris' => $inventaris,
                 'kuesioners' => $kuesioners,
                 'pemeriksaans' => $pemeriksaans,
@@ -157,9 +195,108 @@ class TimPatroliController extends Controller
                 'areas' => [],
                 'rutes' => [],
                 'checkpoints' => [],
+                'shifts' => [],
                 'inventaris' => [],
                 'kuesioners' => [],
                 'pemeriksaans' => [],
+            ], 500);
+        }
+    }
+
+    public function getRutesByAreas(Request $request)
+    {
+        try {
+            $areaIds = $request->input('area_ids', []);
+            $perusahaanId = auth()->user()->perusahaan_id ?? null;
+            
+            if (!$perusahaanId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User tidak memiliki perusahaan yang valid',
+                    'rutes' => [],
+                ], 401);
+            }
+
+            if (empty($areaIds)) {
+                return response()->json([
+                    'success' => true,
+                    'rutes' => [],
+                ]);
+            }
+
+            $rutes = RutePatrol::withoutGlobalScope('perusahaan')
+                ->select('rute_patrols.id', 'rute_patrols.nama', 'rute_patrols.area_patrol_id')
+                ->whereIn('area_patrol_id', $areaIds)
+                ->where('rute_patrols.is_active', true)
+                ->where('rute_patrols.perusahaan_id', $perusahaanId)
+                ->orderBy('rute_patrols.nama')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'rutes' => $rutes,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in getRutesByAreas: ' . $e->getMessage(), [
+                'area_ids' => $request->input('area_ids', []),
+                'user_id' => auth()->id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data rute: ' . $e->getMessage(),
+                'rutes' => [],
+            ], 500);
+        }
+    }
+
+    public function getCheckpointsByRutes(Request $request)
+    {
+        try {
+            $ruteIds = $request->input('rute_ids', []);
+            $perusahaanId = auth()->user()->perusahaan_id ?? null;
+            
+            if (!$perusahaanId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User tidak memiliki perusahaan yang valid',
+                    'checkpoints' => [],
+                ], 401);
+            }
+
+            if (empty($ruteIds)) {
+                return response()->json([
+                    'success' => true,
+                    'checkpoints' => [],
+                ]);
+            }
+
+            $checkpoints = Checkpoint::withoutGlobalScope('perusahaan')
+                ->select('checkpoints.id', 'checkpoints.nama', 'checkpoints.rute_patrol_id', 'rute_patrols.nama as rute_nama')
+                ->join('rute_patrols', 'checkpoints.rute_patrol_id', '=', 'rute_patrols.id')
+                ->whereIn('checkpoints.rute_patrol_id', $ruteIds)
+                ->where('checkpoints.is_active', true)
+                ->where('checkpoints.perusahaan_id', $perusahaanId)
+                ->orderBy('rute_patrols.nama')
+                ->orderBy('checkpoints.urutan')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'checkpoints' => $checkpoints,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in getCheckpointsByRutes: ' . $e->getMessage(), [
+                'rute_ids' => $request->input('rute_ids', []),
+                'user_id' => auth()->id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data checkpoint: ' . $e->getMessage(),
+                'checkpoints' => [],
             ], 500);
         }
     }
@@ -169,7 +306,7 @@ class TimPatroliController extends Controller
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
             'nama_tim' => 'required|string|max:255',
-            'shift' => 'required|in:pagi,siang,malam',
+            'shift_id' => 'required|exists:shifts,id',
             'leader_id' => 'nullable|exists:users,id',
             'areas' => 'nullable|array',
             'areas.*' => 'exists:area_patrols,id',
@@ -187,7 +324,7 @@ class TimPatroliController extends Controller
         ], [
             'project_id.required' => 'Project wajib dipilih',
             'nama_tim.required' => 'Nama tim wajib diisi',
-            'shift.required' => 'Shift wajib dipilih',
+            'shift_id.required' => 'Shift wajib dipilih',
             'is_active.required' => 'Status wajib dipilih',
         ]);
 
@@ -198,7 +335,7 @@ class TimPatroliController extends Controller
                 'perusahaan_id' => $validated['perusahaan_id'],
                 'project_id' => $validated['project_id'],
                 'nama_tim' => $validated['nama_tim'],
-                'shift' => $validated['shift'],
+                'shift_id' => $validated['shift_id'],
                 'leader_id' => $validated['leader_id'] ?? null,
                 'is_active' => $validated['is_active'],
             ]);
@@ -248,6 +385,12 @@ class TimPatroliController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Get shifts for the selected project
+        $shifts = \App\Models\Shift::select('id', 'nama_shift', 'jam_mulai', 'jam_selesai')
+            ->where('project_id', $timPatroli->project_id)
+            ->orderBy('nama_shift')
+            ->get();
+
         // Get data based on selected project
         $areas = AreaPatrol::select('id', 'nama')
             ->where('project_id', $timPatroli->project_id)
@@ -255,17 +398,21 @@ class TimPatroliController extends Controller
             ->orderBy('nama')
             ->get();
 
-        $rutes = RutePatrol::select('rute_patrols.id', 'rute_patrols.nama')
+        $rutes = RutePatrol::withoutGlobalScope('perusahaan')
+            ->select('rute_patrols.id', 'rute_patrols.nama')
             ->join('area_patrols', 'rute_patrols.area_patrol_id', '=', 'area_patrols.id')
             ->where('area_patrols.project_id', $timPatroli->project_id)
             ->where('rute_patrols.is_active', true)
+            ->where('rute_patrols.perusahaan_id', auth()->user()->perusahaan_id)
             ->orderBy('rute_patrols.nama')
             ->get();
 
-        $checkpoints = Checkpoint::select('checkpoints.id', 'checkpoints.nama', 'checkpoints.rute_patrol_id', 'rute_patrols.nama as rute_nama')
+        $checkpoints = Checkpoint::withoutGlobalScope('perusahaan')
+            ->select('checkpoints.id', 'checkpoints.nama', 'checkpoints.rute_patrol_id', 'rute_patrols.nama as rute_nama')
             ->join('rute_patrols', 'checkpoints.rute_patrol_id', '=', 'rute_patrols.id')
             ->join('area_patrols', 'rute_patrols.area_patrol_id', '=', 'area_patrols.id')
             ->where('area_patrols.project_id', $timPatroli->project_id)
+            ->where('checkpoints.perusahaan_id', auth()->user()->perusahaan_id)
             ->orderBy('rute_patrols.nama')
             ->orderBy('checkpoints.urutan')
             ->get();
@@ -289,6 +436,7 @@ class TimPatroliController extends Controller
             'timPatroli', 
             'projects', 
             'users', 
+            'shifts',
             'areas', 
             'rutes', 
             'checkpoints',
@@ -303,7 +451,7 @@ class TimPatroliController extends Controller
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
             'nama_tim' => 'required|string|max:255',
-            'shift' => 'required|in:pagi,siang,malam',
+            'shift_id' => 'required|exists:shifts,id',
             'leader_id' => 'nullable|exists:users,id',
             'areas' => 'nullable|array',
             'areas.*' => 'exists:area_patrols,id',
@@ -321,7 +469,7 @@ class TimPatroliController extends Controller
         ], [
             'project_id.required' => 'Project wajib dipilih',
             'nama_tim.required' => 'Nama tim wajib diisi',
-            'shift.required' => 'Shift wajib dipilih',
+            'shift_id.required' => 'Shift wajib dipilih',
             'is_active.required' => 'Status wajib dipilih',
         ]);
 
@@ -329,7 +477,7 @@ class TimPatroliController extends Controller
             $timPatroli->update([
                 'project_id' => $validated['project_id'],
                 'nama_tim' => $validated['nama_tim'],
-                'shift' => $validated['shift'],
+                'shift_id' => $validated['shift_id'],
                 'leader_id' => $validated['leader_id'] ?? null,
                 'is_active' => $validated['is_active'],
             ]);

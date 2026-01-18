@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PatroliDetail extends Model
 {
@@ -15,6 +16,7 @@ class PatroliDetail extends Model
         'longitude',
         'catatan',
         'foto',
+        'foto_verifikasi',
         'status',
     ];
 
@@ -30,5 +32,10 @@ class PatroliDetail extends Model
     public function checkpoint(): BelongsTo
     {
         return $this->belongsTo(Checkpoint::class);
+    }
+
+    public function asetChecks(): HasMany
+    {
+        return $this->hasMany(AsetCheck::class);
     }
 }

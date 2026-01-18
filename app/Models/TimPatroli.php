@@ -16,7 +16,7 @@ class TimPatroli extends Model
         'perusahaan_id',
         'project_id',
         'nama_tim',
-        'shift',
+        'shift_id',
         'leader_id',
         'is_active',
     ];
@@ -51,6 +51,11 @@ class TimPatroli extends Model
         return $this->belongsTo(User::class, 'leader_id');
     }
 
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Shift::class);
+    }
+
     public function areas(): BelongsToMany
     {
         return $this->belongsToMany(AreaPatrol::class, 'area_tim_patroli');
@@ -81,5 +86,15 @@ class TimPatroli extends Model
         return $this->belongsToMany(Checkpoint::class, 'checkpoint_tim_patroli')
             ->withPivot('urutan')
             ->orderBy('checkpoint_tim_patroli.urutan');
+    }
+
+    public function anggota(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AnggotaTimPatroli::class);
+    }
+
+    public function anggotaAktif(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AnggotaTimPatroli::class)->where('is_active', true);
     }
 }

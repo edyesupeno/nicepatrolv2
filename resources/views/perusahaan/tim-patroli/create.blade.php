@@ -8,9 +8,9 @@
             <a href="{{ route('perusahaan.tim-patroli.master') }}" class="text-gray-600 hover:text-gray-900">
                 <i class="fas fa-arrow-left"></i>
             </a>
-            <h1 class="text-3xl font-bold text-gray-900">Tambah Tim Patroli</h1>
+            <h1 class="text-3xl font-bold text-gray-900">Tambah Regu Patroli</h1>
         </div>
-        <p class="text-gray-600">Buat tim patroli baru dengan area dan rute tanggung jawab</p>
+        <p class="text-gray-600">Buat regu patroli baru dengan area dan rute tanggung jawab</p>
     </div>
 
     <!-- Form -->
@@ -51,17 +51,17 @@
                             @enderror
                         </div>
 
-                        <!-- Nama Tim -->
+                        <!-- Nama Regu -->
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                Nama Tim <span class="text-red-500">*</span>
+                                Nama Regu <span class="text-red-500">*</span>
                             </label>
                             <input 
                                 type="text" 
                                 name="nama_tim" 
                                 id="nama_tim"
                                 value="{{ old('nama_tim') }}"
-                                placeholder="Contoh: Tim Alpha Shift Pagi"
+                                placeholder="Contoh: Regu Alpha Shift Pagi"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
                             >
@@ -76,32 +76,29 @@
                                 Shift <span class="text-red-500">*</span>
                             </label>
                             <select 
-                                name="shift" 
-                                id="shift"
+                                name="shift_id" 
+                                id="shift_id"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
                             >
                                 <option value="">Pilih Shift</option>
-                                <option value="pagi" {{ old('shift') == 'pagi' ? 'selected' : '' }}>Pagi</option>
-                                <option value="siang" {{ old('shift') == 'siang' ? 'selected' : '' }}>Siang</option>
-                                <option value="malam" {{ old('shift') == 'malam' ? 'selected' : '' }}>Malam</option>
                             </select>
-                            @error('shift')
+                            @error('shift_id')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <!-- Leader -->
+                        <!-- Danru -->
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                Leader Tim
+                                Danru
                             </label>
                             <select 
                                 name="leader_id" 
                                 id="leader_id"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             >
-                                <option value="">Pilih Leader</option>
+                                <option value="">Pilih Danru</option>
                                 @foreach($users as $user)
                                     <option value="{{ $user->id }}" {{ old('leader_id') == $user->id ? 'selected' : '' }}>
                                         {{ $user->name }} ({{ $user->email }})
@@ -147,7 +144,20 @@
                     </h3>
                     <p class="text-xs text-gray-500 mb-3">Pilih checkpoint yang harus dikunjungi oleh tim patroli ini</p>
                     
-                    <div id="checkpointsContainer" class="space-y-2">
+                    <!-- Search Checkpoint -->
+                    <div id="checkpointSearchContainer" class="mb-4" style="display: none;">
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="checkpointSearch"
+                                placeholder="Cari checkpoint..."
+                                class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <div id="checkpointsContainer" class="space-y-2 max-h-80 overflow-y-auto">
                         <p class="text-sm text-gray-500 italic">Pilih project terlebih dahulu</p>
                     </div>
                 </div>
@@ -199,14 +209,14 @@
                             <input type="radio" name="is_active" value="1" class="mr-3" {{ old('is_active', '1') == '1' ? 'checked' : '' }} required>
                             <div>
                                 <p class="font-semibold text-gray-900">Aktif</p>
-                                <p class="text-xs text-gray-500">Tim dapat melakukan patroli</p>
+                                <p class="text-xs text-gray-500">Regu dapat melakukan patroli</p>
                             </div>
                         </label>
                         <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition">
                             <input type="radio" name="is_active" value="0" class="mr-3" {{ old('is_active') == '0' ? 'checked' : '' }}>
                             <div>
                                 <p class="font-semibold text-gray-900">Nonaktif</p>
-                                <p class="text-xs text-gray-500">Tim tidak dapat melakukan patroli</p>
+                                <p class="text-xs text-gray-500">Regu tidak dapat melakukan patroli</p>
                             </div>
                         </label>
                     </div>
@@ -221,7 +231,7 @@
                             class="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-900 transition inline-flex items-center justify-center gap-2"
                         >
                             <i class="fas fa-save"></i>
-                            Simpan Tim Patroli
+                            Simpan Regu Patroli
                         </button>
                         <a 
                             href="{{ route('perusahaan.tim-patroli.master') }}"
@@ -239,6 +249,37 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+/* Custom scrollbar for checkpoint container */
+#checkpointsContainer::-webkit-scrollbar {
+    width: 6px;
+}
+
+#checkpointsContainer::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#checkpointsContainer::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#checkpointsContainer::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Sticky route headers */
+.route-header {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 8px;
+    padding: 8px 0;
+}
+</style>
 <script>
 document.getElementById('project_id').addEventListener('change', function() {
     const projectId = this.value;
@@ -264,8 +305,9 @@ document.getElementById('project_id').addEventListener('change', function() {
                 throw new Error(data.message || 'Terjadi kesalahan');
             }
             populateAreas(data.areas);
-            populateRutes(data.rutes);
-            populateCheckpoints(data.checkpoints);
+            // Don't populate rutes and checkpoints initially
+            resetRutesAndCheckpoints();
+            populateShifts(data.shifts);
             populateInventaris(data.inventaris);
             populateKuesioners(data.kuesioners);
             populatePemeriksaans(data.pemeriksaans);
@@ -293,6 +335,47 @@ function resetContainers() {
     containers.forEach(id => {
         document.getElementById(id).innerHTML = '<p class="text-sm text-gray-500 italic">Pilih project terlebih dahulu</p>';
     });
+    
+    // Reset shift dropdown
+    document.getElementById('shift_id').innerHTML = '<option value="">Pilih Project Terlebih Dahulu</option>';
+    
+    // Hide checkpoint search
+    document.getElementById('checkpointSearchContainer').style.display = 'none';
+}
+
+function resetRutesAndCheckpoints() {
+    document.getElementById('rutesContainer').innerHTML = '<p class="text-sm text-gray-500 italic">Pilih area tanggung jawab terlebih dahulu</p>';
+    document.getElementById('checkpointsContainer').innerHTML = '<p class="text-sm text-gray-500 italic">Pilih rute patroli terlebih dahulu</p>';
+    document.getElementById('checkpointSearchContainer').style.display = 'none';
+}
+
+function populateShifts(shifts) {
+    const shiftSelect = document.getElementById('shift_id');
+    
+    // Clear existing options except the first one
+    shiftSelect.innerHTML = '<option value="">Pilih Shift</option>';
+    
+    if (shifts.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Tidak ada shift tersedia';
+        option.disabled = true;
+        shiftSelect.appendChild(option);
+        return;
+    }
+
+    shifts.forEach(shift => {
+        const option = document.createElement('option');
+        option.value = shift.id;
+        option.textContent = `${shift.nama_shift} (${shift.jam_mulai} - ${shift.jam_selesai})`;
+        
+        // Check if this was the old selected value
+        if (option.value == '{{ old('shift_id') }}') {
+            option.selected = true;
+        }
+        
+        shiftSelect.appendChild(option);
+    });
 }
 
 function populateAreas(areas) {
@@ -306,7 +389,7 @@ function populateAreas(areas) {
     areas.forEach(area => {
         html += `
             <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                <input type="checkbox" name="areas[]" value="${area.id}" class="mr-3">
+                <input type="checkbox" name="areas[]" value="${area.id}" class="mr-3 area-checkbox" onchange="handleAreaChange()">
                 <span class="text-sm font-medium text-gray-900">${area.nama}</span>
             </label>
         `;
@@ -314,10 +397,48 @@ function populateAreas(areas) {
     container.innerHTML = html;
 }
 
+// Handle area selection change
+function handleAreaChange() {
+    const selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
+    
+    if (selectedAreas.length === 0) {
+        resetRutesAndCheckpoints();
+        return;
+    }
+
+    // Show loading for rutes
+    document.getElementById('rutesContainer').innerHTML = '<p class="text-sm text-gray-500 italic"><i class="fas fa-spinner fa-spin mr-2"></i>Memuat rute...</p>';
+    document.getElementById('checkpointsContainer').innerHTML = '<p class="text-sm text-gray-500 italic">Pilih rute patroli terlebih dahulu</p>';
+
+    // Fetch rutes based on selected areas
+    fetch('{{ route('perusahaan.tim-patroli.get-rutes-by-areas') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            area_ids: selectedAreas
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            populateRutes(data.rutes);
+        } else {
+            throw new Error(data.message || 'Gagal memuat rute');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('rutesContainer').innerHTML = '<p class="text-sm text-red-500 italic">Gagal memuat rute</p>';
+    });
+}
+
 function populateRutes(rutes) {
     const container = document.getElementById('rutesContainer');
     if (rutes.length === 0) {
-        container.innerHTML = '<p class="text-sm text-gray-500 italic">Tidak ada rute tersedia</p>';
+        container.innerHTML = '<p class="text-sm text-gray-500 italic">Tidak ada rute tersedia untuk area yang dipilih</p>';
         return;
     }
 
@@ -325,7 +446,7 @@ function populateRutes(rutes) {
     rutes.forEach(rute => {
         html += `
             <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                <input type="checkbox" name="rutes[]" value="${rute.id}" class="mr-3">
+                <input type="checkbox" name="rutes[]" value="${rute.id}" class="mr-3 rute-checkbox" onchange="handleRuteChange()">
                 <span class="text-sm font-medium text-gray-900">${rute.nama}</span>
             </label>
         `;
@@ -333,22 +454,97 @@ function populateRutes(rutes) {
     container.innerHTML = html;
 }
 
+// Handle rute selection change
+function handleRuteChange() {
+    const selectedRutes = Array.from(document.querySelectorAll('.rute-checkbox:checked')).map(cb => cb.value);
+    
+    if (selectedRutes.length === 0) {
+        document.getElementById('checkpointsContainer').innerHTML = '<p class="text-sm text-gray-500 italic">Pilih rute patroli terlebih dahulu</p>';
+        document.getElementById('checkpointSearchContainer').style.display = 'none';
+        return;
+    }
+
+    // Show loading for checkpoints
+    document.getElementById('checkpointsContainer').innerHTML = '<p class="text-sm text-gray-500 italic"><i class="fas fa-spinner fa-spin mr-2"></i>Memuat checkpoint...</p>';
+    document.getElementById('checkpointSearchContainer').style.display = 'none';
+
+    // Fetch checkpoints based on selected rutes
+    fetch('{{ route('perusahaan.tim-patroli.get-checkpoints-by-rutes') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            rute_ids: selectedRutes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            populateCheckpoints(data.checkpoints);
+        } else {
+            throw new Error(data.message || 'Gagal memuat checkpoint');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('checkpointsContainer').innerHTML = '<p class="text-sm text-red-500 italic">Gagal memuat checkpoint</p>';
+        document.getElementById('checkpointSearchContainer').style.display = 'none';
+    });
+}
+
 function populateCheckpoints(checkpoints) {
     const container = document.getElementById('checkpointsContainer');
+    const searchContainer = document.getElementById('checkpointSearchContainer');
+    
     if (checkpoints.length === 0) {
         container.innerHTML = '<p class="text-sm text-gray-500 italic">Tidak ada checkpoint tersedia</p>';
+        searchContainer.style.display = 'none';
+        return;
+    }
+
+    // Show search container
+    searchContainer.style.display = 'block';
+    
+    // Store original checkpoints data for filtering
+    window.originalCheckpoints = checkpoints;
+    
+    renderCheckpoints(checkpoints);
+    
+    // Setup search functionality
+    const searchInput = document.getElementById('checkpointSearch');
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const filteredCheckpoints = window.originalCheckpoints.filter(checkpoint => 
+            checkpoint.nama.toLowerCase().includes(searchTerm) ||
+            checkpoint.rute_nama.toLowerCase().includes(searchTerm)
+        );
+        renderCheckpoints(filteredCheckpoints);
+    });
+}
+
+function renderCheckpoints(checkpoints) {
+    const container = document.getElementById('checkpointsContainer');
+    
+    if (checkpoints.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-500 italic">Tidak ada checkpoint yang sesuai dengan pencarian</p>';
         return;
     }
 
     let html = '';
     let currentRute = '';
+    
     checkpoints.forEach(checkpoint => {
         if (currentRute !== checkpoint.rute_nama) {
             if (currentRute !== '') {
                 html += '</div>';
             }
             currentRute = checkpoint.rute_nama;
-            html += `<div class="mb-3"><p class="text-xs font-semibold text-gray-600 uppercase mb-2">${currentRute}</p>`;
+            html += `<div class="mb-3">
+                        <div class="route-header">
+                            <p class="text-xs font-semibold text-gray-600 uppercase">${currentRute}</p>
+                        </div>`;
         }
         html += `
             <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition mb-2">
@@ -357,9 +553,11 @@ function populateCheckpoints(checkpoints) {
             </label>
         `;
     });
+    
     if (currentRute !== '') {
         html += '</div>';
     }
+    
     container.innerHTML = html;
 }
 

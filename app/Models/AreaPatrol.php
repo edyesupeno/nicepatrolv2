@@ -60,4 +60,9 @@ class AreaPatrol extends Model
     {
         return $this->belongsTo(Project::class);
     }
+
+    public function rutePatrols()
+    {
+        return $this->hasMany(RutePatrol::class);
+    }
 }

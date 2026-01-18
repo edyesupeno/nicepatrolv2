@@ -51,4 +51,14 @@ class Perusahaan extends Model
     {
         return $this->hasMany(Patroli::class);
     }
+
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
+    }
+
+    public function areaPatrols(): HasMany
+    {
+        return $this->hasMany(AreaPatrol::class);
+    }
 }

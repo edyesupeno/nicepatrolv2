@@ -21,7 +21,7 @@
     <!-- Header dengan Nama & NIK -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
         <h2 class="text-2xl font-bold text-gray-900">{{ $karyawan->nama_lengkap }}</h2>
-        <p class="text-gray-500">NIK: {{ $karyawan->nik_karyawan }}</p>
+        <p class="text-gray-500">No Badge: {{ $karyawan->nik_karyawan }}</p>
     </div>
 
     <!-- Layout 2 Kolom -->
@@ -103,7 +103,7 @@
                                 <i class="fas fa-edit"></i>
                             </button>
                         </div>
-                        <p class="text-sm text-gray-500 mb-3">NIK: {{ $karyawan->nik_karyawan }}</p>
+                        <p class="text-sm text-gray-500 mb-3">No Badge: {{ $karyawan->nik_karyawan }}</p>
                         <form id="uploadFotoForm" action="{{ route('perusahaan.karyawans.upload-foto', $karyawan->hash_id) }}" method="POST" enctype="multipart/form-data" class="hidden">
                             @csrf
                             <input type="file" id="fotoInput" name="foto" accept="image/*" onchange="previewAndUploadFoto(this)">

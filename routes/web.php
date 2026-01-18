@@ -70,6 +70,12 @@ Route::middleware('auth')->group(function () {
         Route::delete('projects/{project}/contacts/{contact}', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'destroy'])->name('projects.contacts.destroy');
         Route::get('projects/{project}/contacts/jenis/{jenis}', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'getByJenis'])->name('projects.contacts.by-jenis');
         
+        // Buku Tamu Routes
+        Route::resource('buku-tamu', \App\Http\Controllers\Perusahaan\BukuTamuController::class);
+        Route::post('buku-tamu/{bukuTamu}/check-out', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'checkOut'])->name('buku-tamu.check-out');
+        Route::get('buku-tamu-qr/{bukuTamu}', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'generateQrCode'])->name('buku-tamu.qr-code');
+        Route::post('buku-tamu-scan', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getByQrCode'])->name('buku-tamu.scan');
+
         // Tugas Routes
         Route::resource('tugas', \App\Http\Controllers\Perusahaan\TugasController::class);
         Route::get('tugas/{tugas}/assignments', [\App\Http\Controllers\Perusahaan\TugasController::class, 'getAssignments'])->name('tugas.assignments');
@@ -276,13 +282,30 @@ Route::middleware('auth')->group(function () {
             Route::put('{timPatroli}', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'update'])->name('update');
             Route::delete('{timPatroli}', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'destroy'])->name('destroy');
             Route::get('get-data-by-project/{project}', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'getDataByProject'])->name('get-data-by-project');
+            Route::post('get-rutes-by-areas', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'getRutesByAreas'])->name('get-rutes-by-areas');
+            Route::post('get-checkpoints-by-rutes', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'getCheckpointsByRutes'])->name('get-checkpoints-by-rutes');
             Route::get('inventaris', [\App\Http\Controllers\Perusahaan\TimPatroliController::class, 'inventaris'])->name('inventaris');
+            
+            // Anggota Tim Patroli Routes
+            Route::prefix('{timPatroli}/anggota')->name('anggota.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Perusahaan\AnggotaTimPatroliController::class, 'index'])->name('index');
+                Route::get('create', [\App\Http\Controllers\Perusahaan\AnggotaTimPatroliController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Perusahaan\AnggotaTimPatroliController::class, 'store'])->name('store');
+                Route::get('{anggotaTimPatroli}', [\App\Http\Controllers\Perusahaan\AnggotaTimPatroliController::class, 'show'])->name('show');
+                Route::get('{anggotaTimPatroli}/edit', [\App\Http\Controllers\Perusahaan\AnggotaTimPatroliController::class, 'edit'])->name('edit');
+                Route::put('{anggotaTimPatroli}', [\App\Http\Controllers\Perusahaan\AnggotaTimPatroliController::class, 'update'])->name('update');
+                Route::delete('{anggotaTimPatroli}', [\App\Http\Controllers\Perusahaan\AnggotaTimPatroliController::class, 'destroy'])->name('destroy');
+                Route::patch('{anggotaTimPatroli}/nonaktifkan', [\App\Http\Controllers\Perusahaan\AnggotaTimPatroliController::class, 'nonaktifkan'])->name('nonaktifkan');
+                Route::patch('{anggotaTimPatroli}/aktifkan', [\App\Http\Controllers\Perusahaan\AnggotaTimPatroliController::class, 'aktifkan'])->name('aktifkan');
+            });
         });
         
         // Laporan Patroli Routes
         Route::prefix('laporan-patroli')->name('laporan-patroli.')->group(function () {
             Route::get('insiden', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'insiden'])->name('insiden');
             Route::get('kawasan', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'kawasan'])->name('kawasan');
+            Route::get('kawasan/{area}/detail', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'kawasanDetail'])->name('kawasan.detail');
+            Route::get('aset-bermasalah', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'asetBermasalah'])->name('aset-bermasalah');
             Route::get('inventaris', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'inventaris'])->name('inventaris');
             Route::get('kru-change', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'kruChange'])->name('kru-change');
         });
@@ -305,6 +328,12 @@ Route::domain(env('MOBILE_DOMAIN', 'app.nicepatrol.id'))->group(function () {
         Route::get('/home', function() {
             return view('mobile.security.home');
         })->name('home');
+        Route::get('/scan', function() {
+            return view('mobile.security.scan');
+        })->name('scan');
+        Route::get('/checkpoint/{checkpoint}', function($checkpoint) {
+            return view('mobile.security.checkpoint');
+        })->name('checkpoint');
         Route::get('/shift-schedule', function() {
             return view('mobile.security.shift-schedule');
         })->name('shift-schedule');
@@ -317,6 +346,15 @@ Route::domain(env('MOBILE_DOMAIN', 'app.nicepatrol.id'))->group(function () {
         Route::get('/patroli', [\App\Http\Controllers\Mobile\PatroliController::class, 'index'])->name('patroli.index');
         Route::get('/patroli/create', [\App\Http\Controllers\Mobile\PatroliController::class, 'create'])->name('patroli.create');
         Route::get('/scan-qr', [\App\Http\Controllers\Mobile\ScanController::class, 'index'])->name('scan');
+        Route::get('/aktivitas', function() {
+            return view('mobile.security.aktivitas');
+        })->name('aktivitas');
+        Route::get('/patrol', function() {
+            return view('mobile.security.patrol');
+        })->name('patrol');
+        Route::get('/gps-tracking', function() {
+            return view('mobile.security.gps-tracking');
+        })->name('gps-tracking');
     });
     
     // Office Employee Views (no auth middleware - handled by JS with token)
@@ -349,6 +387,12 @@ Route::prefix('security')->group(function () {
     Route::get('/home', function() {
         return view('mobile.security.home');
     });
+    Route::get('/scan', function() {
+        return view('mobile.security.scan');
+    });
+    Route::get('/checkpoint/{checkpoint}', function($checkpoint) {
+        return view('mobile.security.checkpoint');
+    });
     Route::get('/shift-schedule', function() {
         return view('mobile.security.shift-schedule');
     });
@@ -363,6 +407,15 @@ Route::prefix('security')->group(function () {
     });
     Route::get('/scan-qr', function() {
         return view('mobile.security.scan');
+    });
+    Route::get('/aktivitas', function() {
+        return view('mobile.security.aktivitas');
+    });
+    Route::get('/patrol', function() {
+        return view('mobile.security.patrol');
+    });
+    Route::get('/gps-tracking', function() {
+        return view('mobile.security.gps-tracking');
     });
 });
 

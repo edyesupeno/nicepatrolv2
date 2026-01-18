@@ -342,6 +342,18 @@
                     </div>
                 </div>
 
+                <!-- Buku Tamu Menu -->
+                <a href="{{ route('perusahaan.buku-tamu.index') }}" class="menu-item flex items-center px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.buku-tamu.*') ? 'active' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                    <i class="fas fa-address-book w-5 text-center mr-3"></i>
+                    <span class="font-medium">Buku Tamu</span>
+                    @php
+                        $visitingCount = \App\Models\BukuTamu::visiting()->count();
+                    @endphp
+                    @if($visitingCount > 0)
+                        <span class="ml-auto bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold">{{ $visitingCount }}</span>
+                    @endif
+                </a>
+
                 <!-- Tugas Menu -->
                 <a href="{{ route('perusahaan.tugas.index') }}" class="menu-item flex items-center px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.tugas.*') ? 'active' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
                     <i class="fas fa-tasks w-5 text-center mr-3"></i>
@@ -438,19 +450,19 @@
                     </div>
                 </div>
 
-                <!-- Tim Patroli Menu (Collapsible) -->
+                <!-- Regu Patroli Menu (Collapsible) -->
                 <div class="mb-1">
                     <button onclick="toggleSubmenu('tim-patroli')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.tim-patroli.*') || request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
                         <div class="flex items-center">
                             <i class="fas fa-users w-5 text-center mr-3"></i>
-                            <span class="font-medium">Tim Patroli</span>
+                            <span class="font-medium">Regu Patroli</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-tim-patroli"></i>
                     </button>
                     <div id="submenu-tim-patroli" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.tim-patroli.*') || request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') ? '' : 'hidden' }}">
                         <a href="{{ route('perusahaan.tim-patroli.master') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.tim-patroli.master') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-users-cog w-5 text-center mr-3 text-xs"></i>
-                            <span>Master Tim Patroli</span>
+                            <span>Regu Patroli</span>
                         </a>
                         <a href="{{ route('perusahaan.patrol.inventaris-patroli') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-clipboard-list w-5 text-center mr-3 text-xs"></i>
@@ -476,6 +488,10 @@
                         <a href="{{ route('perusahaan.laporan-patroli.kawasan') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.laporan-patroli.kawasan') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-map-marked-alt w-5 text-center mr-3 text-xs"></i>
                             <span>Patroli Kawasan</span>
+                        </a>
+                        <a href="{{ route('perusahaan.laporan-patroli.aset-bermasalah') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.laporan-patroli.aset-bermasalah') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-exclamation-triangle w-5 text-center mr-3 text-xs"></i>
+                            <span>Aset Bermasalah</span>
                         </a>
                         <a href="{{ route('perusahaan.laporan-patroli.inventaris') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.laporan-patroli.inventaris') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-boxes w-5 text-center mr-3 text-xs"></i>

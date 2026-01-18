@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Map Issue</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .debug-info { background: #f0f9ff; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #0ea5e9; }
+        .error { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .success { background: #d1fae5; border-color: #10b981; color: #065f46; }
+        #map { height: 400px; width: 100%; border: 2px solid #e5e7eb; border-radius: 8px; background: #f9fafb; }
+        .log { background: #1f2937; color: #f9fafb; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; margin: 10px 0; }
+        button { padding: 10px 20px; margin: 5px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Map Issue</h1>
+        
+        <div id="status" class="debug-info">
+            <strong>Status:</strong> <span id="status-text">Initializing...</span>
+        </div>
+        
+        <div class="debug-info">
+            <h3>Checklist:</h3>
+            <ul id="checklist">
+                <li id="check-leaflet">❓ Leaflet library loaded</li>
+                <li id="check-element">❓ Map element exists</li>
+                <li id="check-css">❓ Leaflet CSS loaded</li>
+                <li id="check-tiles">❓ Tiles loading</li>
+                <li id="check-network">❓ Network connectivity</li>
+            </ul>
+        </div>
+        
+        <div>
+            <button onclick="runDiagnostics()">🔧 Run Diagnostics</button>
+            <button onclick="testTileServer()">🌐 Test Tile Server</button>
+            <button onclick="clearLog()">🧹 Clear Log</button>
+        </div>
+        
+        <div id="map"></div>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map;
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#60a5fa',
+                success: '#34d399', 
+                error: '#f87171',
+                warning: '#fbbf24'
+            };
+            logDiv.innerHTML += `<div style="color: ${colors[type] || colors.info};">[${time}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusText = document.getElementById('status-text');
+            const statusDiv = document.getElementById('status');
+            statusText.textContent = message;
+            statusDiv.className = `debug-info ${type}`;
+        }
+        
+        function updateCheck(id, status, message) {
+            const element = document.getElementById(id);
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: '❓' };
+            element.innerHTML = `${icons[status]} ${message}`;
+        }
+        
+        function runDiagnostics() {
+            log('🚀 Starting comprehensive diagnostics...', 'info');
+            
+            // Check 1: Leaflet library
+            if (typeof L !== 'undefined') {
+                updateCheck('check-leaflet', 'success', `Leaflet library loaded (v${L.version})`);
+                log(`✅ Leaflet v${L.version} loaded successfully`, 'success');
+            } else {
+                updateCheck('check-leaflet', 'error', 'Leaflet library NOT loaded');
+                log('❌ Leaflet library not found', 'error');
+                return;
+            }
+            
+            // Check 2: Map element
+            const mapElement = document.getElementById('map');
+            if (mapElement) {
+                updateCheck('check-element', 'success', 'Map element exists');
+                log('✅ Map element found in DOM', 'success');
+                log(`Map element dimensions: ${mapElement.offsetWidth}x${mapElement.offsetHeight}`, 'info');
+            } else {
+                updateCheck('check-element', 'error', 'Map element NOT found');
+                log('❌ Map element not found in DOM', 'error');
+                return;
+            }
+            
+            // Check 3: CSS
+            const leafletCSS = document.querySelector('link[href*="leaflet"]');
+            if (leafletCSS) {
+                updateCheck('check-css', 'success', 'Leaflet CSS loaded');
+                log('✅ Leaflet CSS found', 'success');
+            } else {
+                updateCheck('check-css', 'warning', 'Leaflet CSS might not be loaded');
+                log('⚠️ Leaflet CSS not detected', 'warning');
+            }
+            
+            // Initialize map
+            try {
+                log('🗺️ Initializing map...', 'info');
+                map = L.map('map').setView([-6.2088, 106.8456], 12);
+                log('✅ Map object created successfully', 'success');
+                
+                // Add tile layer
+                const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 18
+                });
+                
+                let tilesLoaded = 0;
+                let tilesErrored = 0;
+                
+                tileLayer.on('tileload', function(e) {
+                    tilesLoaded++;
+                    if (tilesLoaded === 1) {
+                        updateCheck('check-tiles', 'success', 'Tiles loading successfully');
+                        log('✅ First tile loaded successfully', 'success');
+                        updateStatus('Map loaded successfully!', 'success');
+                    }
+                });
+                
+                tileLayer.on('tileerror', function(e) {
+                    tilesErrored++;
+                    updateCheck('check-tiles', 'error', `Tile errors: ${tilesErrored}`);
+                    log(`❌ Tile error: ${e.error || 'Unknown error'}`, 'error');
+                    if (tilesErrored > 3) {
+                        updateStatus('Multiple tile loading errors', 'error');
+                    }
+                });
+                
+                tileLayer.on('loading', function() {
+                    updateCheck('check-tiles', 'info', 'Loading tiles...');
+                    log('⏳ Loading tiles...', 'info');
+                });
+                
+                tileLayer.addTo(map);
+                
+                // Add test marker
+                const marker = L.marker([-6.2088, 106.8456]).addTo(map);
+                marker.bindPopup('Test marker - Jakarta').openPopup();
+                log('📍 Test marker added', 'success');
+                
+            } catch (error) {
+                log(`❌ Map initialization error: ${error.message}`, 'error');
+                updateStatus(`Initialization failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testTileServer() {
+            log('🌐 Testing tile server connectivity...', 'info');
+            
+            const testUrl = 'https://a.tile.openstreetmap.org/12/2048/2048.png';
+            const img = new Image();
+            
+            img.onload = function() {
+                updateCheck('check-network', 'success', 'Network connectivity OK');
+                log('✅ Tile server reachable', 'success');
+            };
+            
+            img.onerror = function() {
+                updateCheck('check-network', 'error', 'Network connectivity issues');
+                log('❌ Cannot reach tile server', 'error');
+            };
+            
+            img.src = testUrl;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        // Auto-run diagnostics when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🌐 Page loaded, starting auto-diagnostics...', 'info');
+            setTimeout(runDiagnostics, 500);
+        });
+    </script>
+</body>
+</html>

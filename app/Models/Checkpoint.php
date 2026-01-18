@@ -71,4 +71,9 @@ class Checkpoint extends Model
             ->withPivot('catatan')
             ->withTimestamps();
     }
+
+    public function patroliDetails()
+    {
+        return $this->hasMany(PatroliDetail::class);
+    }
 }

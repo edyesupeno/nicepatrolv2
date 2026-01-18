@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Aggressive Map Containment</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+          crossorigin=""/>
+    
+    <!-- CRITICAL: Ultra-aggressive map containment styling -->
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; background: #f3f4f6; }
+        
+        /* Simulate Laravel layout with Tailwind-like classes */
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .tab-container { margin: 20px 0; border-bottom: 1px solid #e5e7eb; }
+        .tab-button { 
+            padding: 12px 16px; 
+            margin-right: 8px; 
+            border: none; 
+            background: none; 
+            cursor: pointer; 
+            border-bottom: 2px solid transparent;
+            color: #6b7280;
+        }
+        .tab-button.active { 
+            color: #3b82f6; 
+            border-bottom-color: #3b82f6;
+        }
+        .tab-content { 
+            display: none; 
+            padding: 24px 0; 
+        }
+        .tab-content:not(.hidden) { 
+            display: block; 
+        }
+        .hidden { display: none !important; }
+        .mb-6 { margin-bottom: 24px; }
+        .p-6 { padding: 24px; }
+        
+        /* FORCE map container to be contained - use very specific selectors */
+        #content-location #map,
+        div#map,
+        .tab-content #map {
+            height: 400px !important;
+            width: 100% !important;
+            max-height: 400px !important;
+            max-width: 100% !important;
+            position: relative !important;
+            z-index: 1 !important;
+            background: #f9fafb !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            /* CRITICAL: Prevent any positioning that could cause fullscreen */
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            bottom: auto !important;
+            transform: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* FORCE Leaflet container to stay within bounds */
+        #content-location .leaflet-container,
+        div#map .leaflet-container,
+        .tab-content .leaflet-container {
+            height: 400px !important;
+            width: 100% !important;
+            max-height: 400px !important;
+            max-width: 100% !important;
+            font-family: inherit !important;
+            position: relative !important;
+            z-index: 1 !important;
+            overflow: hidden !important;
+            /* CRITICAL: Prevent any positioning that could cause fullscreen */
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            bottom: auto !important;
+            transform: none !important;
+        }
+        
+        /* FORCE leaflet pane to stay contained */
+        #content-location .leaflet-map-pane,
+        div#map .leaflet-map-pane,
+        .tab-content .leaflet-map-pane {
+            position: relative !important;
+            z-index: 1 !important;
+            overflow: hidden !important;
+            /* CRITICAL: Prevent any positioning that could cause fullscreen */
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            bottom: auto !important;
+            transform: none !important;
+        }
+        
+        /* Fix leaflet controls positioning */
+        #content-location .leaflet-control-container,
+        div#map .leaflet-control-container,
+        .tab-content .leaflet-control-container {
+            position: relative !important;
+            z-index: 2 !important;
+        }
+        
+        /* Ensure tiles stay within container */
+        #content-location .leaflet-tile,
+        div#map .leaflet-tile,
+        .tab-content .leaflet-tile {
+            max-width: none !important;
+        }
+        
+        /* Fix popup styling */
+        #content-location .leaflet-popup-content-wrapper,
+        div#map .leaflet-popup-content-wrapper,
+        .tab-content .leaflet-popup-content-wrapper {
+            border-radius: 8px !important;
+        }
+        
+        /* CRITICAL: Ensure tab content contains the map properly */
+        #content-location {
+            position: relative !important;
+            overflow: hidden !important;
+            max-width: 100% !important;
+            contain: layout style !important;
+        }
+        
+        /* Ensure map parent container is properly sized */
+        #content-location .mb-6 {
+            position: relative !important;
+            overflow: hidden !important;
+            contain: layout style !important;
+        }
+        
+        /* Override any potential fullscreen classes */
+        .leaflet-fullscreen-on #map,
+        .leaflet-pseudo-fullscreen #map {
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            width: 100% !important;
+            height: 400px !important;
+            max-width: 100% !important;
+            max-height: 400px !important;
+            z-index: 1 !important;
+        }
+        
+        .info { margin: 10px 0; padding: 10px; background: #f0f9ff; border-radius: 4px; }
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
+        .warning { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ Test Aggressive Map Containment</h1>
+        <p>This tests ultra-aggressive CSS to prevent map from going fullscreen.</p>
+        
+        <!-- Content above map -->
+        <div style="background: #e5e7eb; padding: 20px; margin: 20px 0; border-radius: 8px;">
+            <h3>⬆️ Content Above Map</h3>
+            <p>This content should remain visible and not be covered by the map.</p>
+        </div>
+        
+        <!-- Tab simulation -->
+        <div class="tab-container">
+            <button id="tab-patroli" class="tab-button active">
+                Riwayat Patroli
+            </button>
+            <button id="tab-location" class="tab-button">
+                🗺️ Verifikasi Lokasi
+            </button>
+        </div>
+        
+        <!-- Tab Contents -->
+        <div id="content-patroli" class="tab-content p-6">
+            <h3>Riwayat Patroli</h3>
+            <p>This is the patrol history tab content. The map should not cover this when location tab is active.</p>
+        </div>
+        
+        <div id="content-location" class="tab-content hidden p-6">
+            <h3>Verifikasi Lokasi</h3>
+            
+            <!-- Maps Container -->
+            <div class="mb-6">
+                <h4 style="font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 16px;">Peta Lokasi Checkpoint</h4>
+                
+                <div class="warning">
+                    <strong>⚠️ Testing:</strong> Map should stay within this container (400px height) and not go fullscreen.
+                </div>
+                
+                <!-- Map container - no inline styles -->
+                <div id="map"></div>
+                
+                <div id="map-status" style="margin-top: 8px; font-size: 14px; color: #6b7280;">
+                    <span id="map-loading">
+                        Loading aggressive containment map...
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Content below map -->
+            <div style="background: #f3f4f6; padding: 20px; margin-top: 20px; border-radius: 8px;">
+                <h4>⬇️ Content Below Map</h4>
+                <p>This content should be visible below the map, not covered by it.</p>
+                <p>If you can see this text, the map containment is working correctly.</p>
+            </div>
+        </div>
+        
+        <!-- Content below tabs -->
+        <div style="background: #fef3c7; padding: 20px; margin: 20px 0; border-radius: 8px;">
+            <h3>⬇️ Content Below Tabs</h3>
+            <p>This content should always remain visible and not be covered by the map.</p>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+            crossorigin=""></script>
+
+    <script>
+        // Tab switching function
+        function showTab(tabName) {
+            console.log('showTab called with:', tabName);
+            
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tab buttons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            const selectedContent = document.getElementById('content-' + tabName);
+            if (selectedContent) {
+                selectedContent.classList.remove('hidden');
+            }
+            
+            // Add active class to selected tab button
+            const selectedButton = document.getElementById('tab-' + tabName);
+            if (selectedButton) {
+                selectedButton.classList.add('active');
+            }
+            
+            // Initialize map if location tab is selected
+            if (tabName === 'location') {
+                setTimeout(function() {
+                    if (!window.map) {
+                        initAggressiveContainedMap();
+                    } else {
+                        window.map.invalidateSize();
+                        enforceContainment();
+                    }
+                }, 200);
+            }
+        }
+        
+        // Map implementation with aggressive containment
+        let map;
+        let markers = [];
+
+        // Fix Leaflet marker icons issue
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+            iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+            iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        });
+
+        function enforceContainment() {
+            console.log('🔧 Enforcing aggressive containment...');
+            
+            const mapEl = document.getElementById('map');
+            const leafletContainer = document.querySelector('#map .leaflet-container');
+            
+            if (mapEl) {
+                mapEl.style.height = '400px';
+                mapEl.style.width = '100%';
+                mapEl.style.maxHeight = '400px';
+                mapEl.style.maxWidth = '100%';
+                mapEl.style.position = 'relative';
+                mapEl.style.zIndex = '1';
+                mapEl.style.overflow = 'hidden';
+                mapEl.style.boxSizing = 'border-box';
+                mapEl.style.top = 'auto';
+                mapEl.style.left = 'auto';
+                mapEl.style.right = 'auto';
+                mapEl.style.bottom = 'auto';
+                mapEl.style.transform = 'none';
+            }
+            
+            if (leafletContainer) {
+                leafletContainer.style.height = '400px';
+                leafletContainer.style.width = '100%';
+                leafletContainer.style.maxHeight = '400px';
+                leafletContainer.style.maxWidth = '100%';
+                leafletContainer.style.position = 'relative';
+                leafletContainer.style.overflow = 'hidden';
+                leafletContainer.style.top = 'auto';
+                leafletContainer.style.left = 'auto';
+                leafletContainer.style.right = 'auto';
+                leafletContainer.style.bottom = 'auto';
+                leafletContainer.style.transform = 'none';
+            }
+            
+            console.log('✅ Aggressive containment enforced');
+        }
+
+        function initAggressiveContainedMap() {
+            try {
+                console.log('🗺️ Starting aggressive contained map initialization...');
+                
+                // Update status
+                const statusElement = document.getElementById('map-loading');
+                if (statusElement) {
+                    statusElement.innerHTML = '<span style="color: #3b82f6;">Initializing aggressive contained map...</span>';
+                }
+                
+                // Check if map element exists
+                const mapElement = document.getElementById('map');
+                if (!mapElement) {
+                    console.error('❌ Map element not found');
+                    return;
+                }
+                
+                console.log('✅ Map element found, dimensions:', mapElement.offsetWidth, 'x', mapElement.offsetHeight);
+                
+                // CRITICAL: Force container styles BEFORE initializing map
+                enforceContainment();
+                
+                // Initialize map with aggressive containment options
+                map = L.map('map', {
+                    fullscreenControl: false,
+                    zoomControl: true,
+                    attributionControl: true,
+                    scrollWheelZoom: true,
+                    doubleClickZoom: true,
+                    boxZoom: true,
+                    keyboard: true,
+                    dragging: true,
+                    preferCanvas: false
+                }).setView([-6.2088, 106.8456], 15);
+                
+                window.map = map; // Make it global
+                
+                console.log('✅ Leaflet map object created with containment options');
+                
+                // CRITICAL: Enforce containment immediately after creation
+                setTimeout(enforceContainment, 50);
+                
+                // Add OpenStreetMap tiles
+                const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 18,
+                    minZoom: 1
+                });
+                
+                let tilesLoaded = 0;
+                
+                tileLayer.on('tileload', function() {
+                    tilesLoaded++;
+                    if (tilesLoaded === 1) {
+                        console.log('✅ First tile loaded successfully');
+                        if (statusElement) {
+                            statusElement.innerHTML = '<span style="color: #10b981;">✅ Aggressive contained map loaded successfully</span>';
+                        }
+                    }
+                    
+                    // Enforce containment on every tile load
+                    if (tilesLoaded <= 5) {
+                        setTimeout(enforceContainment, 10);
+                    }
+                });
+                
+                tileLayer.on('tileerror', function(e) {
+                    console.warn('⚠️ Tile error:', e);
+                });
+                
+                tileLayer.addTo(map);
+                console.log('✅ Tile layer added');
+                
+                // Add test markers
+                setTimeout(function() {
+                    addTestMarkers();
+                }, 500);
+                
+                // Continuously enforce containment
+                const containmentInterval = setInterval(function() {
+                    if (map) {
+                        enforceContainment();
+                    } else {
+                        clearInterval(containmentInterval);
+                    }
+                }, 1000);
+                
+                // Force map to resize and stay contained
+                setTimeout(function() {
+                    if (map) {
+                        map.invalidateSize();
+                        enforceContainment();
+                        console.log('✅ Map size invalidated and aggressive containment enforced');
+                    }
+                }, 1000);
+                
+                console.log('✅ Aggressive contained map initialization complete');
+                
+            } catch (error) {
+                console.error('❌ Error in aggressive contained map initialization:', error);
+                const statusElement = document.getElementById('map-loading');
+                if (statusElement) {
+                    statusElement.innerHTML = '<span style="color: #ef4444;">❌ Map failed to load: ' + error.message + '</span>';
+                }
+            }
+        }
+
+        function addTestMarkers() {
+            console.log('📍 Adding test markers...');
+            
+            try {
+                // Add checkpoint markers
+                const checkpointMarker1 = L.marker([-6.2088, 106.8456])
+                    .addTo(map)
+                    .bindPopup('<b>Checkpoint Alpha</b><br>QR001<br><small>Checkpoint Terdaftar</small>');
+                markers.push(checkpointMarker1);
+                
+                const checkpointMarker2 = L.marker([-6.2100, 106.8470])
+                    .addTo(map)
+                    .bindPopup('<b>Checkpoint Beta</b><br>QR002<br><small>Checkpoint Terdaftar</small>');
+                markers.push(checkpointMarker2);
+                
+                // Add patrol markers
+                const patrolMarker1 = L.marker([-6.2090, 106.8458])
+                    .addTo(map)
+                    .bindPopup('<b>Patrol Location</b><br>18 Jan 2026 14:30<br><small>Lokasi Patroli</small>');
+                markers.push(patrolMarker1);
+                
+                // Fit map to show all markers
+                if (markers.length > 0) {
+                    const group = new L.featureGroup(markers);
+                    map.fitBounds(group.getBounds().pad(0.1));
+                    console.log('🎯 Map bounds adjusted for', markers.length, 'markers');
+                    
+                    // Enforce containment after bounds adjustment
+                    setTimeout(enforceContainment, 100);
+                }
+                
+                console.log('✅ All test markers added successfully');
+                
+            } catch (error) {
+                console.error('❌ Error adding markers:', error);
+            }
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🌐 DOM loaded for aggressive contained map test');
+            
+            // Add click listeners to tab buttons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const tabName = this.id.replace('tab-', '');
+                    showTab(tabName);
+                });
+            });
+            
+            console.log('✅ Tab system initialized');
+        });
+    </script>
+</body>
+</html>
+</content>

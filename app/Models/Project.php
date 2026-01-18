@@ -89,6 +89,11 @@ class Project extends Model
         return $this->hasMany(Area::class);
     }
 
+    public function areaPatrols(): HasMany
+    {
+        return $this->hasMany(AreaPatrol::class);
+    }
+
     /**
      * Get struktur jabatan dengan jumlah karyawan per jabatan
      */
