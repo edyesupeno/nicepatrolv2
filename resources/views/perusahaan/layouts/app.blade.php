@@ -342,17 +342,35 @@
                     </div>
                 </div>
 
-                <!-- Buku Tamu Menu -->
-                <a href="{{ route('perusahaan.buku-tamu.index') }}" class="menu-item flex items-center px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.buku-tamu.*') ? 'active' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
-                    <i class="fas fa-address-book w-5 text-center mr-3"></i>
-                    <span class="font-medium">Buku Tamu</span>
-                    @php
-                        $visitingCount = \App\Models\BukuTamu::visiting()->count();
-                    @endphp
-                    @if($visitingCount > 0)
-                        <span class="ml-auto bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold">{{ $visitingCount }}</span>
-                    @endif
-                </a>
+                <!-- Buku Tamu Menu (Collapsible) -->
+                <div class="mb-1">
+                    <button onclick="toggleSubmenu('buku-tamu')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.buku-tamu.*') || request()->routeIs('perusahaan.penerimaan-barang.*') || request()->routeIs('perusahaan.pertanyaan-tamu.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                        <div class="flex items-center">
+                            <i class="fas fa-address-book w-5 text-center mr-3"></i>
+                            <span class="font-medium">Buku Tamu</span>
+                            @php
+                                $visitingCount = \App\Models\BukuTamu::visiting()->count();
+                            @endphp
+                            @if($visitingCount > 0)
+                                <span class="ml-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold">{{ $visitingCount }}</span>
+                            @endif
+                        </div>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-buku-tamu"></i>
+                    </button>
+                    <div id="submenu-buku-tamu" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.buku-tamu.*') || request()->routeIs('perusahaan.penerimaan-barang.*') || request()->routeIs('perusahaan.pertanyaan-tamu.*') ? '' : 'hidden' }}">
+                        <a href="{{ route('perusahaan.buku-tamu.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.buku-tamu.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-book w-5 text-center mr-3 text-xs"></i>
+                            <span>Buku Tamu</span>
+                            @if($visitingCount > 0)
+                                <span class="ml-auto bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">{{ $visitingCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('perusahaan.penerimaan-barang.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.penerimaan-barang.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-box w-5 text-center mr-3 text-xs"></i>
+                            <span>Penerimaan Barang</span>
+                        </a>
+                    </div>
+                </div>
 
                 <!-- Tugas Menu -->
                 <a href="{{ route('perusahaan.tugas.index') }}" class="menu-item flex items-center px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.tugas.*') ? 'active' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
@@ -639,6 +657,37 @@
                 }
             }
         });
+
+        // Show under construction modal
+        function showUnderConstruction(featureName) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Fitur Dalam Pengembangan',
+                html: `
+                    <div class="text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-tools text-6xl text-orange-500 mb-4"></i>
+                        </div>
+                        <p class="text-lg font-semibold text-gray-800 mb-2">${featureName}</p>
+                        <p class="text-gray-600 mb-4">Fitur ini sedang dalam tahap pengembangan dan akan segera tersedia.</p>
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p class="text-sm text-blue-700">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                Kami sedang bekerja keras untuk menghadirkan fitur terbaik untuk Anda!
+                            </p>
+                        </div>
+                    </div>
+                `,
+                confirmButtonText: 'Mengerti',
+                confirmButtonColor: '#3B82C8',
+                showClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutUp'
+                }
+            });
+        }
     </script>
 
     @stack('scripts')

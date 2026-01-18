@@ -4,6 +4,10 @@
 @section('page-title', 'Detail Tamu')
 @section('page-subtitle', $bukuTamu->nama_tamu)
 
+@php
+use Illuminate\Support\Facades\Storage;
+@endphp
+
 @section('content')
 <div class="max-w-4xl mx-auto">
     <!-- Breadcrumb -->
@@ -37,7 +41,7 @@
                             <div class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center">
                                 @if($bukuTamu->foto)
                                     <img 
-                                        src="{{ asset('storage/' . $bukuTamu->foto) }}" 
+                                        src="{{ Storage::url($bukuTamu->foto) }}" 
                                         alt="{{ $bukuTamu->nama_tamu }}" 
                                         class="w-full h-full object-cover"
                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
@@ -83,6 +87,71 @@
                     <!-- Details Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Informasi Pribadi</h3>
+                            <div class="space-y-4">
+                                @if($bukuTamu->nik)
+                                <div class="flex items-start">
+                                    <i class="fas fa-id-card text-gray-400 mr-3 mt-1 w-5"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ $bukuTamu->nik }}</p>
+                                        <p class="text-xs text-gray-500">NIK</p>
+                                    </div>
+                                </div>
+                                @endif
+                                
+                                @if($bukuTamu->tanggal_lahir)
+                                <div class="flex items-start">
+                                    <i class="fas fa-birthday-cake text-gray-400 mr-3 mt-1 w-5"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ $bukuTamu->tanggal_lahir->format('d M Y') }}</p>
+                                        <p class="text-xs text-gray-500">Tanggal Lahir</p>
+                                    </div>
+                                </div>
+                                @endif
+                                
+                                @if($bukuTamu->domisili)
+                                <div class="flex items-start">
+                                    <i class="fas fa-home text-gray-400 mr-3 mt-1 w-5"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ $bukuTamu->domisili }}</p>
+                                        <p class="text-xs text-gray-500">Domisili</p>
+                                    </div>
+                                </div>
+                                @endif
+                                
+                                @if($bukuTamu->jabatan)
+                                <div class="flex items-start">
+                                    <i class="fas fa-user-tie text-gray-400 mr-3 mt-1 w-5"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ $bukuTamu->jabatan }}</p>
+                                        <p class="text-xs text-gray-500">Jabatan</p>
+                                    </div>
+                                </div>
+                                @endif
+                                
+                                @if($bukuTamu->email)
+                                <div class="flex items-start">
+                                    <i class="fas fa-envelope text-gray-400 mr-3 mt-1 w-5"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ $bukuTamu->email }}</p>
+                                        <p class="text-xs text-gray-500">Email</p>
+                                    </div>
+                                </div>
+                                @endif
+                                
+                                @if($bukuTamu->no_whatsapp)
+                                <div class="flex items-start">
+                                    <i class="fab fa-whatsapp text-gray-400 mr-3 mt-1 w-5"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ $bukuTamu->no_whatsapp }}</p>
+                                        <p class="text-xs text-gray-500">WhatsApp</p>
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div>
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">Informasi Kunjungan</h3>
                             <div class="space-y-4">
                                 <div class="flex items-start">
@@ -110,6 +179,16 @@
                                         <p class="text-xs text-gray-500">Keperluan</p>
                                     </div>
                                 </div>
+                                
+                                @if($bukuTamu->lokasi_dituju)
+                                <div class="flex items-start">
+                                    <i class="fas fa-map-pin text-gray-400 mr-3 mt-1 w-5"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ $bukuTamu->lokasi_dituju }}</p>
+                                        <p class="text-xs text-gray-500">Lokasi Dituju</p>
+                                    </div>
+                                </div>
+                                @endif
                                 
                                 @if($bukuTamu->bertemu)
                                 <div class="flex items-start">
@@ -140,9 +219,12 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Waktu Kunjungan</h3>
+                    <!-- Waktu Kunjungan -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Waktu Kunjungan</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="space-y-4">
                                 <div class="flex items-start">
                                     <i class="fas fa-sign-in-alt text-gray-400 mr-3 mt-1 w-5"></i>
@@ -152,6 +234,18 @@
                                     </div>
                                 </div>
                                 
+                                @if($bukuTamu->mulai_kunjungan)
+                                <div class="flex items-start">
+                                    <i class="fas fa-play text-gray-400 mr-3 mt-1 w-5"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ $bukuTamu->mulai_kunjungan->format('d M Y H:i') }}</p>
+                                        <p class="text-xs text-gray-500">Mulai Kunjungan</p>
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                            
+                            <div class="space-y-4">
                                 @if($bukuTamu->check_out)
                                 <div class="flex items-start">
                                     <i class="fas fa-sign-out-alt text-gray-400 mr-3 mt-1 w-5"></i>
@@ -162,13 +256,25 @@
                                 </div>
                                 @endif
                                 
+                                @if($bukuTamu->selesai_kunjungan)
+                                <div class="flex items-start">
+                                    <i class="fas fa-stop text-gray-400 mr-3 mt-1 w-5"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ $bukuTamu->selesai_kunjungan->format('d M Y H:i') }}</p>
+                                        <p class="text-xs text-gray-500">Selesai Kunjungan</p>
+                                    </div>
+                                </div>
+                                @endif
+                                
+                                @if($bukuTamu->lama_kunjungan)
                                 <div class="flex items-start">
                                     <i class="fas fa-clock text-gray-400 mr-3 mt-1 w-5"></i>
                                     <div>
-                                        <p class="text-sm font-medium text-gray-900">{{ $bukuTamu->duration }}</p>
-                                        <p class="text-xs text-gray-500">Durasi Kunjungan</p>
+                                        <p class="text-sm font-medium text-gray-900">{{ $bukuTamu->lama_kunjungan }}</p>
+                                        <p class="text-xs text-gray-500">Lama Kunjungan</p>
                                     </div>
                                 </div>
+                                @endif
                                 
                                 <div class="flex items-start">
                                     <i class="fas fa-calendar text-gray-400 mr-3 mt-1 w-5"></i>
@@ -180,6 +286,97 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Kuesioner Dinamis -->
+                    @if($bukuTamu->jawabanKuesioner->count() > 0)
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Jawaban Kuesioner</h3>
+                        @if($bukuTamu->areaPatrol)
+                            <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>
+                                    <span class="text-sm font-medium text-blue-800">Area Patrol: {{ $bukuTamu->areaPatrol->nama }}</span>
+                                </div>
+                            </div>
+                        @endif
+                        
+                        <div class="space-y-4">
+                            @foreach($bukuTamu->jawabanKuesioner as $jawaban)
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-start gap-3">
+                                    <span class="flex items-center justify-center w-8 h-8 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold flex-shrink-0">
+                                        {{ $jawaban->pertanyaanTamu->urutan }}
+                                    </span>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold text-gray-900 mb-2">
+                                            {{ $jawaban->pertanyaanTamu->pertanyaan }}
+                                            @if($jawaban->pertanyaanTamu->is_required)
+                                                <span class="text-red-500 ml-1">*</span>
+                                            @endif
+                                        </h4>
+                                        
+                                        @if($jawaban->pertanyaanTamu->tipe_jawaban === 'pilihan')
+                                            <div class="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                                                <i class="fas fa-check-circle mr-2"></i>
+                                                {{ $jawaban->jawaban }}
+                                            </div>
+                                        @else
+                                            <div class="bg-gray-50 rounded-lg p-3 mt-2">
+                                                <p class="text-gray-700 leading-relaxed">{{ $jawaban->jawaban }}</p>
+                                            </div>
+                                        @endif
+                                        
+                                        <div class="mt-2 text-xs text-gray-500">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Tipe: {{ $jawaban->pertanyaanTamu->tipe_jawaban === 'pilihan' ? 'Pilihan Ganda' : 'Text Bebas' }}
+                                            @if($jawaban->pertanyaanTamu->is_required)
+                                                • Wajib diisi
+                                            @else
+                                                • Opsional
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Kuesioner Statis Lama (Fallback) -->
+                    @if($bukuTamu->jawabanKuesioner->count() == 0 && ($bukuTamu->pertanyaan_1 || $bukuTamu->pertanyaan_2 || $bukuTamu->pertanyaan_3))
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Kuesioner (Versi Lama)</h3>
+                        <div class="bg-purple-50 rounded-lg p-4">
+                            <div class="space-y-4">
+                                @if($bukuTamu->pertanyaan_1)
+                                <div>
+                                    <p class="text-sm font-medium text-gray-700">1. Pertanyaan 1</p>
+                                    <p class="text-sm text-purple-700 mt-1">{{ $bukuTamu->pertanyaan_1 }}</p>
+                                </div>
+                                @endif
+                                
+                                @if($bukuTamu->pertanyaan_2 && count($bukuTamu->pertanyaan_2) > 0)
+                                <div>
+                                    <p class="text-sm font-medium text-gray-700">2. Pertanyaan 2</p>
+                                    <div class="mt-1">
+                                        @foreach($bukuTamu->pertanyaan_2 as $jawaban)
+                                            <span class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full mr-2 mb-1">{{ $jawaban }}</span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endif
+                                
+                                @if($bukuTamu->pertanyaan_3)
+                                <div>
+                                    <p class="text-sm font-medium text-gray-700">3. Pertanyaan 3</p>
+                                    <p class="text-sm text-purple-700 mt-1">{{ $bukuTamu->pertanyaan_3 }}</p>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    @endif
 
                     @if($bukuTamu->catatan)
                     <!-- Notes -->
@@ -239,7 +436,7 @@
                         <div class="bg-gray-50 rounded-lg p-4">
                             <div class="w-48 h-32 mx-auto rounded-lg overflow-hidden bg-white shadow-sm flex items-center justify-center">
                                 <img 
-                                    src="{{ asset('storage/' . $bukuTamu->foto_identitas) }}" 
+                                    src="{{ Storage::url($bukuTamu->foto_identitas) }}" 
                                     alt="Foto Identitas" 
                                     class="w-full h-full object-cover"
                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"

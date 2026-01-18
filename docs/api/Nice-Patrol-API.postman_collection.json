@@ -1,0 +1,767 @@
+{
+  "info": {
+    "name": "Nice Patrol API",
+    "description": "API collection for Nice Patrol Security Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "nice-patrol-api-v1"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set environment based on URL",
+          "const url = pm.request.url.toString();",
+          "if (url.includes('localhost')) {",
+          "    pm.collectionVariables.set('base_url', 'http://localhost:8000/api/v1');",
+          "} else if (url.includes('devapi')) {",
+          "    pm.collectionVariables.set('base_url', 'https://devapi.nicepatrol.id/v1');",
+          "} else if (url.includes('api.nicepatrol.id')) {",
+          "    pm.collectionVariables.set('base_url', 'https://api.nicepatrol.id/v1');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has token', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data.token).to.exist;",
+                  "    ",
+                  "    // Save token for other requests",
+                  "    pm.collectionVariables.set('token', jsonData.data.token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"security@nicepatrol.id\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            },
+            "description": "Login with email and password to get access token"
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/me",
+              "host": ["{{base_url}}"],
+              "path": ["me"]
+            },
+            "description": "Get current authenticated user information"
+          }
+        },
+        {
+          "name": "Upload User Photo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/user/upload-photo",
+              "host": ["{{base_url}}"],
+              "path": ["user", "upload-photo"]
+            },
+            "description": "Upload and compress user profile photo"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": ["{{base_url}}"],
+              "path": ["logout"]
+            },
+            "description": "Logout and invalidate current token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shift Schedule",
+      "item": [
+        {
+          "name": "Get My Schedule",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shift/my-schedule?month=2024-01",
+              "host": ["{{base_url}}"],
+              "path": ["shift", "my-schedule"],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2024-01"
+                }
+              ]
+            },
+            "description": "Get current user's shift schedule"
+          }
+        },
+        {
+          "name": "Get Today's Shift",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shift/today",
+              "host": ["{{base_url}}"],
+              "path": ["shift", "today"]
+            },
+            "description": "Get current user's shift for today"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Absensi",
+      "item": [
+        {
+          "name": "Get Absensi Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/absensi/summary?month=2024-01",
+              "host": ["{{base_url}}"],
+              "path": ["absensi", "summary"],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2024-01"
+                }
+              ]
+            },
+            "description": "Get attendance summary for current user"
+          }
+        },
+        {
+          "name": "Check Today Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/absensi/today-status",
+              "host": ["{{base_url}}"],
+              "path": ["absensi", "today-status"]
+            },
+            "description": "Check current user's attendance status for today"
+          }
+        },
+        {
+          "name": "Get Absensi Locations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/absensi/lokasi",
+              "host": ["{{base_url}}"],
+              "path": ["absensi", "lokasi"]
+            },
+            "description": "Get available attendance locations"
+          }
+        },
+        {
+          "name": "Check In",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"lokasi_id\": 1,\n    \"latitude\": -6.2088,\n    \"longitude\": 106.8456,\n    \"catatan\": \"Masuk tepat waktu\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/absensi/check-in",
+              "host": ["{{base_url}}"],
+              "path": ["absensi", "check-in"]
+            },
+            "description": "Record attendance check-in"
+          }
+        },
+        {
+          "name": "Check Out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"lokasi_id\": 1,\n    \"latitude\": -6.2088,\n    \"longitude\": 106.8456,\n    \"catatan\": \"Selesai kerja\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/absensi/check-out",
+              "host": ["{{base_url}}"],
+              "path": ["absensi", "check-out"]
+            },
+            "description": "Record attendance check-out"
+          }
+        },
+        {
+          "name": "Take Break",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"catatan\": \"Istirahat makan siang\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/absensi/take-break",
+              "host": ["{{base_url}}"],
+              "path": ["absensi", "take-break"]
+            },
+            "description": "Record break start time"
+          }
+        },
+        {
+          "name": "Return from Break",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"catatan\": \"Kembali dari istirahat\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/absensi/return-from-break",
+              "host": ["{{base_url}}"],
+              "path": ["absensi", "return-from-break"]
+            },
+            "description": "Record break end time"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lokasi",
+      "item": [
+        {
+          "name": "Get All Locations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/lokasis?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["lokasis"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get all locations with pagination"
+          }
+        },
+        {
+          "name": "Create Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nama\": \"Gedung Perkantoran ABC\",\n    \"alamat\": \"Jl. Sudirman No. 123, Jakarta\",\n    \"latitude\": -6.2088,\n    \"longitude\": 106.8456,\n    \"deskripsi\": \"Gedung perkantoran 20 lantai\",\n    \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/lokasis",
+              "host": ["{{base_url}}"],
+              "path": ["lokasis"]
+            },
+            "description": "Create new location (admin only)"
+          }
+        },
+        {
+          "name": "Get Location by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/lokasis/{{location_hash_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["lokasis", "{{location_hash_id}}"]
+            },
+            "description": "Get specific location details"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkpoint",
+      "item": [
+        {
+          "name": "Get All Checkpoints",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/checkpoints?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["checkpoints"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get all checkpoints with pagination"
+          }
+        },
+        {
+          "name": "Create Checkpoint",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nama\": \"Checkpoint Lobby Utama\",\n    \"kode\": \"CP001\",\n    \"lokasi_id\": 1,\n    \"latitude\": -6.2088,\n    \"longitude\": 106.8456,\n    \"deskripsi\": \"Checkpoint di lobby utama gedung\",\n    \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/checkpoints",
+              "host": ["{{base_url}}"],
+              "path": ["checkpoints"]
+            },
+            "description": "Create new checkpoint (admin only)"
+          }
+        },
+        {
+          "name": "Get Checkpoint Assets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/checkpoints/{{checkpoint_hash_id}}/asets",
+              "host": ["{{base_url}}"],
+              "path": ["checkpoints", "{{checkpoint_hash_id}}", "asets"]
+            },
+            "description": "Get all assets for a specific checkpoint"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patroli",
+      "item": [
+        {
+          "name": "Get All Patrols",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patrolis?page=1&status=aktif",
+              "host": ["{{base_url}}"],
+              "path": ["patrolis"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "status",
+                  "value": "aktif"
+                }
+              ]
+            },
+            "description": "Get all patrols for current user"
+          }
+        },
+        {
+          "name": "Start New Patrol",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Patrol created successfully', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data.hash_id).to.exist;",
+                  "    ",
+                  "    // Save patrol hash_id for other requests",
+                  "    pm.collectionVariables.set('patrol_hash_id', jsonData.data.hash_id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"lokasi_id\": 1,\n    \"tanggal_patroli\": \"2024-01-17\",\n    \"catatan_mulai\": \"Memulai patroli rutin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patrolis",
+              "host": ["{{base_url}}"],
+              "path": ["patrolis"]
+            },
+            "description": "Start a new patrol session"
+          }
+        },
+        {
+          "name": "Scan Checkpoint",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"checkpoint_id\": 1,\n    \"latitude\": -6.2088,\n    \"longitude\": 106.8456,\n    \"catatan\": \"Kondisi normal, tidak ada masalah\",\n    \"insiden\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patrolis/{{patrol_hash_id}}/scan",
+              "host": ["{{base_url}}"],
+              "path": ["patrolis", "{{patrol_hash_id}}", "scan"]
+            },
+            "description": "Scan checkpoint during active patrol"
+          }
+        },
+        {
+          "name": "Scan QR Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"qr_code\": \"checkpoint_abc123\",\n    \"latitude\": -6.2088,\n    \"longitude\": 106.8456\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/scan-qr",
+              "host": ["{{base_url}}"],
+              "path": ["scan-qr"]
+            },
+            "description": "Scan QR code to identify checkpoint or asset"
+          }
+        },
+        {
+          "name": "End Patrol",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"selesai\",\n    \"catatan_selesai\": \"Patroli selesai tanpa insiden\",\n    \"waktu_selesai\": \"2024-01-17T18:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patrolis/{{patrol_hash_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["patrolis", "{{patrol_hash_id}}"]
+            },
+            "description": "End active patrol"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Project Contacts",
+      "item": [
+        {
+          "name": "Get Project Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_hash_id}}/contacts",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "{{project_hash_id}}", "contacts"]
+            },
+            "description": "Get all contacts for a specific project"
+          }
+        },
+        {
+          "name": "Get Emergency Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_hash_id}}/contacts/emergency",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "{{project_hash_id}}", "contacts", "emergency"]
+            },
+            "description": "Get emergency contacts for a specific project"
+          }
+        },
+        {
+          "name": "Create Project Contact",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nama\": \"John Doe\",\n    \"jabatan\": \"Security Manager\",\n    \"jenis\": \"emergency\",\n    \"telepon\": \"+62812345678\",\n    \"email\": \"john@company.com\",\n    \"alamat\": \"Jl. Sudirman No. 123, Jakarta\",\n    \"catatan\": \"Kontak darurat 24 jam\",\n    \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_hash_id}}/contacts",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "{{project_hash_id}}", "contacts"]
+            },
+            "description": "Create new project contact (admin only)"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2151 @@
+openapi: 3.0.3
+info:
+  title: Nice Patrol API
+  description: |
+    API documentation for Nice Patrol System - Security Management Platform
+    
+    ## Authentication
+    This API uses Bearer Token authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer {your_token}
+    ```
+    
+    ## Base URLs
+    - **Production**: `https://api.nicepatrol.id/v1`
+    - **Development**: `https://devapi.nicepatrol.id/v1`
+    - **Local**: `http://localhost:8000/api/v1`
+    
+    ## Multi-Tenancy
+    All endpoints automatically filter data based on the authenticated user's company (perusahaan_id).
+    Only superadmin can access data across all companies.
+    
+    ## Response Format
+    All responses follow this standard format:
+    ```json
+    {
+      "success": true,
+      "message": "Operation successful",
+      "data": {
+        // Response data here
+      }
+    }
+    ```
+    
+    ## Error Handling
+    Error responses include appropriate HTTP status codes and error details:
+    ```json
+    {
+      "success": false,
+      "message": "Error message",
+      "errors": {
+        "field": ["Validation error details"]
+      }
+    }
+    ```
+  version: 1.0.0
+  contact:
+    name: Nice Patrol Support
+    email: support@nicepatrol.id
+  license:
+    name: Proprietary
+    
+servers:
+  - url: https://api.nicepatrol.id/v1
+    description: Production server
+  - url: https://devapi.nicepatrol.id/v1
+    description: Development server
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Authentication Endpoints
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and get access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: security@nicepatrol.id
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Login berhasil
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      token:
+                        type: string
+                        example: 1|abc123def456...
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Logout user and invalidate current token
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Logout berhasil
+
+  /me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user
+      description: Get authenticated user information
+      responses:
+        '200':
+          description: User information retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+
+  /user:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user (alias)
+      description: Alias for /me endpoint
+      responses:
+        '200':
+          description: User information retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+
+  /user/upload-photo:
+    post:
+      tags:
+        - Authentication
+      summary: Upload user photo
+      description: Upload and compress user profile photo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - foto
+              properties:
+                foto:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, JPG, GIF, WEBP, max 10MB)
+      responses:
+        '200':
+          description: Photo uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Foto berhasil diupload dan dikompres
+                  data:
+                    type: object
+                    properties:
+                      foto_url:
+                        type: string
+                        example: https://api.nicepatrol.id/storage/karyawan/foto/compressed_image.jpg
+                      foto_path:
+                        type: string
+                        example: karyawan/foto/compressed_image.jpg
+
+  # Shift Schedule Endpoints
+  /shift/my-schedule:
+    get:
+      tags:
+        - Shift Schedule
+      summary: Get my shift schedule
+      description: Get current user's shift schedule
+      parameters:
+        - name: date
+          in: query
+          description: Date to get schedule for (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2024-01-17"
+        - name: month
+          in: query
+          description: Month to get schedule for (YYYY-MM)
+          schema:
+            type: string
+            example: "2024-01"
+      responses:
+        '200':
+          description: Shift schedule retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShiftSchedule'
+
+  /shift/today:
+    get:
+      tags:
+        - Shift Schedule
+      summary: Get today's shift
+      description: Get current user's shift for today
+      responses:
+        '200':
+          description: Today's shift retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ShiftSchedule'
+
+  # Absensi Endpoints
+  /absensi/summary:
+    get:
+      tags:
+        - Absensi
+      summary: Get absensi summary
+      description: Get attendance summary for current user
+      parameters:
+        - name: month
+          in: query
+          description: Month to get summary for (YYYY-MM)
+          schema:
+            type: string
+            example: "2024-01"
+      responses:
+        '200':
+          description: Absensi summary retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/AbsensiSummary'
+
+  /absensi/my-schedule:
+    get:
+      tags:
+        - Absensi
+      summary: Get my absensi schedule
+      description: Get current user's attendance schedule
+      parameters:
+        - name: date
+          in: query
+          description: Date to get schedule for (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2024-01-17"
+      responses:
+        '200':
+          description: Absensi schedule retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AbsensiSchedule'
+
+  /absensi/lokasi:
+    get:
+      tags:
+        - Absensi
+      summary: Get absensi locations
+      description: Get available attendance locations for current user
+      responses:
+        '200':
+          description: Absensi locations retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LokasiAbsensi'
+
+  /absensi/today-status:
+    get:
+      tags:
+        - Absensi
+      summary: Check today's absensi status
+      description: Check current user's attendance status for today
+      responses:
+        '200':
+          description: Today's absensi status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/AbsensiStatus'
+
+  /absensi/check-in:
+    post:
+      tags:
+        - Absensi
+      summary: Check in
+      description: Record attendance check-in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - lokasi_id
+                - latitude
+                - longitude
+              properties:
+                lokasi_id:
+                  type: integer
+                  example: 1
+                latitude:
+                  type: number
+                  format: float
+                  example: -6.2088
+                longitude:
+                  type: number
+                  format: float
+                  example: 106.8456
+                foto:
+                  type: string
+                  format: binary
+                  description: Optional selfie photo
+                catatan:
+                  type: string
+                  example: Masuk tepat waktu
+      responses:
+        '200':
+          description: Check-in successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Check-in berhasil
+                  data:
+                    $ref: '#/components/schemas/Absensi'
+
+  /absensi/check-out:
+    post:
+      tags:
+        - Absensi
+      summary: Check out
+      description: Record attendance check-out
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - lokasi_id
+                - latitude
+                - longitude
+              properties:
+                lokasi_id:
+                  type: integer
+                  example: 1
+                latitude:
+                  type: number
+                  format: float
+                  example: -6.2088
+                longitude:
+                  type: number
+                  format: float
+                  example: 106.8456
+                foto:
+                  type: string
+                  format: binary
+                  description: Optional selfie photo
+                catatan:
+                  type: string
+                  example: Selesai kerja
+      responses:
+        '200':
+          description: Check-out successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Check-out berhasil
+                  data:
+                    $ref: '#/components/schemas/Absensi'
+
+  /absensi/take-break:
+    post:
+      tags:
+        - Absensi
+      summary: Take break
+      description: Record break start time
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                catatan:
+                  type: string
+                  example: Istirahat makan siang
+      responses:
+        '200':
+          description: Break started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Istirahat dimulai
+                  data:
+                    $ref: '#/components/schemas/Absensi'
+
+  /absensi/return-from-break:
+    post:
+      tags:
+        - Absensi
+      summary: Return from break
+      description: Record break end time
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                catatan:
+                  type: string
+                  example: Kembali dari istirahat
+      responses:
+        '200':
+          description: Returned from break successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Kembali dari istirahat
+                  data:
+                    $ref: '#/components/schemas/Absensi'
+
+  # Lokasi Endpoints
+  /lokasis:
+    get:
+      tags:
+        - Lokasi
+      summary: Get all locations
+      description: Get all locations for current user's company
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            example: 1
+        - name: per_page
+          in: query
+          description: Items per page
+          schema:
+            type: integer
+            example: 20
+        - name: search
+          in: query
+          description: Search term
+          schema:
+            type: string
+            example: "Jakarta"
+      responses:
+        '200':
+          description: Locations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        example: 1
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Lokasi'
+                      per_page:
+                        type: integer
+                        example: 20
+                      total:
+                        type: integer
+                        example: 100
+
+    post:
+      tags:
+        - Lokasi
+      summary: Create new location
+      description: Create a new location (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LokasiInput'
+      responses:
+        '201':
+          description: Location created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Lokasi berhasil dibuat
+                  data:
+                    $ref: '#/components/schemas/Lokasi'
+
+  /lokasis/{id}:
+    get:
+      tags:
+        - Lokasi
+      summary: Get location by ID
+      description: Get specific location details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Location hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Location retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Lokasi'
+
+    put:
+      tags:
+        - Lokasi
+      summary: Update location
+      description: Update existing location (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Location hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LokasiInput'
+      responses:
+        '200':
+          description: Location updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Lokasi berhasil diupdate
+                  data:
+                    $ref: '#/components/schemas/Lokasi'
+
+    delete:
+      tags:
+        - Lokasi
+      summary: Delete location
+      description: Delete existing location (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Location hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Location deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Lokasi berhasil dihapus
+
+  # Checkpoint Endpoints
+  /checkpoints:
+    get:
+      tags:
+        - Checkpoint
+      summary: Get all checkpoints
+      description: Get all checkpoints for current user's company
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            example: 1
+        - name: per_page
+          in: query
+          description: Items per page
+          schema:
+            type: integer
+            example: 20
+        - name: lokasi_id
+          in: query
+          description: Filter by location ID
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Checkpoints retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        example: 1
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Checkpoint'
+                      per_page:
+                        type: integer
+                        example: 20
+                      total:
+                        type: integer
+                        example: 50
+
+    post:
+      tags:
+        - Checkpoint
+      summary: Create new checkpoint
+      description: Create a new checkpoint (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckpointInput'
+      responses:
+        '201':
+          description: Checkpoint created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Checkpoint berhasil dibuat
+                  data:
+                    $ref: '#/components/schemas/Checkpoint'
+
+  /checkpoints/{id}:
+    get:
+      tags:
+        - Checkpoint
+      summary: Get checkpoint by ID
+      description: Get specific checkpoint details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Checkpoint hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Checkpoint retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Checkpoint'
+
+    put:
+      tags:
+        - Checkpoint
+      summary: Update checkpoint
+      description: Update existing checkpoint (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Checkpoint hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckpointInput'
+      responses:
+        '200':
+          description: Checkpoint updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Checkpoint berhasil diupdate
+                  data:
+                    $ref: '#/components/schemas/Checkpoint'
+
+    delete:
+      tags:
+        - Checkpoint
+      summary: Delete checkpoint
+      description: Delete existing checkpoint (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Checkpoint hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Checkpoint deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Checkpoint berhasil dihapus
+
+  /checkpoints/{id}/asets:
+    get:
+      tags:
+        - Checkpoint
+      summary: Get checkpoint assets
+      description: Get all assets for a specific checkpoint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Checkpoint hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Checkpoint assets retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AsetCheckpoint'
+
+  /checkpoints/{id}/aset-status:
+    post:
+      tags:
+        - Checkpoint
+      summary: Update asset status
+      description: Update status of assets at checkpoint during patrol
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Checkpoint hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - patroli_id
+                - aset_statuses
+              properties:
+                patroli_id:
+                  type: integer
+                  example: 1
+                aset_statuses:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      aset_id:
+                        type: integer
+                        example: 1
+                      status:
+                        type: string
+                        enum: [baik, rusak, hilang]
+                        example: baik
+                      catatan:
+                        type: string
+                        example: Kondisi normal
+      responses:
+        '200':
+          description: Asset status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Status aset berhasil diupdate
+
+  # Patroli Endpoints
+  /patrolis:
+    get:
+      tags:
+        - Patroli
+      summary: Get all patrols
+      description: Get all patrols for current user
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            example: 1
+        - name: per_page
+          in: query
+          description: Items per page
+          schema:
+            type: integer
+            example: 20
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum: [aktif, selesai, dibatalkan]
+            example: aktif
+        - name: tanggal_mulai
+          in: query
+          description: Filter from date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2024-01-01"
+        - name: tanggal_selesai
+          in: query
+          description: Filter to date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2024-01-31"
+      responses:
+        '200':
+          description: Patrols retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        example: 1
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Patroli'
+                      per_page:
+                        type: integer
+                        example: 20
+                      total:
+                        type: integer
+                        example: 100
+
+    post:
+      tags:
+        - Patroli
+      summary: Start new patrol
+      description: Start a new patrol session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatroliInput'
+      responses:
+        '201':
+          description: Patrol started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Patroli berhasil dimulai
+                  data:
+                    $ref: '#/components/schemas/Patroli'
+
+  /patrolis/{id}:
+    get:
+      tags:
+        - Patroli
+      summary: Get patrol by ID
+      description: Get specific patrol details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Patrol hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Patrol retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Patroli'
+
+    put:
+      tags:
+        - Patroli
+      summary: Update patrol
+      description: Update patrol information or end patrol
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Patrol hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [aktif, selesai, dibatalkan]
+                  example: selesai
+                catatan_selesai:
+                  type: string
+                  example: Patroli selesai tanpa insiden
+                waktu_selesai:
+                  type: string
+                  format: date-time
+                  example: "2024-01-17T18:00:00Z"
+      responses:
+        '200':
+          description: Patrol updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Patroli berhasil diupdate
+                  data:
+                    $ref: '#/components/schemas/Patroli'
+
+    delete:
+      tags:
+        - Patroli
+      summary: Cancel patrol
+      description: Cancel active patrol
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Patrol hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Patrol cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Patroli berhasil dibatalkan
+
+  /patrolis/{id}/scan:
+    post:
+      tags:
+        - Patroli
+      summary: Scan checkpoint during patrol
+      description: Record checkpoint scan during active patrol
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Patrol hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - checkpoint_id
+                - latitude
+                - longitude
+              properties:
+                checkpoint_id:
+                  type: integer
+                  example: 1
+                latitude:
+                  type: number
+                  format: float
+                  example: -6.2088
+                longitude:
+                  type: number
+                  format: float
+                  example: 106.8456
+                foto:
+                  type: string
+                  format: binary
+                  description: Photo taken at checkpoint
+                catatan:
+                  type: string
+                  example: Kondisi normal, tidak ada masalah
+                insiden:
+                  type: boolean
+                  example: false
+                deskripsi_insiden:
+                  type: string
+                  example: Ditemukan pintu terbuka
+      responses:
+        '200':
+          description: Checkpoint scanned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Checkpoint berhasil discan
+                  data:
+                    $ref: '#/components/schemas/PatroliDetail'
+
+  /patrolis/{id}/gps-locations:
+    get:
+      tags:
+        - Patroli
+      summary: Get patrol GPS locations
+      description: Get GPS tracking data for a patrol
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Patrol hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: GPS locations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GpsLocation'
+
+  /scan-qr:
+    post:
+      tags:
+        - Patroli
+      summary: Scan QR code
+      description: Scan QR code to identify checkpoint or asset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - qr_code
+              properties:
+                qr_code:
+                  type: string
+                  example: "checkpoint_abc123"
+                latitude:
+                  type: number
+                  format: float
+                  example: -6.2088
+                longitude:
+                  type: number
+                  format: float
+                  example: 106.8456
+      responses:
+        '200':
+          description: QR code scanned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum: [checkpoint, aset]
+                        example: checkpoint
+                      checkpoint:
+                        $ref: '#/components/schemas/Checkpoint'
+                      aset:
+                        $ref: '#/components/schemas/AsetCheckpoint'
+
+  # Project Contacts Endpoints
+  /projects/{project_id}/contacts:
+    get:
+      tags:
+        - Project Contacts
+      summary: Get project contacts
+      description: Get all contacts for a specific project
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Project hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+        - name: jenis
+          in: query
+          description: Filter by contact type
+          schema:
+            type: string
+            enum: [emergency, security, management, vendor]
+            example: emergency
+      responses:
+        '200':
+          description: Project contacts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProjectContact'
+
+    post:
+      tags:
+        - Project Contacts
+      summary: Create project contact
+      description: Create a new contact for a project (admin only)
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Project hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectContactInput'
+      responses:
+        '201':
+          description: Project contact created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Kontak berhasil ditambahkan
+                  data:
+                    $ref: '#/components/schemas/ProjectContact'
+
+  /projects/{project_id}/contacts/emergency:
+    get:
+      tags:
+        - Project Contacts
+      summary: Get emergency contacts
+      description: Get emergency contacts for a specific project
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Project hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Emergency contacts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProjectContact'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - Invalid or missing token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: Unauthenticated
+
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: Akses ditolak
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: Data tidak ditemukan
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: Validation failed
+              errors:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john@nicepatrol.id
+        role:
+          type: string
+          enum: [superadmin, admin_perusahaan, security_officer, office_employee]
+          example: security_officer
+        role_display:
+          type: string
+          example: Security Officer
+        perusahaan_id:
+          type: integer
+          example: 1
+        foto:
+          type: string
+          nullable: true
+          example: https://api.nicepatrol.id/storage/karyawan/foto/user1.jpg
+        jabatan_name:
+          type: string
+          nullable: true
+          example: Security Guard
+        perusahaan:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 1
+            nama:
+              type: string
+              example: PT. Nice Patrol Indonesia
+
+    ShiftSchedule:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        tanggal:
+          type: string
+          format: date
+          example: "2024-01-17"
+        shift:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            nama:
+              type: string
+              example: Shift Pagi
+            jam_masuk:
+              type: string
+              format: time
+              example: "08:00:00"
+            jam_keluar:
+              type: string
+              format: time
+              example: "16:00:00"
+
+    AbsensiSummary:
+      type: object
+      properties:
+        total_hari_kerja:
+          type: integer
+          example: 22
+        total_hadir:
+          type: integer
+          example: 20
+        total_terlambat:
+          type: integer
+          example: 2
+        total_alpha:
+          type: integer
+          example: 0
+        persentase_kehadiran:
+          type: number
+          format: float
+          example: 90.91
+
+    AbsensiSchedule:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        tanggal:
+          type: string
+          format: date
+          example: "2024-01-17"
+        shift:
+          $ref: '#/components/schemas/ShiftSchedule'
+        status:
+          type: string
+          enum: [scheduled, hadir, terlambat, alpha, izin, sakit]
+          example: scheduled
+
+    LokasiAbsensi:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nama:
+          type: string
+          example: Kantor Pusat Jakarta
+        alamat:
+          type: string
+          example: Jl. Sudirman No. 123, Jakarta
+        latitude:
+          type: number
+          format: float
+          example: -6.2088
+        longitude:
+          type: number
+          format: float
+          example: 106.8456
+        radius:
+          type: integer
+          example: 100
+        is_active:
+          type: boolean
+          example: true
+
+    AbsensiStatus:
+      type: object
+      properties:
+        has_checked_in:
+          type: boolean
+          example: true
+        has_checked_out:
+          type: boolean
+          example: false
+        is_on_break:
+          type: boolean
+          example: false
+        check_in_time:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-01-17T08:00:00Z"
+        check_out_time:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        break_start_time:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        break_end_time:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+
+    Absensi:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        tanggal:
+          type: string
+          format: date
+          example: "2024-01-17"
+        jam_masuk:
+          type: string
+          format: time
+          nullable: true
+          example: "08:00:00"
+        jam_keluar:
+          type: string
+          format: time
+          nullable: true
+          example: "16:00:00"
+        jam_istirahat_mulai:
+          type: string
+          format: time
+          nullable: true
+          example: "12:00:00"
+        jam_istirahat_selesai:
+          type: string
+          format: time
+          nullable: true
+          example: "13:00:00"
+        status:
+          type: string
+          enum: [hadir, terlambat, alpha, izin, sakit]
+          example: hadir
+        lokasi_masuk:
+          type: string
+          nullable: true
+          example: "Kantor Pusat Jakarta"
+        lokasi_keluar:
+          type: string
+          nullable: true
+          example: "Kantor Pusat Jakarta"
+        foto_masuk:
+          type: string
+          nullable: true
+          example: https://api.nicepatrol.id/storage/absensi/foto/checkin_1.jpg
+        foto_keluar:
+          type: string
+          nullable: true
+          example: https://api.nicepatrol.id/storage/absensi/foto/checkout_1.jpg
+        catatan_masuk:
+          type: string
+          nullable: true
+          example: Masuk tepat waktu
+        catatan_keluar:
+          type: string
+          nullable: true
+          example: Selesai kerja
+
+    Lokasi:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        hash_id:
+          type: string
+          example: "abc123def456"
+        nama:
+          type: string
+          example: Gedung Perkantoran ABC
+        alamat:
+          type: string
+          example: Jl. Sudirman No. 123, Jakarta
+        latitude:
+          type: number
+          format: float
+          example: -6.2088
+        longitude:
+          type: number
+          format: float
+          example: 106.8456
+        deskripsi:
+          type: string
+          nullable: true
+          example: Gedung perkantoran 20 lantai
+        is_active:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-17T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-17T10:00:00Z"
+
+    LokasiInput:
+      type: object
+      required:
+        - nama
+        - alamat
+        - latitude
+        - longitude
+      properties:
+        nama:
+          type: string
+          example: Gedung Perkantoran ABC
+        alamat:
+          type: string
+          example: Jl. Sudirman No. 123, Jakarta
+        latitude:
+          type: number
+          format: float
+          example: -6.2088
+        longitude:
+          type: number
+          format: float
+          example: 106.8456
+        deskripsi:
+          type: string
+          nullable: true
+          example: Gedung perkantoran 20 lantai
+        is_active:
+          type: boolean
+          example: true
+
+    Checkpoint:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        hash_id:
+          type: string
+          example: "abc123def456"
+        nama:
+          type: string
+          example: Checkpoint Lobby Utama
+        kode:
+          type: string
+          example: CP001
+        lokasi_id:
+          type: integer
+          example: 1
+        latitude:
+          type: number
+          format: float
+          example: -6.2088
+        longitude:
+          type: number
+          format: float
+          example: 106.8456
+        deskripsi:
+          type: string
+          nullable: true
+          example: Checkpoint di lobby utama gedung
+        qr_code:
+          type: string
+          example: checkpoint_abc123def456
+        is_active:
+          type: boolean
+          example: true
+        lokasi:
+          $ref: '#/components/schemas/Lokasi'
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-17T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-17T10:00:00Z"
+
+    CheckpointInput:
+      type: object
+      required:
+        - nama
+        - kode
+        - lokasi_id
+        - latitude
+        - longitude
+      properties:
+        nama:
+          type: string
+          example: Checkpoint Lobby Utama
+        kode:
+          type: string
+          example: CP001
+        lokasi_id:
+          type: integer
+          example: 1
+        latitude:
+          type: number
+          format: float
+          example: -6.2088
+        longitude:
+          type: number
+          format: float
+          example: 106.8456
+        deskripsi:
+          type: string
+          nullable: true
+          example: Checkpoint di lobby utama gedung
+        is_active:
+          type: boolean
+          example: true
+
+    AsetCheckpoint:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nama:
+          type: string
+          example: CCTV Camera 01
+        kode:
+          type: string
+          example: CCTV001
+        jenis:
+          type: string
+          example: CCTV
+        deskripsi:
+          type: string
+          nullable: true
+          example: CCTV untuk monitoring lobby
+        status:
+          type: string
+          enum: [baik, rusak, hilang]
+          example: baik
+        qr_code:
+          type: string
+          example: aset_abc123def456
+
+    Patroli:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        hash_id:
+          type: string
+          example: "abc123def456"
+        lokasi_id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        tanggal_patroli:
+          type: string
+          format: date
+          example: "2024-01-17"
+        waktu_mulai:
+          type: string
+          format: date-time
+          example: "2024-01-17T08:00:00Z"
+        waktu_selesai:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-01-17T16:00:00Z"
+        status:
+          type: string
+          enum: [aktif, selesai, dibatalkan]
+          example: aktif
+        catatan_mulai:
+          type: string
+          nullable: true
+          example: Memulai patroli rutin
+        catatan_selesai:
+          type: string
+          nullable: true
+          example: Patroli selesai tanpa insiden
+        total_checkpoint:
+          type: integer
+          example: 5
+        checkpoint_selesai:
+          type: integer
+          example: 3
+        lokasi:
+          $ref: '#/components/schemas/Lokasi'
+        user:
+          $ref: '#/components/schemas/User'
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatroliDetail'
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-17T08:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-17T16:00:00Z"
+
+    PatroliInput:
+      type: object
+      required:
+        - lokasi_id
+        - tanggal_patroli
+      properties:
+        lokasi_id:
+          type: integer
+          example: 1
+        tanggal_patroli:
+          type: string
+          format: date
+          example: "2024-01-17"
+        catatan_mulai:
+          type: string
+          nullable: true
+          example: Memulai patroli rutin
+
+    PatroliDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        patroli_id:
+          type: integer
+          example: 1
+        checkpoint_id:
+          type: integer
+          example: 1
+        waktu_scan:
+          type: string
+          format: date-time
+          example: "2024-01-17T08:30:00Z"
+        latitude:
+          type: number
+          format: float
+          example: -6.2088
+        longitude:
+          type: number
+          format: float
+          example: 106.8456
+        foto:
+          type: string
+          nullable: true
+          example: https://api.nicepatrol.id/storage/patroli/foto/scan_1.jpg
+        catatan:
+          type: string
+          nullable: true
+          example: Kondisi normal
+        insiden:
+          type: boolean
+          example: false
+        deskripsi_insiden:
+          type: string
+          nullable: true
+          example: null
+        checkpoint:
+          $ref: '#/components/schemas/Checkpoint'
+
+    GpsLocation:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        patroli_id:
+          type: integer
+          example: 1
+        latitude:
+          type: number
+          format: float
+          example: -6.2088
+        longitude:
+          type: number
+          format: float
+          example: 106.8456
+        accuracy:
+          type: number
+          format: float
+          nullable: true
+          example: 5.0
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-17T08:15:00Z"
+
+    ProjectContact:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        hash_id:
+          type: string
+          example: "abc123def456"
+        project_id:
+          type: integer
+          example: 1
+        nama:
+          type: string
+          example: John Doe
+        jabatan:
+          type: string
+          example: Security Manager
+        jenis:
+          type: string
+          enum: [emergency, security, management, vendor]
+          example: emergency
+        telepon:
+          type: string
+          example: "+62812345678"
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: john@company.com
+        alamat:
+          type: string
+          nullable: true
+          example: Jl. Sudirman No. 123, Jakarta
+        catatan:
+          type: string
+          nullable: true
+          example: Kontak darurat 24 jam
+        is_active:
+          type: boolean
+          example: true
+
+    ProjectContactInput:
+      type: object
+      required:
+        - nama
+        - jabatan
+        - jenis
+        - telepon
+      properties:
+        nama:
+          type: string
+          example: John Doe
+        jabatan:
+          type: string
+          example: Security Manager
+        jenis:
+          type: string
+          enum: [emergency, security, management, vendor]
+          example: emergency
+        telepon:
+          type: string
+          example: "+62812345678"
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: john@company.com
+        alamat:
+          type: string
+          nullable: true
+          example: Jl. Sudirman No. 123, Jakarta
+        catatan:
+          type: string
+          nullable: true
+          example: Kontak darurat 24 jam
+        is_active:
+          type: boolean
+          example: true
+
+tags:
+  - name: Authentication
+    description: User authentication and profile management
+  - name: Shift Schedule
+    description: Employee shift schedule management
+  - name: Absensi
+    description: Employee attendance management
+  - name: Lokasi
+    description: Location management
+  - name: Checkpoint
+    description: Security checkpoint management
+  - name: Patroli
+    description: Security patrol management
+  - name: Project Contacts
+    description: Project contact management

@@ -74,7 +74,7 @@
                 type="text" 
                 name="search" 
                 value="{{ request('search') }}"
-                placeholder="Cari nama tamu, perusahaan, keperluan, atau QR code..."
+                placeholder="Cari nama, NIK, email, WhatsApp, perusahaan, jabatan, keperluan, atau QR code..."
                 class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-sm"
                 style="focus:ring-color: #3B82C8;"
             >
@@ -226,6 +226,12 @@
                     <td class="px-6 py-4">
                         <div>
                             <p class="text-sm font-semibold text-gray-900">{{ $tamu->nama_tamu }}</p>
+                            @if($tamu->nik)
+                                <p class="text-xs text-gray-500">NIK: {{ $tamu->nik }}</p>
+                            @endif
+                            @if($tamu->email)
+                                <p class="text-xs text-gray-500">{{ $tamu->email }}</p>
+                            @endif
                             <p class="text-xs text-gray-500">Input oleh: {{ $tamu->inputBy->name }}</p>
                         </div>
                     </td>
@@ -236,10 +242,20 @@
                         <p class="text-sm text-gray-600">{{ $tamu->area ? $tamu->area->nama : '-' }}</p>
                     </td>
                     <td class="px-6 py-4">
-                        <p class="text-sm text-gray-600">{{ $tamu->perusahaan_tamu ?: '-' }}</p>
+                        <div>
+                            <p class="text-sm text-gray-600">{{ $tamu->perusahaan_tamu ?: '-' }}</p>
+                            @if($tamu->jabatan)
+                                <p class="text-xs text-gray-500">{{ $tamu->jabatan }}</p>
+                            @endif
+                        </div>
                     </td>
                     <td class="px-6 py-4">
-                        <p class="text-sm text-gray-600">{{ Str::limit($tamu->keperluan, 30) }}</p>
+                        <div>
+                            <p class="text-sm text-gray-600">{{ Str::limit($tamu->keperluan, 30) }}</p>
+                            @if($tamu->lokasi_dituju)
+                                <p class="text-xs text-gray-500">Ke: {{ Str::limit($tamu->lokasi_dituju, 25) }}</p>
+                            @endif
+                        </div>
                     </td>
                     <td class="px-6 py-4">
                         <p class="text-sm text-gray-600">{{ $tamu->bertemu ?: '-' }}</p>

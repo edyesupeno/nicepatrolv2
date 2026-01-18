@@ -75,6 +75,12 @@ Route::middleware('auth')->group(function () {
         Route::post('buku-tamu/{bukuTamu}/check-out', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'checkOut'])->name('buku-tamu.check-out');
         Route::get('buku-tamu-qr/{bukuTamu}', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'generateQrCode'])->name('buku-tamu.qr-code');
         Route::post('buku-tamu-scan', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getByQrCode'])->name('buku-tamu.scan');
+        Route::get('buku-tamu-kuesioner', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getKuesionerByArea'])->name('buku-tamu.kuesioner');
+
+        // Penerimaan Barang Routes
+        Route::resource('penerimaan-barang', \App\Http\Controllers\Perusahaan\PenerimaanBarangController::class);
+        Route::get('penerimaan-barang-areas/{project}', [\App\Http\Controllers\Perusahaan\PenerimaanBarangController::class, 'getAreasByProject'])->name('penerimaan-barang.areas-by-project');
+        Route::get('penerimaan-barang-search-pos', [\App\Http\Controllers\Perusahaan\PenerimaanBarangController::class, 'searchPos'])->name('penerimaan-barang.search-pos');
 
         // Tugas Routes
         Route::resource('tugas', \App\Http\Controllers\Perusahaan\TugasController::class);
@@ -271,6 +277,20 @@ Route::middleware('auth')->group(function () {
             Route::delete('pemeriksaan-patroli/{pemeriksaanPatroli}/pertanyaan/{pertanyaan}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'destroyPertanyaanPemeriksaan'])->name('pemeriksaan-patroli.pertanyaan.destroy');
             Route::post('pemeriksaan-patroli/{pemeriksaanPatroli}/urutan', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updateUrutanPertanyaanPemeriksaan'])->name('pemeriksaan-patroli.urutan');
             Route::get('pemeriksaan-patroli/{pemeriksaanPatroli}/preview', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'previewPemeriksaan'])->name('pemeriksaan-patroli.preview');
+            
+            // Pertanyaan Tamu Routes
+            Route::get('pertanyaan-tamu', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'pertanyaanTamu'])->name('pertanyaan-tamu');
+            Route::post('pertanyaan-tamu', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'storePertanyaanTamu'])->name('pertanyaan-tamu.store');
+            Route::get('pertanyaan-tamu/{kuesionerTamu}/edit', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'editPertanyaanTamu'])->name('pertanyaan-tamu.edit');
+            Route::put('pertanyaan-tamu/{kuesionerTamu}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updatePertanyaanTamu'])->name('pertanyaan-tamu.update');
+            Route::delete('pertanyaan-tamu/{kuesionerTamu}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'destroyPertanyaanTamu'])->name('pertanyaan-tamu.destroy');
+            Route::get('pertanyaan-tamu/{kuesionerTamu}/kelola', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'kelolaPertanyaanTamu'])->name('pertanyaan-tamu.kelola');
+            Route::post('pertanyaan-tamu/{kuesionerTamu}/pertanyaan', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'storePertanyaanDetailTamu'])->name('pertanyaan-tamu.pertanyaan.store');
+            Route::put('pertanyaan-tamu/{kuesionerTamu}/pertanyaan/{pertanyaan}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updatePertanyaanDetailTamu'])->name('pertanyaan-tamu.pertanyaan.update');
+            Route::delete('pertanyaan-tamu/{kuesionerTamu}/pertanyaan/{pertanyaan}', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'destroyPertanyaanDetailTamu'])->name('pertanyaan-tamu.pertanyaan.destroy');
+            Route::post('pertanyaan-tamu/{kuesionerTamu}/urutan', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'updateUrutanPertanyaanTamu'])->name('pertanyaan-tamu.urutan');
+            Route::get('pertanyaan-tamu/{kuesionerTamu}/preview', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'previewKuesionerTamu'])->name('pertanyaan-tamu.preview');
+            Route::get('get-areas-by-project', [\App\Http\Controllers\Perusahaan\PatrolController::class, 'getAreasByProject'])->name('get-areas-by-project');
         });
         
         // Tim Patroli Routes
@@ -434,3 +454,18 @@ Route::prefix('employee')->group(function () {
 Route::get('/profile', function() {
     return view('mobile.security.profile');
 });
+
+// API Documentation Routes
+Route::get('/api-docs', function() {
+    return response()->file(public_path('api-docs.html'));
+})->name('api.docs');
+
+Route::get('/docs/api/swagger.yaml', function() {
+    $yamlPath = base_path('docs/api/swagger.yaml');
+    if (file_exists($yamlPath)) {
+        return response()->file($yamlPath, [
+            'Content-Type' => 'application/x-yaml'
+        ]);
+    }
+    return abort(404);
+})->name('api.swagger.yaml');

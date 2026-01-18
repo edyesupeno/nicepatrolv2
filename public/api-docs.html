@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nice Patrol API Documentation</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css" />
+    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.10.5/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.10.5/favicon-16x16.png" sizes="16x16" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+
+        body {
+            margin: 0;
+            background: #fafafa;
+        }
+
+        .swagger-ui .topbar {
+            background-color: #3B82C8;
+        }
+
+        .swagger-ui .topbar .download-url-wrapper .select-label {
+            color: #fff;
+        }
+
+        .swagger-ui .topbar .download-url-wrapper input[type=text] {
+            border: 2px solid #fff;
+        }
+
+        .swagger-ui .info .title {
+            color: #3B82C8;
+        }
+
+        .custom-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 0;
+        }
+
+        .custom-header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .custom-header p {
+            margin: 10px 0 0 0;
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .environment-selector {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            text-align: center;
+        }
+
+        .environment-selector select {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            margin-left: 10px;
+        }
+
+        .auth-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px;
+            color: #1565c0;
+        }
+
+        .auth-info h3 {
+            margin-top: 0;
+            color: #0d47a1;
+        }
+
+        .auth-info code {
+            background: #bbdefb;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="custom-header">
+        <h1>Nice Patrol API</h1>
+        <p>Security Management Platform API Documentation</p>
+    </div>
+
+    <div class="environment-selector">
+        <label for="environment">Environment:</label>
+        <select id="environment" onchange="changeEnvironment()">
+            <option value="local">Local Development (localhost:8000)</option>
+            <option value="dev">Development (devapi.nicepatrol.id)</option>
+            <option value="prod">Production (api.nicepatrol.id)</option>
+        </select>
+    </div>
+
+    <div class="auth-info">
+        <h3>🔐 Authentication Required</h3>
+        <p>Most endpoints require authentication. To test the API:</p>
+        <ol>
+            <li>First, call the <strong>POST /login</strong> endpoint with valid credentials</li>
+            <li>Copy the <code>token</code> from the response</li>
+            <li>Click the <strong>"Authorize"</strong> button above</li>
+            <li>Enter: <code>Bearer {your_token}</code></li>
+            <li>Click <strong>"Authorize"</strong> and then <strong>"Close"</strong></li>
+        </ol>
+        <p><strong>Test Credentials:</strong></p>
+        <ul>
+            <li><strong>Security Officer:</strong> security@nicepatrol.id / password123</li>
+            <li><strong>Admin:</strong> admin@nicepatrol.id / password123</li>
+        </ul>
+    </div>
+
+    <div id="swagger-ui"></div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js"></script>
+    <script>
+        const environments = {
+            local: 'http://localhost:8000/api/v1',
+            dev: 'https://devapi.nicepatrol.id/v1',
+            prod: 'https://api.nicepatrol.id/v1'
+        };
+
+        let currentSpec = null;
+
+        function getCurrentEnvironment() {
+            const hostname = window.location.hostname;
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return 'local';
+            } else if (hostname.includes('dev')) {
+                return 'dev';
+            } else {
+                return 'prod';
+            }
+        }
+
+        function loadSwaggerSpec() {
+            // Try to load from the same domain first
+            const specUrl = window.location.origin + '/docs/api/swagger.yaml';
+            
+            fetch(specUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Swagger spec not found on server');
+                    }
+                    return response.text();
+                })
+                .then(yamlText => {
+                    // Parse YAML and update servers
+                    currentSpec = jsyaml.load(yamlText);
+                    updateSpecServers();
+                    initSwaggerUI();
+                })
+                .catch(error => {
+                    console.warn('Could not load swagger spec from server, using embedded spec');
+                    // Fallback to embedded spec
+                    loadEmbeddedSpec();
+                });
+        }
+
+        function loadEmbeddedSpec() {
+            // Embedded spec as fallback
+            currentSpec = {
+                openapi: "3.0.3",
+                info: {
+                    title: "Nice Patrol API",
+                    description: "API documentation for Nice Patrol System - Security Management Platform",
+                    version: "1.0.0"
+                },
+                servers: [
+                    { url: "http://localhost:8000/api/v1", description: "Local development" },
+                    { url: "https://devapi.nicepatrol.id/v1", description: "Development" },
+                    { url: "https://api.nicepatrol.id/v1", description: "Production" }
+                ],
+                paths: {
+                    "/login": {
+                        post: {
+                            tags: ["Authentication"],
+                            summary: "User login",
+                            description: "Authenticate user and get access token",
+                            security: [],
+                            requestBody: {
+                                required: true,
+                                content: {
+                                    "application/json": {
+                                        schema: {
+                                            type: "object",
+                                            required: ["email", "password"],
+                                            properties: {
+                                                email: { type: "string", format: "email", example: "security@nicepatrol.id" },
+                                                password: { type: "string", format: "password", example: "password123" }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            responses: {
+                                "200": {
+                                    description: "Login successful",
+                                    content: {
+                                        "application/json": {
+                                            schema: {
+                                                type: "object",
+                                                properties: {
+                                                    success: { type: "boolean", example: true },
+                                                    message: { type: "string", example: "Login berhasil" },
+                                                    data: {
+                                                        type: "object",
+                                                        properties: {
+                                                            user: { type: "object" },
+                                                            token: { type: "string", example: "1|abc123def456..." }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                components: {
+                    securitySchemes: {
+                        BearerAuth: {
+                            type: "http",
+                            scheme: "bearer",
+                            bearerFormat: "JWT"
+                        }
+                    }
+                }
+            };
+            updateSpecServers();
+            initSwaggerUI();
+        }
+
+        function updateSpecServers() {
+            const env = document.getElementById('environment').value;
+            const baseUrl = environments[env];
+            
+            // Update the servers in the spec
+            currentSpec.servers = [
+                { url: baseUrl, description: `Current environment (${env})` }
+            ];
+        }
+
+        function changeEnvironment() {
+            updateSpecServers();
+            initSwaggerUI();
+        }
+
+        function initSwaggerUI() {
+            window.ui = SwaggerUIBundle({
+                spec: currentSpec,
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                tryItOutEnabled: true,
+                requestInterceptor: (request) => {
+                    // Add custom headers if needed
+                    request.headers['Accept'] = 'application/json';
+                    return request;
+                },
+                responseInterceptor: (response) => {
+                    // Handle responses if needed
+                    return response;
+                }
+            });
+        }
+
+        // Set initial environment based on current hostname
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentEnv = getCurrentEnvironment();
+            document.getElementById('environment').value = currentEnv;
+            
+            // Load js-yaml for parsing YAML
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/js-yaml@4.1.0/dist/js-yaml.min.js';
+            script.onload = loadSwaggerSpec;
+            document.head.appendChild(script);
+        });
+    </script>
+</body>
+</html>

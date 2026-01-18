@@ -15,11 +15,22 @@ class BukuTamu extends Model
         'perusahaan_id',
         'project_id',
         'area_id',
+        'area_patrol_id',
         'input_by',
         'nama_tamu',
+        'nik',
+        'tanggal_lahir',
+        'domisili',
         'perusahaan_tamu',
+        'jabatan',
+        'email',
+        'no_whatsapp',
         'keperluan',
         'bertemu',
+        'lokasi_dituju',
+        'mulai_kunjungan',
+        'selesai_kunjungan',
+        'lama_kunjungan',
         'foto',
         'foto_identitas',
         'kontak_darurat_nama',
@@ -32,12 +43,19 @@ class BukuTamu extends Model
         'no_kartu_pinjam',
         'catatan',
         'keterangan_tambahan',
+        'pertanyaan_1',
+        'pertanyaan_2',
+        'pertanyaan_3',
         'is_active',
     ];
 
     protected $casts = [
         'check_in' => 'datetime',
         'check_out' => 'datetime',
+        'mulai_kunjungan' => 'datetime',
+        'selesai_kunjungan' => 'datetime',
+        'tanggal_lahir' => 'date',
+        'pertanyaan_2' => 'array',
         'is_active' => 'boolean',
     ];
 
@@ -77,9 +95,19 @@ class BukuTamu extends Model
         return $this->belongsTo(Area::class);
     }
 
+    public function areaPatrol(): BelongsTo
+    {
+        return $this->belongsTo(AreaPatrol::class);
+    }
+
     public function inputBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'input_by');
+    }
+
+    public function jawabanKuesioner()
+    {
+        return $this->hasMany(JawabanKuesionerTamu::class);
     }
 
     /**
