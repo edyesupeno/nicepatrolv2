@@ -35,6 +35,11 @@ class KaryawanImport implements ToCollection, WithHeadingRow
             $rowNumber = $index + 2; // +2 karena header di row 1, data mulai row 2
             
             try {
+                // Handle backward compatibility for "No Badge" vs "NIK Karyawan"
+                if (isset($row['no_badge']) && !isset($row['nik_karyawan'])) {
+                    $row['nik_karyawan'] = $row['no_badge'];
+                }
+                
                 // Skip empty rows
                 if (empty($row['nik_karyawan']) && empty($row['nama_lengkap'])) {
                     continue;
@@ -60,7 +65,7 @@ class KaryawanImport implements ToCollection, WithHeadingRow
                     'habis_kontrak' => 'nullable|date',
                     'gaji_pokok' => 'nullable|numeric|min:0',
                 ], [
-                    'nik_karyawan.required' => 'NIK Karyawan wajib diisi',
+                    'nik_karyawan.required' => 'No Badge wajib diisi',
                     'nama_lengkap.required' => 'Nama Lengkap wajib diisi',
                     'email.required' => 'Email wajib diisi',
                     'email.email' => 'Format email tidak valid',
@@ -87,13 +92,13 @@ class KaryawanImport implements ToCollection, WithHeadingRow
                     continue;
                 }
                 
-                // Check if NIK already exists
+                // Check if No Badge already exists
                 $existingKaryawan = Karyawan::where('nik_karyawan', $row['nik_karyawan'])
                     ->where('perusahaan_id', $this->perusahaanId)
                     ->first();
                 
                 if ($existingKaryawan) {
-                    $this->errors[] = "Baris {$rowNumber}: NIK {$row['nik_karyawan']} sudah ada";
+                    $this->errors[] = "Baris {$rowNumber}: No Badge {$row['nik_karyawan']} sudah ada";
                     $this->skippedCount++;
                     continue;
                 }
@@ -171,7 +176,7 @@ class KaryawanImport implements ToCollection, WithHeadingRow
                 ]);
                 
                 // Create Karyawan
-                Karyawan::create([
+                $karyawan = Karyawan::create([
                     'user_id' => $user->id,
                     'perusahaan_id' => $this->perusahaanId,
                     'project_id' => $project->id,
@@ -190,13 +195,16 @@ class KaryawanImport implements ToCollection, WithHeadingRow
                     'habis_kontrak' => $habisKontrak,
                     'is_active' => $row['status'] === 'Aktif',
                     // Required fields with default values
-                    'nik_ktp' => $row['nik_karyawan'], // Use NIK Karyawan as NIK KTP if not provided
+                    'nik_ktp' => $row['nik_karyawan'], // Use No Badge as NIK KTP if not provided
                     'telepon' => $row['no_telepon'] ?? '0000000000',
                     'alamat' => 'Belum diisi',
                     'kota' => 'Belum diisi',
                     'provinsi' => 'Belum diisi',
                     'gaji_pokok' => $row['gaji_pokok'] ?? 0,
                 ]);
+                
+                // AUTO-ADD AREA: Assign semua area di project ke karyawan
+                $this->autoAssignAreas($karyawan, $project);
                 
                 $this->successCount++;
                 
@@ -220,5 +228,26 @@ class KaryawanImport implements ToCollection, WithHeadingRow
     public function getSkippedCount()
     {
         return $this->skippedCount;
+    }
+    
+    private function autoAssignAreas($karyawan, $project)
+    {
+        // Get all areas in the project
+        $areas = \App\Models\Area::where('project_id', $project->id)
+            ->where('perusahaan_id', $this->perusahaanId)
+            ->get();
+
+        if ($areas->count() > 0) {
+            foreach ($areas as $index => $area) {
+                // Insert ke karyawan_areas
+                \Illuminate\Support\Facades\DB::table('karyawan_areas')->insertOrIgnore([
+                    'karyawan_id' => $karyawan->id,
+                    'area_id' => $area->id,
+                    'is_primary' => $index === 0, // First area is primary
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
     }
 }

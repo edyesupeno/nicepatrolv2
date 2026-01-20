@@ -159,6 +159,7 @@ Route::middleware('auth')->group(function () {
         
         Route::get('karyawans/download-template', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'downloadTemplate'])->name('karyawans.download-template');
         Route::post('karyawans/import-excel', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'importExcel'])->name('karyawans.import-excel');
+        Route::get('karyawans/import-progress', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'importProgress'])->name('karyawans.import-progress');
         Route::resource('karyawans', \App\Http\Controllers\Perusahaan\KaryawanController::class);
         Route::post('karyawans/{karyawan}/upload-foto', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'uploadFoto'])->name('karyawans.upload-foto');
         Route::put('karyawans/{karyawan}/update-nama', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'updateNama'])->name('karyawans.update-nama');

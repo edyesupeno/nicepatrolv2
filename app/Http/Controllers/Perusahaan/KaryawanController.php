@@ -825,56 +825,80 @@ class KaryawanController extends Controller
         $request->validate([
             'project_id' => 'required|exists:projects,id',
             'role' => 'required|in:security_officer,office_employee,manager_project,admin_project,admin_branch,finance_branch,admin_hsse',
-            'file' => 'required|mimes:xlsx,xls|max:2048',
+            'file' => 'required|mimes:xlsx,xls|max:10240', // Increased to 10MB for larger files
         ], [
             'project_id.required' => 'Project wajib dipilih',
             'role.required' => 'Role wajib dipilih',
             'role.in' => 'Role tidak valid',
             'file.required' => 'File Excel wajib diupload',
             'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
-            'file.max' => 'Ukuran file maksimal 2MB',
+            'file.max' => 'Ukuran file maksimal 10MB',
         ]);
         
         $perusahaanId = auth()->user()->perusahaan_id;
         $projectId = $request->project_id;
         $role = $request->role;
+        $userId = auth()->id();
         
         try {
-            $import = new \App\Imports\KaryawanImport($perusahaanId, $projectId, $role);
+            // Store uploaded file temporarily
+            $file = $request->file('file');
+            $fileName = 'import_karyawan_' . $userId . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $filePath = storage_path('app/temp/' . $fileName);
             
-            \Maatwebsite\Excel\Facades\Excel::import($import, $request->file('file'));
-            
-            $errors = $import->getErrors();
-            $successCount = $import->getSuccessCount();
-            $skippedCount = $import->getSkippedCount();
-            
-            // Jika tidak ada yang berhasil dan ada error, tampilkan error
-            if ($successCount === 0 && count($errors) > 0) {
-                $errorMessage = "Import gagal. Error: " . implode('; ', array_slice($errors, 0, 3));
-                if (count($errors) > 3) {
-                    $errorMessage .= " ... dan " . (count($errors) - 3) . " error lainnya";
-                }
-                return back()->with('error', $errorMessage);
+            // Create temp directory if not exists
+            if (!file_exists(storage_path('app/temp'))) {
+                mkdir(storage_path('app/temp'), 0755, true);
             }
             
-            // Jika ada yang berhasil, tampilkan pesan sukses ringkas
-            $message = "Import berhasil: {$successCount} karyawan berhasil ditambahkan";
+            $file->move(storage_path('app/temp'), $fileName);
             
-            if ($skippedCount > 0) {
-                $message .= ", {$skippedCount} data di-skip";
-            }
+            // Generate job ID
+            $jobId = uniqid('import_karyawan_');
             
-            // Jika ada error tapi juga ada yang berhasil, tampilkan warning ringkas
-            if (count($errors) > 0) {
-                // Hanya tampilkan jumlah error, tidak detail
-                return back()->with('warning', $message . ". {$skippedCount} data gagal diimport (duplikat atau data tidak valid)");
-            }
+            // Dispatch background job
+            $job = new \App\Jobs\ImportKaryawanJob($filePath, $perusahaanId, $projectId, $role, $userId, $jobId);
+            dispatch($job);
             
-            return back()->with('success', $message);
+            return response()->json([
+                'success' => true,
+                'message' => 'Import dimulai di background. Silakan pantau progress.',
+                'job_id' => $jobId,
+            ]);
             
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal import: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memulai import: ' . $e->getMessage(),
+            ], 500);
         }
+    }
+    
+    public function importProgress(Request $request)
+    {
+        $userId = auth()->id();
+        $jobId = $request->get('job_id');
+        
+        if (!$jobId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Job ID tidak ditemukan',
+            ], 400);
+        }
+        
+        $progress = \Illuminate\Support\Facades\Cache::get("import_progress_{$userId}_{$jobId}");
+        
+        if (!$progress) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Progress tidak ditemukan',
+            ], 404);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => $progress,
+        ]);
     }
 }
 

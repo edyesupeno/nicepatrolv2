@@ -622,7 +622,7 @@
                             </div>
                             <p class="text-sm font-semibold text-gray-700 mb-1">Klik untuk upload file</p>
                             <p class="text-xs text-gray-500">atau drag and drop file Excel di sini</p>
-                            <p class="text-xs text-gray-400 mt-2">Format: .xlsx atau .xls (Max: 2MB)</p>
+                            <p class="text-xs text-gray-400 mt-2">Format: .xlsx atau .xls (Max: 10MB)</p>
                         </label>
                     </div>
                     <p id="fileName" class="mt-2 text-sm text-gray-600 hidden"></p>
@@ -636,10 +636,11 @@
                             <p class="font-semibold mb-2">Penting:</p>
                             <ul class="list-disc list-inside space-y-1 text-xs">
                                 <li>Pastikan format file sesuai dengan template</li>
-                                <li>NIK Karyawan dan Email harus unik</li>
+                                <li>No Badge dan Email harus unik</li>
                                 <li>Jabatan harus sesuai dengan yang ada di sistem</li>
                                 <li>Password default untuk semua user: <strong>nicepatrol</strong></li>
                                 <li>Semua karyawan akan memiliki <strong>role yang sama</strong> sesuai pilihan di Step 1</li>
+                                <li>Area kerja akan <strong>otomatis di-assign</strong> berdasarkan project</li>
                                 <li>Hapus baris contoh sebelum import</li>
                             </ul>
                         </div>
@@ -654,15 +655,85 @@
                         <button type="button" onclick="closeImportModal()" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
                             Batal
                         </button>
-                        <button type="submit" class="px-6 py-3 text-white rounded-lg font-semibold transition" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                        <button type="submit" id="importButton" class="px-6 py-3 text-white rounded-lg font-semibold transition" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
                             <i class="fas fa-upload mr-2"></i>Import Sekarang
                         </button>
                     </div>
                 </div>
             </div>
+
+            <!-- Step 3: Progress -->
+            <div id="importStep3" class="hidden">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-50 flex items-center justify-center">
+                        <i class="fas fa-cog fa-spin text-3xl text-blue-600"></i>
+                    </div>
+                    <h4 class="text-xl font-semibold text-gray-800 mb-2">Import Sedang Berjalan</h4>
+                    <p class="text-sm text-gray-600">Mohon tunggu, proses import sedang berjalan di background...</p>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">Progress</span>
+                        <span id="progressPercentage" class="text-sm font-medium text-blue-600">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                        <div id="progressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <p id="progressMessage" class="text-sm text-gray-600 mt-2">Memulai import...</p>
+                </div>
+
+                <!-- Progress Stats -->
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="text-center p-3 bg-green-50 rounded-lg">
+                        <div id="successCount" class="text-2xl font-bold text-green-600">0</div>
+                        <div class="text-sm text-gray-600">Berhasil</div>
+                    </div>
+                    <div class="text-center p-3 bg-red-50 rounded-lg">
+                        <div id="skippedCount" class="text-2xl font-bold text-red-600">0</div>
+                        <div class="text-sm text-gray-600">Di-skip</div>
+                    </div>
+                    <div class="text-center p-3 bg-blue-50 rounded-lg">
+                        <div id="totalProcessed" class="text-2xl font-bold text-blue-600">0</div>
+                        <div class="text-sm text-gray-600">Total</div>
+                    </div>
+                </div>
+
+                <!-- Recent Errors -->
+                <div id="recentErrors" class="hidden mb-6">
+                    <h5 class="text-sm font-semibold text-gray-700 mb-2">Error Terbaru:</h5>
+                    <div id="errorList" class="bg-red-50 border border-red-200 rounded-lg p-3 max-h-32 overflow-y-auto">
+                        <!-- Errors will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div id="progressActions" class="flex justify-center">
+                    <button type="button" onclick="cancelImport()" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+                        Tutup
+                    </button>
+                </div>
+
+                <!-- Completion Actions -->
+                <div id="completionActions" class="hidden flex justify-center gap-3">
+                    <button type="button" onclick="closeImportModal(); location.reload();" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
+                        <i class="fas fa-check mr-2"></i>Selesai
+                    </button>
+                    <button type="button" onclick="startNewImport()" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+                        Import Lagi
+                    </button>
+                </div>
+            </div>
         </form>
     </div>
 </div>
+
+<!-- Progress Polling Variables -->
+<script>
+let importJobId = null;
+let progressInterval = null;
+</script>
 
 @push('scripts')
 <script>
@@ -733,11 +804,12 @@ function updateFileName(input) {
     }
 }
 
-// Submit form with loading
+// Handle form submission with AJAX
 document.getElementById('importForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
     const fileInput = document.getElementById('import_file');
     if (!fileInput.files || !fileInput.files[0]) {
-        e.preventDefault();
         Swal.fire({
             icon: 'warning',
             title: 'Perhatian',
@@ -746,16 +818,156 @@ document.getElementById('importForm').addEventListener('submit', function(e) {
         return;
     }
     
-    Swal.fire({
-        title: 'Mengimport data...',
-        text: 'Mohon tunggu, proses import sedang berlangsung',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        didOpen: () => {
-            Swal.showLoading();
+    // Show progress step
+    document.getElementById('importStep2').classList.add('hidden');
+    document.getElementById('importStep3').classList.remove('hidden');
+    
+    // Reset progress
+    resetProgress();
+    
+    // Submit form via AJAX
+    const formData = new FormData(this);
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            importJobId = data.job_id;
+            startProgressPolling();
+        } else {
+            showError('Gagal memulai import: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('Terjadi kesalahan saat memulai import');
     });
 });
+
+function resetProgress() {
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('progressPercentage').textContent = '0%';
+    document.getElementById('progressMessage').textContent = 'Memulai import...';
+    document.getElementById('successCount').textContent = '0';
+    document.getElementById('skippedCount').textContent = '0';
+    document.getElementById('totalProcessed').textContent = '0';
+    document.getElementById('recentErrors').classList.add('hidden');
+    document.getElementById('progressActions').classList.remove('hidden');
+    document.getElementById('completionActions').classList.add('hidden');
+}
+
+function startProgressPolling() {
+    if (progressInterval) {
+        clearInterval(progressInterval);
+    }
+    
+    progressInterval = setInterval(checkProgress, 2000); // Check every 2 seconds
+    checkProgress(); // Check immediately
+}
+
+function checkProgress() {
+    if (!importJobId) return;
+    
+    fetch(`{{ route('perusahaan.karyawans.import-progress') }}?job_id=${importJobId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateProgress(data.data);
+            } else {
+                console.error('Progress check failed:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Progress check error:', error);
+        });
+}
+
+function updateProgress(progress) {
+    // Update progress bar
+    document.getElementById('progressBar').style.width = progress.percentage + '%';
+    document.getElementById('progressPercentage').textContent = progress.percentage + '%';
+    document.getElementById('progressMessage').textContent = progress.message;
+    
+    // Update stats
+    document.getElementById('successCount').textContent = progress.success_count;
+    document.getElementById('skippedCount').textContent = progress.skipped_count;
+    document.getElementById('totalProcessed').textContent = progress.success_count + progress.skipped_count;
+    
+    // Show errors if any
+    if (progress.errors && progress.errors.length > 0) {
+        document.getElementById('recentErrors').classList.remove('hidden');
+        const errorList = document.getElementById('errorList');
+        errorList.innerHTML = progress.errors.map(error => 
+            `<div class="text-sm text-red-700 mb-1">• ${error}</div>`
+        ).join('');
+    }
+    
+    // Check if completed
+    if (progress.completed) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+        
+        document.getElementById('progressActions').classList.add('hidden');
+        document.getElementById('completionActions').classList.remove('hidden');
+        
+        // Show completion message
+        if (progress.success_count > 0) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Import Selesai!',
+                text: `Berhasil import ${progress.success_count} karyawan${progress.skipped_count > 0 ? `, ${progress.skipped_count} data di-skip` : ''}`,
+                timer: 3000,
+                showConfirmButton: false
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Import Gagal',
+                text: 'Tidak ada data yang berhasil diimport. Periksa format file dan data.',
+            });
+        }
+    }
+}
+
+function cancelImport() {
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+    }
+    closeImportModal();
+}
+
+function startNewImport() {
+    // Reset form and go back to step 1
+    document.getElementById('importForm').reset();
+    document.getElementById('fileName').classList.add('hidden');
+    document.getElementById('importStep3').classList.add('hidden');
+    document.getElementById('importStep1').classList.remove('hidden');
+    
+    // Clear progress data
+    importJobId = null;
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+    }
+}
+
+function showError(message) {
+    document.getElementById('importStep3').classList.add('hidden');
+    document.getElementById('importStep2').classList.remove('hidden');
+    
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: message,
+    });
+}
 
 // Initialize Select2 for Kota and Provinsi with tagging (add new option)
 $(document).ready(function() {

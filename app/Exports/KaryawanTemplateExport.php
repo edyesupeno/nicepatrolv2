@@ -54,7 +54,7 @@ class KaryawanTemplateExport implements FromCollection, WithHeadings, WithStyles
     public function headings(): array
     {
         return [
-            'NIK Karyawan *',
+            'No Badge *',
             'Nama Lengkap *',
             'Email *',
             'No. Telepon',
@@ -96,7 +96,7 @@ class KaryawanTemplateExport implements FromCollection, WithHeadings, WithStyles
     public function columnWidths(): array
     {
         return [
-            'A' => 18,  // NIK
+            'A' => 18,  // No Badge
             'B' => 25,  // Nama
             'C' => 25,  // Email
             'D' => 18,  // Telepon
@@ -286,7 +286,7 @@ class KaryawanTemplateExport implements FromCollection, WithHeadings, WithStyles
                 
                 $instructions = [
                     'A5' => '1. Kolom dengan tanda (*) wajib diisi',
-                    'A6' => '2. NIK Karyawan harus unik (tidak boleh sama)',
+                    'A6' => '2. No Badge harus unik (tidak boleh sama)',
                     'A7' => '3. Email harus valid dan unik',
                     'A8' => '4. Project: Pilih dari dropdown',
                     'A9' => '5. Jabatan: Pilih dari dropdown',
@@ -300,6 +300,7 @@ class KaryawanTemplateExport implements FromCollection, WithHeadings, WithStyles
                     'A17' => '13. Status: Pilih dari dropdown (Aktif/Tidak Aktif)',
                     'A18' => '14. Password default untuk semua user: nicepatrol',
                     'A19' => '15. Hapus baris contoh sebelum import',
+                    'A20' => '16. Area kerja akan otomatis di-assign berdasarkan project',
                 ];
                 
                 foreach ($instructions as $cell => $text) {
