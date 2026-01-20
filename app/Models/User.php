@@ -23,6 +23,7 @@ class User extends Authenticatable
         'perusahaan_id',
         'name',
         'email',
+        'no_whatsapp',
         'password',
         'role',
         'is_active',

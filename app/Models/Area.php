@@ -27,6 +27,24 @@ class Area extends Model
                 $builder->where('perusahaan_id', auth()->user()->perusahaan_id);
             }
         });
+        
+        // CRITICAL: Project scope untuk non-superadmin
+        static::addGlobalScope('project', function (Builder $builder) {
+            if (auth()->check()) {
+                $user = auth()->user();
+                
+                // Jika bukan superadmin, batasi hanya area dari project mereka
+                if (!$user->isSuperAdmin()) {
+                    // Get project_id dari karyawan
+                    if ($user->karyawan && $user->karyawan->project_id) {
+                        $builder->where('project_id', $user->karyawan->project_id);
+                    } else {
+                        // Jika tidak ada project_id, return empty result
+                        $builder->whereRaw('1 = 0');
+                    }
+                }
+            }
+        });
     }
 
     public function perusahaan(): BelongsTo

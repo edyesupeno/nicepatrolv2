@@ -1385,19 +1385,19 @@ class PatrolController extends Controller
             'tipe_jawaban' => 'required|in:pilihan,text',
             'opsi_jawaban' => 'required_if:tipe_jawaban,pilihan|array|min:2',
             'opsi_jawaban.*' => 'required_if:tipe_jawaban,pilihan|string',
-            'is_required' => 'required|boolean',
+            'is_required' => 'boolean',
         ], [
             'pertanyaan.required' => 'Pertanyaan wajib diisi',
             'tipe_jawaban.required' => 'Tipe jawaban wajib dipilih',
             'opsi_jawaban.required_if' => 'Opsi jawaban wajib diisi untuk tipe pilihan',
             'opsi_jawaban.min' => 'Minimal 2 opsi jawaban',
-            'is_required.required' => 'Status wajib dipilih',
         ]);
 
         // Get max urutan
         $maxUrutan = $kuesionerTamu->pertanyaans()->max('urutan') ?? 0;
         $validated['urutan'] = $maxUrutan + 1;
         $validated['kuesioner_tamu_id'] = $kuesionerTamu->id;
+        $validated['is_required'] = $request->has('is_required');
 
         // Clean opsi_jawaban if tipe is text
         if ($validated['tipe_jawaban'] === 'text') {
@@ -1417,14 +1417,15 @@ class PatrolController extends Controller
             'tipe_jawaban' => 'required|in:pilihan,text',
             'opsi_jawaban' => 'required_if:tipe_jawaban,pilihan|array|min:2',
             'opsi_jawaban.*' => 'required_if:tipe_jawaban,pilihan|string',
-            'is_required' => 'required|boolean',
+            'is_required' => 'boolean',
         ], [
             'pertanyaan.required' => 'Pertanyaan wajib diisi',
             'tipe_jawaban.required' => 'Tipe jawaban wajib dipilih',
             'opsi_jawaban.required_if' => 'Opsi jawaban wajib diisi untuk tipe pilihan',
             'opsi_jawaban.min' => 'Minimal 2 opsi jawaban',
-            'is_required.required' => 'Status wajib dipilih',
         ]);
+
+        $validated['is_required'] = $request->has('is_required');
 
         // Clean opsi_jawaban if tipe is text
         if ($validated['tipe_jawaban'] === 'text') {

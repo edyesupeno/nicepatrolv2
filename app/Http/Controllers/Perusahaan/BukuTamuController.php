@@ -102,41 +102,63 @@ class BukuTamuController extends Controller
             ->orderBy('nama')
             ->get();
 
-        return view('perusahaan.buku-tamu.create', compact('projects', 'users', 'areas', 'areaPatrols'));
+        return view('perusahaan.buku-tamu.create', compact(
+            'projects', 
+            'users', 
+            'areas', 
+            'areaPatrols'
+        ));
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            // Step 1: Data Diri
+        // Debug: Log request data
+        \Log::info('Buku Tamu Store Request:', [
+            'all_data' => $request->all(),
+            'project_id' => $request->project_id,
+            'guest_book_mode' => $request->guest_book_mode,
+            'enable_questionnaire' => $request->enable_questionnaire
+        ]);
+
+        // Get project settings to determine validation rules
+        $project = null;
+        if ($request->filled('project_id')) {
+            $project = Project::find($request->project_id);
+        }
+        
+        // Use form data first, then project data, then fallback
+        $guestBookMode = $request->guest_book_mode ?: ($project ? $project->guest_book_mode : 'simple');
+        $enableQuestionnaire = $request->enable_questionnaire !== null ? 
+            (bool)$request->enable_questionnaire : 
+            ($project ? $project->enable_questionnaire : false);
+        
+        // Debug: Log determined mode
+        \Log::info('Determined Mode:', [
+            'project_found' => $project ? true : false,
+            'guest_book_mode' => $guestBookMode,
+            'enable_questionnaire' => $enableQuestionnaire,
+            'form_mode' => $request->guest_book_mode,
+            'form_questionnaire' => $request->enable_questionnaire
+        ]);
+        
+        // Base validation rules (always required for both modes)
+        $rules = [
+            // Project selection (now required)
+            'project_id' => 'required|exists:projects,id',
+            
+            // Step 1: Data Diri (always required)
             'nama_tamu' => 'required|string|max:255',
-            'nik' => 'required|string|size:16|regex:/^[0-9]{16}$/',
-            'tanggal_lahir' => 'required|date|before:today',
-            'domisili' => 'required|string',
             'perusahaan_tamu' => 'required|string|max:255',
             'jabatan' => 'required|string|max:255',
             'foto' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'foto_identitas' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             
-            // Step 2: Kontak Tamu
-            'email' => 'required|email|max:255',
-            'no_whatsapp' => 'required|string|max:20',
-            'kontak_darurat_telepon' => 'required|string|max:20',
-            'kontak_darurat_nama' => 'required|string|max:255',
-            'kontak_darurat_hubungan' => 'required|string|max:100',
-            
-            // Step 3: Data Kunjungan
+            // Step 3: Data Kunjungan (always required)
             'keperluan' => 'required|string|max:255',
-            'lokasi_dituju' => 'required|string|max:255',
             'mulai_kunjungan' => 'required|date',
             'selesai_kunjungan' => 'required|date|after:mulai_kunjungan',
             'lama_kunjungan' => 'required|string|max:100',
             
-            // Step 4: Kuesioner (now dynamic, old static questions removed)
-            // Dynamic questionnaire answers are handled separately
-            
             // Optional fields
-            'project_id' => 'nullable|exists:projects,id',
             'area_id' => 'required|exists:areas,id',
             'area_patrol_id' => 'nullable|exists:area_patrols,id',
             'bertemu' => 'nullable|string|max:255',
@@ -147,58 +169,79 @@ class BukuTamuController extends Controller
             // Dynamic questionnaire answers
             'kuesioner_answers' => 'nullable|array',
             'kuesioner_answers.*' => 'nullable|string',
-        ], [
-            // Step 1 validation messages
+        ];
+        
+        // Simplified validation for debugging
+        $rules = [
+            'project_id' => 'required|exists:projects,id',
+            'nama_tamu' => 'required|string|max:255',
+            'perusahaan_tamu' => 'required|string|max:255',
+            'jabatan' => 'required|string|max:255',
+            'foto' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'keperluan' => 'required|string|max:255',
+            'area_id' => 'required|exists:areas,id',
+            'mulai_kunjungan' => 'required|date',
+            'selesai_kunjungan' => 'required|date|after:mulai_kunjungan',
+            'lama_kunjungan' => 'required|string|max:100',
+            
+            // Make everything else optional for now
+            'nik' => 'nullable|string',
+            'tanggal_lahir' => 'nullable|date',
+            'domisili' => 'nullable|string',
+            'foto_identitas' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'lokasi_dituju' => 'nullable|string',
+            'email' => 'nullable|email',
+            'no_whatsapp' => 'nullable|string',
+            'kontak_darurat_telepon' => 'nullable|string',
+            'kontak_darurat_nama' => 'nullable|string',
+            'kontak_darurat_hubungan' => 'nullable|string',
+            'area_patrol_id' => 'nullable|exists:area_patrols,id',
+            'bertemu' => 'nullable|string',
+            'no_kartu_pinjam' => 'nullable|string',
+            'keterangan_tambahan' => 'nullable|string',
+            'catatan' => 'nullable|string',
+            'kuesioner_answers' => 'nullable|array',
+            'kuesioner_answers.*' => 'nullable|string',
+        ];
+        
+        // Debug: Log validation rules
+        \Log::info('Validation Rules:', $rules);
+        
+        // Simplified validation messages
+        $messages = [
+            'project_id.required' => 'Project wajib dipilih',
             'nama_tamu.required' => 'Nama tamu wajib diisi',
-            'nik.required' => 'NIK wajib diisi',
-            'nik.size' => 'NIK harus 16 digit',
-            'nik.regex' => 'NIK harus berupa angka 16 digit',
-            'tanggal_lahir.required' => 'Tanggal lahir wajib diisi',
-            'tanggal_lahir.before' => 'Tanggal lahir harus sebelum hari ini',
-            'domisili.required' => 'Domisili wajib diisi',
             'perusahaan_tamu.required' => 'Instansi wajib diisi',
             'jabatan.required' => 'Jabatan wajib diisi',
             'foto.required' => 'Foto selfie wajib diupload',
-            'foto.image' => 'File foto harus berupa gambar',
-            'foto.mimes' => 'Format foto harus jpeg, png, atau jpg',
-            'foto.max' => 'Ukuran foto maksimal 2MB',
-            'foto_identitas.required' => 'Foto KTP wajib diupload',
-            'foto_identitas.image' => 'File foto identitas harus berupa gambar',
-            'foto_identitas.mimes' => 'Format foto identitas harus jpeg, png, atau jpg',
-            'foto_identitas.max' => 'Ukuran foto identitas maksimal 2MB',
-            
-            // Step 2 validation messages
-            'email.required' => 'Email wajib diisi',
-            'email.email' => 'Format email tidak valid',
-            'no_whatsapp.required' => 'Nomor WhatsApp wajib diisi',
-            'kontak_darurat_telepon.required' => 'Kontak darurat wajib diisi',
-            'kontak_darurat_nama.required' => 'Nama kontak darurat wajib diisi',
-            'kontak_darurat_hubungan.required' => 'Hubungan kontak darurat wajib dipilih',
-            
-            // Step 3 validation messages
             'keperluan.required' => 'Maksud & tujuan wajib diisi',
-            'lokasi_dituju.required' => 'Lokasi yang dituju wajib diisi',
+            'area_id.required' => 'Area/lokasi wajib dipilih',
             'mulai_kunjungan.required' => 'Waktu mulai kunjungan wajib diisi',
             'selesai_kunjungan.required' => 'Waktu selesai kunjungan wajib diisi',
-            'selesai_kunjungan.after' => 'Waktu selesai harus setelah waktu mulai',
             'lama_kunjungan.required' => 'Lama kunjungan wajib diisi',
-            
-            // Step 4 validation messages (removed - now using dynamic questionnaire)
-            
-            // Area validation
-            'area_id.required' => 'Area/lokasi wajib dipilih',
-            'area_id.exists' => 'Area/lokasi tidak valid',
-        ]);
+        ];
+
+        try {
+            $validated = $request->validate($rules, $messages);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed:', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            throw $e;
+        }
 
         $validated['perusahaan_id'] = auth()->user()->perusahaan_id;
         $validated['input_by'] = auth()->id();
         $validated['status'] = 'sedang_berkunjung';
         $validated['check_in'] = $validated['mulai_kunjungan'];
 
-        // Set default project if not provided
-        if (!$validated['project_id']) {
-            $defaultProject = Project::where('is_active', true)->first();
-            $validated['project_id'] = $defaultProject ? $defaultProject->id : null;
+        // Set lokasi_dituju from area if not provided (for Simple mode)
+        if (empty($validated['lokasi_dituju']) && !empty($validated['area_id'])) {
+            $area = \App\Models\Area::find($validated['area_id']);
+            if ($area) {
+                $validated['lokasi_dituju'] = $area->nama . ($area->alamat ? ' - ' . $area->alamat : '');
+            }
         }
 
         // Handle photo upload
@@ -209,7 +252,7 @@ class BukuTamuController extends Controller
             $validated['foto'] = $path;
         }
 
-        // Handle identity photo upload
+        // Handle identity photo upload (only for Standard MIGAS mode or if file is provided)
         if ($request->hasFile('foto_identitas')) {
             $fotoIdentitas = $request->file('foto_identitas');
             $filename = 'identitas_' . time() . '_' . Str::random(10) . '.' . $fotoIdentitas->getClientOriginalExtension();
@@ -219,8 +262,8 @@ class BukuTamuController extends Controller
 
         $bukuTamu = BukuTamu::create($validated);
 
-        // Save dynamic questionnaire answers if provided
-        if (!empty($validated['kuesioner_answers'])) {
+        // Save dynamic questionnaire answers if questionnaire is enabled and answers provided
+        if ($enableQuestionnaire && !empty($validated['kuesioner_answers'])) {
             foreach ($validated['kuesioner_answers'] as $pertanyaanId => $jawaban) {
                 if (!empty($jawaban)) {
                     JawabanKuesionerTamu::create([
@@ -467,7 +510,163 @@ class BukuTamuController extends Controller
     }
 
     /**
-     * Get kuesioner by area patrol
+     * Get project settings for guest book
+     */
+    public function getProjectSettings(Request $request)
+    {
+        try {
+            $projectId = $request->get('project_id');
+            
+            if (!$projectId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Project ID required'
+                ], 400);
+            }
+
+            $project = Project::find($projectId);
+
+            if (!$project) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Project tidak ditemukan'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $project->id,
+                    'nama' => $project->nama,
+                    'guest_book_mode' => $project->guest_book_mode,
+                    'enable_questionnaire' => $project->enable_questionnaire,
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in getProjectSettings:', [
+                'error' => $e->getMessage(),
+                'project_id' => $request->get('project_id')
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get kuesioner by project only (new method for simplified flow)
+     */
+    public function getKuesionerByProject(Request $request)
+    {
+        try {
+            $projectId = $request->get('project_id');
+            
+            \Log::info('getKuesionerByProject called', [
+                'project_id' => $projectId,
+                'user_id' => auth()->id(),
+                'perusahaan_id' => auth()->user()->perusahaan_id ?? null
+            ]);
+            
+            if (!$projectId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Project ID required'
+                ]);
+            }
+
+            // Find active kuesioner for this project
+            $kuesioner = KuesionerTamu::with(['pertanyaans' => function($query) {
+                    $query->orderBy('urutan');
+                }])
+                ->where('project_id', $projectId)
+                ->where('is_active', true)
+                ->first();
+
+            \Log::info('Kuesioner search result', [
+                'found' => $kuesioner ? true : false,
+                'kuesioner_id' => $kuesioner ? $kuesioner->id : null,
+                'pertanyaans_count' => $kuesioner && $kuesioner->pertanyaans ? $kuesioner->pertanyaans->count() : 0
+            ]);
+
+            if (!$kuesioner || !$kuesioner->pertanyaans || $kuesioner->pertanyaans->count() === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kuesioner tidak ditemukan untuk project ini'
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $kuesioner->id,
+                    'judul' => $kuesioner->judul,
+                    'deskripsi' => $kuesioner->deskripsi,
+                    'pertanyaans' => $kuesioner->pertanyaans->map(function($pertanyaan) {
+                        return [
+                            'id' => $pertanyaan->id,
+                            'pertanyaan' => $pertanyaan->pertanyaan,
+                            'tipe_jawaban' => $pertanyaan->tipe_jawaban,
+                            'opsi_jawaban' => $pertanyaan->opsi_jawaban,
+                            'is_required' => $pertanyaan->is_required,
+                            'urutan' => $pertanyaan->urutan,
+                        ];
+                    })
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in getKuesionerByProject', [
+                'error' => $e->getMessage(),
+                'project_id' => $request->get('project_id'),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get kuesioner by project and area patrol
+     */
+    public function getKuesionerByProjectAndArea(Request $request)
+    {
+        $projectId = $request->get('project_id');
+        $areaPatrolId = $request->get('area_patrol_id');
+        
+        if (!$projectId || !$areaPatrolId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Project ID and Area Patrol ID required'
+            ]);
+        }
+
+        $kuesioner = KuesionerTamu::with('pertanyaans')
+            ->where('project_id', $projectId)
+            ->where('area_patrol_id', $areaPatrolId)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$kuesioner) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kuesioner tidak ditemukan untuk project dan area ini'
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $kuesioner
+        ]);
+    }
+
+    /**
+     * Get kuesioner by area patrol (legacy method - now updated)
      */
     public function getKuesionerByArea(Request $request)
     {

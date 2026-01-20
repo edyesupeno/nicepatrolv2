@@ -50,6 +50,11 @@
                     @endif
                 </div>
                 <div class="flex items-center gap-2">
+                    <button onclick="openGuestBookModal('{{ $project->hash_id }}')" 
+                            class="text-purple-600 hover:text-purple-800 p-2 rounded-lg hover:bg-purple-50 transition" 
+                            title="Pengaturan Buku Tamu">
+                        <i class="fas fa-book text-lg"></i>
+                    </button>
                     <a href="{{ route('perusahaan.projects.contacts.index', $project->hash_id) }}" 
                        class="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-green-50 transition" 
                        title="Kontak Penting">
@@ -96,6 +101,27 @@
                             → {{ $project->tanggal_selesai->format('d M Y') }}
                         @else
                             → Sekarang
+                        @endif
+                    </span>
+                </div>
+
+                <div class="flex items-center text-sm text-gray-600">
+                    <i class="fas fa-book text-gray-400 mr-2.5 w-4"></i>
+                    <span class="font-medium">Buku Tamu:</span>
+                    <span class="ml-2">
+                        @if($project->guest_book_mode === 'standard_migas')
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                Standard MIGAS
+                            </span>
+                        @else
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                Simple
+                            </span>
+                        @endif
+                        @if($project->enable_questionnaire)
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 ml-1">
+                                + Kuesioner
+                            </span>
                         @endif
                     </span>
                 </div>
@@ -382,6 +408,104 @@
     </div>
 </div>
 
+<!-- Modal Guest Book Settings -->
+<div id="modalGuestBook" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4">
+        <form id="formGuestBook" method="POST">
+            @csrf
+            @method('PUT')
+            <div class="p-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-book text-purple-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Pengaturan Buku Tamu</h3>
+                        <p class="text-sm text-gray-600">Konfigurasi mode dan fitur buku tamu</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Guest Book Mode -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Mode Buku Tamu</label>
+                        <div class="space-y-3">
+                            <label class="flex items-start p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                                <input type="radio" name="guest_book_mode" value="standard_migas" id="mode_standard" class="mt-1 mr-3 text-blue-600 focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-1">
+                                        <span class="font-semibold text-gray-900">Standard MIGAS</span>
+                                        <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                            Lengkap
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Form lengkap dengan semua field sesuai standar MIGAS (NIK, foto KTP, kontak darurat, dll)</p>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-start p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                                <input type="radio" name="guest_book_mode" value="simple" id="mode_simple" class="mt-1 mr-3 text-green-600 focus:ring-green-500">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-1">
+                                        <span class="font-semibold text-gray-900">Simple</span>
+                                        <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                            Sederhana
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Form sederhana hanya dengan field dasar (nama, perusahaan, keperluan, foto)</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Enable Questionnaire -->
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Aktifkan Kuesioner</label>
+                                <p class="text-sm text-gray-500 mt-1">Tampilkan kuesioner dinamis berdasarkan area patrol</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="enable_questionnaire" id="enable_questionnaire" class="sr-only peer" value="1">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                        </div>
+                        <div class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-amber-600 mt-0.5 mr-2"></i>
+                                <div class="text-sm text-amber-800">
+                                    <p class="font-medium mb-1">Catatan Kuesioner:</p>
+                                    <ul class="list-disc list-inside space-y-1 text-xs">
+                                        <li>Kuesioner akan muncul jika tamu memilih area patrol</li>
+                                        <li>Pertanyaan dapat dikonfigurasi di menu Patrol → Inventaris Patroli → Pertanyaan Tamu</li>
+                                        <li>Jika dinonaktifkan, kuesioner tidak akan ditampilkan sama sekali</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex space-x-3 mt-8">
+                    <button 
+                        type="button" 
+                        onclick="closeGuestBookModal()"
+                        class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition"
+                    >
+                        Batal
+                    </button>
+                    <button 
+                        type="submit"
+                        class="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition"
+                    >
+                        <i class="fas fa-save mr-2"></i>Simpan Pengaturan
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <form id="deleteForm" method="POST" style="display: none;">
     @csrf
     @method('DELETE')
@@ -397,6 +521,47 @@ function openCreateModal() {
 function closeCreateModal() {
     document.getElementById('modalCreate').classList.add('hidden');
     document.getElementById('formCreate').reset();
+}
+
+async function openGuestBookModal(hashId) {
+    try {
+        const response = await fetch(`/perusahaan/projects/${hashId}/edit`);
+        const data = await response.json();
+        
+        // Set guest book mode
+        const modeRadios = document.querySelectorAll('input[name="guest_book_mode"]');
+        modeRadios.forEach(radio => {
+            radio.checked = radio.value === data.guest_book_mode;
+            
+            // Update visual state
+            const label = radio.closest('label');
+            if (radio.checked) {
+                label.classList.add('border-blue-500', 'bg-blue-50');
+                label.classList.remove('border-gray-200');
+            } else {
+                label.classList.remove('border-blue-500', 'bg-blue-50');
+                label.classList.add('border-gray-200');
+            }
+        });
+        
+        // Set questionnaire toggle
+        document.getElementById('enable_questionnaire').checked = data.enable_questionnaire;
+        
+        // Set form action
+        document.getElementById('formGuestBook').action = `/perusahaan/projects/${hashId}/guest-book-settings`;
+        
+        document.getElementById('modalGuestBook').classList.remove('hidden');
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: 'Gagal memuat pengaturan buku tamu'
+        });
+    }
+}
+
+function closeGuestBookModal() {
+    document.getElementById('modalGuestBook').classList.add('hidden');
 }
 
 async function openEditModal(hashId) {
@@ -474,6 +639,36 @@ document.getElementById('modalCreate')?.addEventListener('click', function(e) {
 
 document.getElementById('modalEdit')?.addEventListener('click', function(e) {
     if (e.target === this) closeEditModal();
+});
+
+document.getElementById('modalGuestBook')?.addEventListener('click', function(e) {
+    if (e.target === this) closeGuestBookModal();
+});
+
+// Handle guest book mode radio button visual feedback
+document.addEventListener('DOMContentLoaded', function() {
+    const modeRadios = document.querySelectorAll('input[name="guest_book_mode"]');
+    modeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Reset all labels
+            modeRadios.forEach(r => {
+                const label = r.closest('label');
+                label.classList.remove('border-blue-500', 'bg-blue-50', 'border-green-500', 'bg-green-50');
+                label.classList.add('border-gray-200');
+            });
+            
+            // Highlight selected
+            if (this.checked) {
+                const label = this.closest('label');
+                label.classList.remove('border-gray-200');
+                if (this.value === 'standard_migas') {
+                    label.classList.add('border-blue-500', 'bg-blue-50');
+                } else {
+                    label.classList.add('border-green-500', 'bg-green-50');
+                }
+            }
+        });
+    });
 });
 </script>
 @endpush

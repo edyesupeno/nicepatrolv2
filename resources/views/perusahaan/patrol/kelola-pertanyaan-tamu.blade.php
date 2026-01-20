@@ -309,10 +309,14 @@ function closeModal() {
 }
 
 function toggleOpsiJawaban() {
-    const tipeJawaban = document.querySelector('input[name="tipe_jawaban"]:checked').value;
+    const tipeJawaban = document.querySelector('input[name="tipe_jawaban"]:checked');
     const opsiContainer = document.getElementById('opsiJawabanContainer');
     
-    if (tipeJawaban === 'pilihan') {
+    if (!tipeJawaban || !opsiContainer) {
+        return;
+    }
+    
+    if (tipeJawaban.value === 'pilihan') {
         opsiContainer.style.display = 'block';
         // Make opsi inputs required
         document.querySelectorAll('input[name="opsi_jawaban[]"]').forEach(input => {

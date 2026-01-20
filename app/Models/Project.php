@@ -22,10 +22,13 @@ class Project extends Model
         'tanggal_selesai',
         'deskripsi',
         'is_active',
+        'guest_book_mode',
+        'enable_questionnaire',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'enable_questionnaire' => 'boolean',
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
     ];
@@ -37,6 +40,24 @@ class Project extends Model
         static::addGlobalScope('perusahaan', function (Builder $builder) {
             if (auth()->check() && auth()->user()->perusahaan_id) {
                 $builder->where('perusahaan_id', auth()->user()->perusahaan_id);
+            }
+        });
+        
+        // CRITICAL: Project scope untuk non-superadmin
+        static::addGlobalScope('project', function (Builder $builder) {
+            if (auth()->check()) {
+                $user = auth()->user();
+                
+                // Jika bukan superadmin, batasi hanya project mereka
+                if (!$user->isSuperAdmin()) {
+                    // Get project_id dari karyawan
+                    if ($user->karyawan && $user->karyawan->project_id) {
+                        $builder->where('id', $user->karyawan->project_id);
+                    } else {
+                        // Jika tidak ada project_id, return empty result
+                        $builder->whereRaw('1 = 0');
+                    }
+                }
             }
         });
     }

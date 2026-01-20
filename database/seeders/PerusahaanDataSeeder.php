@@ -33,16 +33,20 @@ class PerusahaanDataSeeder extends Seeder
             // Create Projects
             $projects = [
                 [
-                    'nama' => 'Project Security ' . $perusahaan->kode,
+                    'nama' => 'Kantor Jakarta',
                     'timezone' => 'Asia/Jakarta',
                     'tanggal_mulai' => now(),
-                    'deskripsi' => 'Project keamanan utama',
+                    'deskripsi' => 'Project keamanan kantor Jakarta',
+                    'guest_book_mode' => 'standard_migas',
+                    'enable_questionnaire' => true,
                 ],
                 [
-                    'nama' => 'Project Patrol ' . $perusahaan->kode,
+                    'nama' => 'Area Batang',
                     'timezone' => 'Asia/Jakarta',
                     'tanggal_mulai' => now(),
-                    'deskripsi' => 'Project patroli kawasan',
+                    'deskripsi' => 'Project patroli area Batang',
+                    'guest_book_mode' => 'simple',
+                    'enable_questionnaire' => true,
                 ],
             ];
 
@@ -55,6 +59,9 @@ class PerusahaanDataSeeder extends Seeder
                     'tanggal_mulai' => $projectData['tanggal_mulai'],
                     'deskripsi' => $projectData['deskripsi'],
                     'is_active' => true,
+                    // Add guest book settings
+                    'guest_book_mode' => $projectData['guest_book_mode'] ?? 'simple',
+                    'enable_questionnaire' => $projectData['enable_questionnaire'] ?? true,
                 ]);
 
                 // Create Jabatan for this project (per perusahaan)

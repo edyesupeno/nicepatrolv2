@@ -90,6 +90,24 @@ class ProjectController extends Controller
             ->with('success', 'Project berhasil dihapus');
     }
 
+    public function updateGuestBookSettings(Request $request, Project $project)
+    {
+        $validated = $request->validate([
+            'guest_book_mode' => 'required|in:standard_migas,simple',
+            'enable_questionnaire' => 'nullable|boolean',
+        ], [
+            'guest_book_mode.required' => 'Mode buku tamu wajib dipilih',
+            'guest_book_mode.in' => 'Mode buku tamu tidak valid',
+        ]);
+
+        $validated['enable_questionnaire'] = $request->has('enable_questionnaire');
+
+        $project->update($validated);
+
+        return redirect()->route('perusahaan.projects.index')
+            ->with('success', 'Pengaturan buku tamu berhasil diupdate');
+    }
+
     public function getJabatans($id)
     {
         $project = Project::with('jabatans')->findOrFail($id);

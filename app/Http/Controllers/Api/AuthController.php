@@ -56,8 +56,19 @@ class AuthController extends Controller
 
         // Get jabatan name from karyawan
         $jabatanName = null;
+        $projectId = null;
+        $projectName = null;
+        
         if ($user->karyawan && $user->karyawan->jabatan) {
             $jabatanName = $user->karyawan->jabatan->nama;
+        }
+        
+        // Get project_id from karyawan (CRITICAL untuk multi-tenancy)
+        if ($user->karyawan && $user->karyawan->project_id) {
+            $projectId = $user->karyawan->project_id;
+            if ($user->karyawan->project) {
+                $projectName = $user->karyawan->project->nama;
+            }
         }
 
         return response()->json([
@@ -71,11 +82,16 @@ class AuthController extends Controller
                     'role' => $user->role,
                     'role_display' => $user->getRoleDisplayName(),
                     'perusahaan_id' => $user->perusahaan_id,
+                    'project_id' => $projectId, // CRITICAL: Tambahkan project_id
                     'foto' => $foto,
                     'jabatan_name' => $jabatanName,
                     'perusahaan' => $user->perusahaan ? [
                         'id' => $user->perusahaan->id,
                         'nama' => $user->perusahaan->nama_perusahaan,
+                    ] : null,
+                    'project' => $projectId ? [
+                        'id' => $projectId,
+                        'nama' => $projectName,
                     ] : null,
                 ],
                 'token' => $token,
@@ -113,8 +129,19 @@ class AuthController extends Controller
         
         // Get jabatan name from karyawan
         $jabatanName = null;
+        $projectId = null;
+        $projectName = null;
+        
         if ($user->karyawan && $user->karyawan->jabatan) {
             $jabatanName = $user->karyawan->jabatan->nama;
+        }
+        
+        // Get project_id from karyawan (CRITICAL untuk multi-tenancy)
+        if ($user->karyawan && $user->karyawan->project_id) {
+            $projectId = $user->karyawan->project_id;
+            if ($user->karyawan->project) {
+                $projectName = $user->karyawan->project->nama;
+            }
         }
         
         return response()->json([
@@ -126,11 +153,16 @@ class AuthController extends Controller
                 'role' => $user->role,
                 'role_display' => $user->getRoleDisplayName(),
                 'perusahaan_id' => $user->perusahaan_id,
+                'project_id' => $projectId, // CRITICAL: Tambahkan project_id
                 'foto' => $foto,
                 'jabatan_name' => $jabatanName,
                 'perusahaan' => $user->perusahaan ? [
                     'id' => $user->perusahaan->id,
                     'nama' => $user->perusahaan->nama_perusahaan,
+                ] : null,
+                'project' => $projectId ? [
+                    'id' => $projectId,
+                    'nama' => $projectName,
                 ] : null,
             ],
         ]);

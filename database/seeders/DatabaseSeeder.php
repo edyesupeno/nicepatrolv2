@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             KategoriInsidenSeeder::class,
             AreaPatrolSeeder::class,
             RutePatrolSeeder::class,
+            KuesionerTamuSeeder::class,
         ]);
     }
 }

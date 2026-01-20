@@ -48,4 +48,9 @@ return [
         'reverse_geocoding_url' => env('MAPS_REVERSE_GEOCODING_URL', 'https://maps.adonara.co.id/reverse'),
     ],
 
+    'whatsapp' => [
+        'base_url' => env('WHATSAPP_API_BASE_URL', 'https://api.starsender.online/api/send'),
+        'token' => env('WHATSAPP_API_TOKEN'),
+    ],
+
 ];

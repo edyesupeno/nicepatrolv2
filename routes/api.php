@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AsetCheckpointController;
 use App\Http\Controllers\Api\PatroliController;
 use App\Http\Controllers\Api\ShiftController;
 use App\Http\Controllers\Api\AbsensiController;
+use App\Http\Controllers\Api\PenerimaanBarangController;
 
 // API Routes
 // Production: api.nicepatrol.id/v1
@@ -67,6 +68,11 @@ $apiRoutes = function () {
         Route::put('projects/{project}/contacts/{contact}', [\App\Http\Controllers\Api\ProjectContactController::class, 'update']);
         Route::delete('projects/{project}/contacts/{contact}', [\App\Http\Controllers\Api\ProjectContactController::class, 'destroy']);
         Route::get('projects/{project}/contacts/emergency', [\App\Http\Controllers\Api\ProjectContactController::class, 'emergency']);
+
+        // Penerimaan Barang
+        Route::apiResource('penerimaan-barang', \App\Http\Controllers\Api\PenerimaanBarangController::class);
+        Route::get('penerimaan-barang-projects', [\App\Http\Controllers\Api\PenerimaanBarangController::class, 'getProjects']);
+        Route::get('penerimaan-barang-areas/{project}', [\App\Http\Controllers\Api\PenerimaanBarangController::class, 'getAreasByProject']);
     });
 };
 

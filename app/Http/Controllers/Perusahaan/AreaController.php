@@ -88,4 +88,52 @@ class AreaController extends Controller
         return redirect()->route('perusahaan.areas.index')
             ->with('success', 'Area berhasil dihapus');
     }
+
+    /**
+     * Get areas by project (for AJAX)
+     */
+    public function getByProject(Request $request)
+    {
+        try {
+            $projectId = $request->get('project_id');
+            
+            \Log::info('AreaController getByProject called', [
+                'project_id' => $projectId,
+                'user_id' => auth()->id(),
+                'perusahaan_id' => auth()->user()->perusahaan_id ?? null
+            ]);
+            
+            if (!$projectId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Project ID required'
+                ]);
+            }
+
+            $areas = Area::where('project_id', $projectId)
+                ->orderBy('nama')
+                ->get(['id', 'nama', 'alamat']);
+
+            \Log::info('Areas found', [
+                'count' => $areas->count(),
+                'areas' => $areas->toArray()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $areas
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in AreaController getByProject', [
+                'error' => $e->getMessage(),
+                'project_id' => $request->get('project_id')
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
 }

@@ -65,6 +65,27 @@ class PenerimaanBarang extends Model
                 $builder->where('perusahaan_id', auth()->user()->perusahaan_id);
             }
         });
+        
+        // CRITICAL: Project scope untuk non-superadmin
+        static::addGlobalScope('project', function (Builder $builder) {
+            if (auth()->check()) {
+                $user = auth()->user();
+                
+                // Jika bukan superadmin, batasi hanya data dari project mereka
+                if (!$user->isSuperAdmin()) {
+                    // Get project_id dari karyawan
+                    if ($user->karyawan && $user->karyawan->project_id) {
+                        $builder->where(function($query) use ($user) {
+                            $query->where('project_id', $user->karyawan->project_id)
+                                  ->orWhereNull('project_id'); // Allow null project_id
+                        });
+                    } else {
+                        // Jika tidak ada project_id, hanya tampilkan yang null project_id
+                        $builder->whereNull('project_id');
+                    }
+                }
+            }
+        });
     }
 
     // Relationships

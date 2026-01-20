@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
@@ -13,6 +15,15 @@ Route::domain(env('DASHBOARD_DOMAIN', 'dash.nicepatrol.test'))->group(function (
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    
+    // Forgot Password Routes
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOTP'])->name('password.send-otp');
+    Route::get('/verify-otp', [ForgotPasswordController::class, 'showVerifyForm'])->name('password.verify');
+    Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP'])->name('password.verify-otp');
+    Route::post('/resend-otp', [ForgotPasswordController::class, 'resendOTP'])->name('password.resend-otp');
+    Route::get('/reset-password', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'])->name('password.update');
 });
 
 // Mobile Auth Routes (for IP access from phone)
@@ -61,6 +72,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('kantors', \App\Http\Controllers\Perusahaan\KantorController::class);
         Route::resource('projects', \App\Http\Controllers\Perusahaan\ProjectController::class);
         Route::get('projects/{project}/jabatans', [\App\Http\Controllers\Perusahaan\ProjectController::class, 'getJabatans'])->name('projects.jabatans');
+        Route::put('projects/{project}/guest-book-settings', [\App\Http\Controllers\Perusahaan\ProjectController::class, 'updateGuestBookSettings'])->name('projects.guest-book-settings');
         
         // Project Contacts Routes
         Route::get('projects/{project}/contacts', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'index'])->name('projects.contacts.index');
@@ -70,12 +82,26 @@ Route::middleware('auth')->group(function () {
         Route::delete('projects/{project}/contacts/{contact}', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'destroy'])->name('projects.contacts.destroy');
         Route::get('projects/{project}/contacts/jenis/{jenis}', [\App\Http\Controllers\Perusahaan\ProjectContactController::class, 'getByJenis'])->name('projects.contacts.by-jenis');
         
-        // Buku Tamu Routes
-        Route::resource('buku-tamu', \App\Http\Controllers\Perusahaan\BukuTamuController::class);
-        Route::post('buku-tamu/{bukuTamu}/check-out', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'checkOut'])->name('buku-tamu.check-out');
+        // Buku Tamu Routes - specific routes MUST come before resource routes
+        Route::get('buku-tamu/project-settings', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getProjectSettings'])->name('buku-tamu.project-settings');
+        Route::get('buku-tamu/kuesioner', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getKuesionerByProject'])->name('buku-tamu.kuesioner');
         Route::get('buku-tamu-qr/{bukuTamu}', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'generateQrCode'])->name('buku-tamu.qr-code');
         Route::post('buku-tamu-scan', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getByQrCode'])->name('buku-tamu.scan');
-        Route::get('buku-tamu-kuesioner', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getKuesionerByArea'])->name('buku-tamu.kuesioner');
+        Route::post('buku-tamu/{bukuTamu}/check-out', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'checkOut'])->name('buku-tamu.check-out');
+        Route::resource('buku-tamu', \App\Http\Controllers\Perusahaan\BukuTamuController::class);
+
+        // Area Routes
+        Route::get('areas/by-project', [\App\Http\Controllers\Perusahaan\AreaController::class, 'getByProject'])->name('areas.by-project');
+        
+        // Area Patrol (POS Jaga) Routes
+        Route::get('area-patrols/by-project', [\App\Http\Controllers\Perusahaan\AreaPatrolController::class, 'getByProject'])->name('area-patrols.by-project');
+        Route::post('area-patrols', [\App\Http\Controllers\Perusahaan\AreaPatrolController::class, 'store'])->name('area-patrols.store');
+        
+        // Debug route for buku tamu
+        Route::post('buku-tamu-debug', function(Request $request) {
+            \Log::info('Debug Buku Tamu Request:', $request->all());
+            return response()->json(['success' => true, 'data' => $request->all()]);
+        })->name('buku-tamu.debug');
 
         // Penerimaan Barang Routes
         Route::resource('penerimaan-barang', \App\Http\Controllers\Perusahaan\PenerimaanBarangController::class);

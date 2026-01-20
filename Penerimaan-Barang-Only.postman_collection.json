@@ -1,0 +1,492 @@
+{
+	"info": {
+		"_postman_id": "penerimaan-barang-only-2026",
+		"name": "Penerimaan Barang API",
+		"description": "Collection khusus untuk testing Penerimaan Barang endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{auth_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://stagapi.nicepatrol.id/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "test_email",
+			"value": "edy@gmail.com",
+			"type": "string"
+		},
+		{
+			"key": "test_password",
+			"value": "12345678",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data.token) {",
+									"        pm.collectionVariables.set('auth_token', response.data.token);",
+									"        console.log('✅ Token saved:', response.data.token);",
+									"    }",
+									"} else {",
+									"    console.log('❌ Login failed');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{test_email}}\",\n    \"password\": \"{{test_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📦 Penerimaan Barang",
+			"item": [
+				{
+					"name": "📋 Get All Penerimaan Barang",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/penerimaan-barang?page=1&per_page=20&kategori=&kondisi=&project_id=&search=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"penerimaan-barang"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Nomor halaman"
+								},
+								{
+									"key": "per_page",
+									"value": "20",
+									"description": "Jumlah data per halaman"
+								},
+								{
+									"key": "kategori",
+									"value": "",
+									"description": "Filter kategori: Dokumen, Material, Elektronik, Logistik"
+								},
+								{
+									"key": "kondisi",
+									"value": "",
+									"description": "Filter kondisi: Baik, Rusak, Segel Terbuka"
+								},
+								{
+									"key": "project_id",
+									"value": "",
+									"description": "Filter berdasarkan project ID"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Pencarian nama barang atau nomor penerimaan"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "➕ Create Penerimaan Barang",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "project_id",
+									"value": "1",
+									"type": "text",
+									"description": "🏢 ID Project (optional)"
+								},
+								{
+									"key": "area_id",
+									"value": "1",
+									"type": "text",
+									"description": "📍 ID Area penyimpanan (optional)"
+								},
+								{
+									"key": "pos",
+									"value": "A1-B2-C3",
+									"type": "text",
+									"description": "📌 Point of Storage (optional)"
+								},
+								{
+									"key": "nama_barang",
+									"value": "Laptop Dell Inspiron",
+									"type": "text",
+									"description": "📦 Nama barang (required)"
+								},
+								{
+									"key": "kategori_barang",
+									"value": "Elektronik",
+									"type": "text",
+									"description": "🏷️ Kategori: Dokumen, Material, Elektronik, Logistik (required)"
+								},
+								{
+									"key": "jumlah_barang",
+									"value": "2",
+									"type": "text",
+									"description": "🔢 Jumlah barang (required)"
+								},
+								{
+									"key": "satuan",
+									"value": "unit",
+									"type": "text",
+									"description": "📏 Satuan barang (required)"
+								},
+								{
+									"key": "kondisi_barang",
+									"value": "Baik",
+									"type": "text",
+									"description": "✅ Kondisi: Baik, Rusak, Segel Terbuka (required)"
+								},
+								{
+									"key": "pengirim",
+									"value": "PT. Supplier ABC",
+									"type": "text",
+									"description": "🚚 Nama pengirim (required)"
+								},
+								{
+									"key": "tujuan_departemen",
+									"value": "IT Department",
+									"type": "text",
+									"description": "🏢 Departemen tujuan (required)"
+								},
+								{
+									"key": "tanggal_terima",
+									"value": "2026-01-20",
+									"type": "text",
+									"description": "📅 Tanggal penerimaan YYYY-MM-DD (required)"
+								},
+								{
+									"key": "petugas_penerima",
+									"value": "John Doe",
+									"type": "text",
+									"description": "👤 Nama petugas penerima (optional)"
+								},
+								{
+									"key": "keterangan",
+									"value": "Barang dalam kondisi baik",
+									"type": "text",
+									"description": "📝 Keterangan tambahan (optional)"
+								},
+								{
+									"key": "foto_barang",
+									"type": "file",
+									"description": "📸 Foto barang (optional, max 10MB)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/penerimaan-barang",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"penerimaan-barang"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "👁️ Get Penerimaan Barang by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/penerimaan-barang/abc123def456",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"penerimaan-barang",
+								"abc123def456"
+							],
+							"variable": [
+								{
+									"key": "penerimaan_barang_id",
+									"value": "abc123def456",
+									"description": "Hash ID dari penerimaan barang"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "✏️ Update Penerimaan Barang",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "_method",
+									"value": "PUT",
+									"type": "text",
+									"description": "🔄 Method override untuk form-data"
+								},
+								{
+									"key": "project_id",
+									"value": "1",
+									"type": "text",
+									"description": "🏢 ID Project (optional)"
+								},
+								{
+									"key": "area_id",
+									"value": "1",
+									"type": "text",
+									"description": "📍 ID Area penyimpanan (optional)"
+								},
+								{
+									"key": "pos",
+									"value": "A1-B2-C3",
+									"type": "text",
+									"description": "📌 Point of Storage (optional)"
+								},
+								{
+									"key": "nama_barang",
+									"value": "Laptop Dell Inspiron Updated",
+									"type": "text",
+									"description": "📦 Nama barang (required)"
+								},
+								{
+									"key": "kategori_barang",
+									"value": "Elektronik",
+									"type": "text",
+									"description": "🏷️ Kategori: Dokumen, Material, Elektronik, Logistik (required)"
+								},
+								{
+									"key": "jumlah_barang",
+									"value": "3",
+									"type": "text",
+									"description": "🔢 Jumlah barang (required)"
+								},
+								{
+									"key": "satuan",
+									"value": "unit",
+									"type": "text",
+									"description": "📏 Satuan barang (required)"
+								},
+								{
+									"key": "kondisi_barang",
+									"value": "Baik",
+									"type": "text",
+									"description": "✅ Kondisi: Baik, Rusak, Segel Terbuka (required)"
+								},
+								{
+									"key": "pengirim",
+									"value": "PT. Supplier ABC",
+									"type": "text",
+									"description": "🚚 Nama pengirim (required)"
+								},
+								{
+									"key": "tujuan_departemen",
+									"value": "IT Department",
+									"type": "text",
+									"description": "🏢 Departemen tujuan (required)"
+								},
+								{
+									"key": "tanggal_terima",
+									"value": "2026-01-20",
+									"type": "text",
+									"description": "📅 Tanggal penerimaan YYYY-MM-DD (required)"
+								},
+								{
+									"key": "petugas_penerima",
+									"value": "John Doe",
+									"type": "text",
+									"description": "👤 Nama petugas penerima (optional)"
+								},
+								{
+									"key": "keterangan",
+									"value": "Barang sudah diupdate",
+									"type": "text",
+									"description": "📝 Keterangan tambahan (optional)"
+								},
+								{
+									"key": "foto_barang",
+									"type": "file",
+									"description": "📸 Foto barang baru (optional, max 10MB)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/penerimaan-barang/abc123def456",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"penerimaan-barang",
+								"abc123def456"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "🗑️ Delete Penerimaan Barang",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/penerimaan-barang/abc123def456",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"penerimaan-barang",
+								"abc123def456"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔽 Dropdown Data",
+			"item": [
+				{
+					"name": "🏢 Get Projects for Dropdown",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/penerimaan-barang-projects",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"penerimaan-barang-projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "📍 Get Areas by Project",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/penerimaan-barang-areas/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"penerimaan-barang-areas",
+								"1"
+							],
+							"variable": [
+								{
+									"key": "project_id",
+									"value": "1",
+									"description": "ID Project untuk mendapatkan areas"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

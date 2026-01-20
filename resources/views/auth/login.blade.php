@@ -102,6 +102,13 @@
             </button>
         </form>
 
+        <!-- Forgot Password Link -->
+        <div class="mt-6 text-center">
+            <a href="{{ route('password.request') }}" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                <i class="fas fa-key mr-2"></i>Lupa Password?
+            </a>
+        </div>
+
         <!-- Footer -->
         <div class="mt-8 text-center">
             <p class="text-xs text-gray-500">{{ setting('copyright_text', '© 2024 Nice Patrol. All rights reserved.') }}</p>

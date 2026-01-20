@@ -11,9 +11,10 @@ info:
     ```
     
     ## Base URLs
-    - **Production**: `https://api.nicepatrol.id/v1`
-    - **Development**: `https://devapi.nicepatrol.id/v1`
     - **Local**: `http://localhost:8000/api/v1`
+    - **Development**: `https://devapi.nicepatrol.id/api/v1` (Laptop - akan mati jika laptop off)
+    - **Staging**: `https://stagapi.nicepatrol.id/api/v1` (Server staging - **RECOMMENDED untuk testing**)
+    - **Production**: `https://apiv1.nicepatrol.id/api/v1` (Live server)
     
     ## Multi-Tenancy
     All endpoints automatically filter data based on the authenticated user's company (perusahaan_id).
@@ -50,12 +51,14 @@ info:
     name: Proprietary
     
 servers:
-  - url: https://api.nicepatrol.id/v1
-    description: Production server
-  - url: https://devapi.nicepatrol.id/v1
-    description: Development server
   - url: http://localhost:8000/api/v1
     description: Local development server
+  - url: https://devapi.nicepatrol.id/api/v1
+    description: Development server (Laptop - unstable, mati jika laptop off)
+  - url: https://stagapi.nicepatrol.id/api/v1
+    description: Staging server (Recommended untuk testing)
+  - url: https://apiv1.nicepatrol.id/api/v1
+    description: Production server (Live)
 
 security:
   - BearerAuth: []
@@ -82,11 +85,11 @@ paths:
                 email:
                   type: string
                   format: email
-                  example: security@nicepatrol.id
+                  example: edy@gmail.com
                 password:
                   type: string
                   format: password
-                  example: password123
+                  example: 12345678
       responses:
         '200':
           description: Login successful
@@ -310,13 +313,12 @@ paths:
       summary: Get my absensi schedule
       description: Get current user's attendance schedule
       parameters:
-        - name: date
+        - name: month
           in: query
-          description: Date to get schedule for (YYYY-MM-DD)
+          description: Month to get schedule for (YYYY-MM)
           schema:
             type: string
-            format: date
-            example: "2024-01-17"
+            example: "2024-01"
       responses:
         '200':
           description: Absensi schedule retrieved
@@ -329,16 +331,22 @@ paths:
                     type: boolean
                     example: true
                   data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/AbsensiSchedule'
+                    type: object
+                    properties:
+                      month:
+                        type: string
+                        example: "2024-01"
+                      schedules:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AbsensiSchedule'
 
   /absensi/lokasi:
     get:
       tags:
         - Absensi
       summary: Get absensi locations
-      description: Get available attendance locations for current user
+      description: Get available attendance locations for current user's project
       responses:
         '200':
           description: Absensi locations retrieved
@@ -380,36 +388,37 @@ paths:
       tags:
         - Absensi
       summary: Check in
-      description: Record attendance check-in
+      description: Record attendance check-in with photo and location validation
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required:
-                - lokasi_id
+                - lokasi_absensi_id
                 - latitude
                 - longitude
+                - foto
               properties:
-                lokasi_id:
+                lokasi_absensi_id:
                   type: integer
+                  description: ID of attendance location
                   example: 1
                 latitude:
                   type: number
                   format: float
+                  description: Current GPS latitude
                   example: -6.2088
                 longitude:
                   type: number
                   format: float
+                  description: Current GPS longitude
                   example: 106.8456
                 foto:
                   type: string
                   format: binary
-                  description: Optional selfie photo
-                catatan:
-                  type: string
-                  example: Masuk tepat waktu
+                  description: Selfie photo (JPEG, PNG, JPG, max 2MB)
       responses:
         '200':
           description: Check-in successful
@@ -423,45 +432,66 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: Check-in berhasil
+                    example: Absensi masuk berhasil dicatat
                   data:
-                    $ref: '#/components/schemas/Absensi'
+                    type: object
+                    properties:
+                      jam_masuk:
+                        type: string
+                        format: time
+                        example: "08:00:00"
+                      status:
+                        type: string
+                        enum: [hadir, terlambat]
+                        example: hadir
+                      lokasi:
+                        type: string
+                        example: "Kantor Pusat Jakarta"
+                      on_radius:
+                        type: boolean
+                        example: true
+                      distance:
+                        type: number
+                        format: float
+                        example: 25.5
+                        description: Distance from location in meters
 
   /absensi/check-out:
     post:
       tags:
         - Absensi
       summary: Check out
-      description: Record attendance check-out
+      description: Record attendance check-out with photo and location validation
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required:
-                - lokasi_id
+                - lokasi_absensi_id
                 - latitude
                 - longitude
+                - foto
               properties:
-                lokasi_id:
+                lokasi_absensi_id:
                   type: integer
+                  description: ID of attendance location
                   example: 1
                 latitude:
                   type: number
                   format: float
+                  description: Current GPS latitude
                   example: -6.2088
                 longitude:
                   type: number
                   format: float
+                  description: Current GPS longitude
                   example: 106.8456
                 foto:
                   type: string
                   format: binary
-                  description: Optional selfie photo
-                catatan:
-                  type: string
-                  example: Selesai kerja
+                  description: Selfie photo (JPEG, PNG, JPG, max 2MB)
       responses:
         '200':
           description: Check-out successful
@@ -475,26 +505,69 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: Check-out berhasil
+                    example: Absensi keluar berhasil dicatat
                   data:
-                    $ref: '#/components/schemas/Absensi'
+                    type: object
+                    properties:
+                      jam_keluar:
+                        type: string
+                        format: time
+                        example: "17:00:00"
+                      status:
+                        type: string
+                        enum: [hadir, terlambat, pulang_cepat]
+                        example: hadir
+                      lokasi:
+                        type: string
+                        example: "Kantor Pusat Jakarta"
+                      durasi_kerja:
+                        type: string
+                        example: "9 jam 0 menit"
+                      on_radius:
+                        type: boolean
+                        example: true
+                      distance:
+                        type: number
+                        format: float
+                        example: 30.2
+                        description: Distance from location in meters
 
   /absensi/take-break:
     post:
       tags:
         - Absensi
       summary: Take break
-      description: Record break start time
+      description: Record break start time with photo and location validation
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
+              required:
+                - lokasi_absensi_id
+                - latitude
+                - longitude
+                - foto
               properties:
-                catatan:
+                lokasi_absensi_id:
+                  type: integer
+                  description: ID of attendance location
+                  example: 1
+                latitude:
+                  type: number
+                  format: float
+                  description: Current GPS latitude
+                  example: -6.2088
+                longitude:
+                  type: number
+                  format: float
+                  description: Current GPS longitude
+                  example: 106.8456
+                foto:
                   type: string
-                  example: Istirahat makan siang
+                  format: binary
+                  description: Photo during break (JPEG, PNG, JPG, max 2MB)
       responses:
         '200':
           description: Break started successfully
@@ -508,26 +581,62 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: Istirahat dimulai
+                    example: Absensi istirahat berhasil dicatat
                   data:
-                    $ref: '#/components/schemas/Absensi'
+                    type: object
+                    properties:
+                      jam_istirahat:
+                        type: string
+                        format: time
+                        example: "12:00:00"
+                      lokasi:
+                        type: string
+                        example: "Kantor Pusat Jakarta"
+                      on_radius:
+                        type: boolean
+                        example: true
+                      distance:
+                        type: number
+                        format: float
+                        example: 15.8
+                        description: Distance from location in meters
 
   /absensi/return-from-break:
     post:
       tags:
         - Absensi
       summary: Return from break
-      description: Record break end time
+      description: Record break end time with photo and location validation
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
+              required:
+                - lokasi_absensi_id
+                - latitude
+                - longitude
+                - foto
               properties:
-                catatan:
+                lokasi_absensi_id:
+                  type: integer
+                  description: ID of attendance location
+                  example: 1
+                latitude:
+                  type: number
+                  format: float
+                  description: Current GPS latitude
+                  example: -6.2088
+                longitude:
+                  type: number
+                  format: float
+                  description: Current GPS longitude
+                  example: 106.8456
+                foto:
                   type: string
-                  example: Kembali dari istirahat
+                  format: binary
+                  description: Photo when returning from break (JPEG, PNG, JPG, max 2MB)
       responses:
         '200':
           description: Returned from break successfully
@@ -541,9 +650,28 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: Kembali dari istirahat
+                    example: Absensi kembali bekerja berhasil dicatat
                   data:
-                    $ref: '#/components/schemas/Absensi'
+                    type: object
+                    properties:
+                      jam_kembali:
+                        type: string
+                        format: time
+                        example: "13:00:00"
+                      lokasi:
+                        type: string
+                        example: "Kantor Pusat Jakarta"
+                      durasi_istirahat:
+                        type: string
+                        example: "1 jam 0 menit"
+                      on_radius:
+                        type: boolean
+                        example: true
+                      distance:
+                        type: number
+                        format: float
+                        example: 18.3
+                        description: Distance from location in meters
 
   # Lokasi Endpoints
   /lokasis:
@@ -1430,6 +1558,412 @@ paths:
                     items:
                       $ref: '#/components/schemas/ProjectContact'
 
+  # Penerimaan Barang Endpoints
+  /penerimaan-barang:
+    get:
+      tags:
+        - Penerimaan Barang
+      summary: Get list penerimaan barang
+      description: Mendapatkan daftar penerimaan barang dengan pagination dan filter
+      parameters:
+        - name: page
+          in: query
+          description: Nomor halaman
+          required: false
+          schema:
+            type: integer
+            example: 1
+        - name: per_page
+          in: query
+          description: Jumlah data per halaman (max 100)
+          required: false
+          schema:
+            type: integer
+            example: 20
+        - name: kategori
+          in: query
+          description: Filter berdasarkan kategori barang
+          required: false
+          schema:
+            type: string
+            enum: [Dokumen, Material, Elektronik, Logistik]
+        - name: kondisi
+          in: query
+          description: Filter berdasarkan kondisi barang
+          required: false
+          schema:
+            type: string
+            enum: [Baik, Rusak, Segel Terbuka]
+        - name: project_id
+          in: query
+          description: Filter berdasarkan project ID
+          required: false
+          schema:
+            type: integer
+        - name: search
+          in: query
+          description: Pencarian berdasarkan nama barang atau nomor penerimaan
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Data berhasil diambil
+                  data:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        example: 1
+                      per_page:
+                        type: integer
+                        example: 20
+                      total:
+                        type: integer
+                        example: 50
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PenerimaanBarang'
+
+    post:
+      tags:
+        - Penerimaan Barang
+      summary: Create penerimaan barang baru
+      description: Membuat data penerimaan barang baru
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - nama_barang
+                - kategori_barang
+                - jumlah_barang
+                - satuan
+                - kondisi_barang
+                - pengirim
+                - tujuan_departemen
+                - tanggal_terima
+              properties:
+                project_id:
+                  type: integer
+                  description: ID Project
+                  example: 1
+                area_id:
+                  type: integer
+                  description: ID Area penyimpanan
+                  example: 1
+                pos:
+                  type: string
+                  description: Point of Storage
+                  example: A1-B2-C3
+                nama_barang:
+                  type: string
+                  description: Nama barang
+                  example: Laptop Dell Inspiron
+                kategori_barang:
+                  type: string
+                  enum: [Dokumen, Material, Elektronik, Logistik]
+                  example: Elektronik
+                jumlah_barang:
+                  type: integer
+                  description: Jumlah barang
+                  example: 2
+                satuan:
+                  type: string
+                  description: Satuan barang
+                  example: unit
+                kondisi_barang:
+                  type: string
+                  enum: [Baik, Rusak, Segel Terbuka]
+                  example: Baik
+                pengirim:
+                  type: string
+                  description: Nama pengirim
+                  example: PT. Supplier ABC
+                tujuan_departemen:
+                  type: string
+                  description: Departemen tujuan
+                  example: IT Department
+                tanggal_terima:
+                  type: string
+                  format: date
+                  description: Tanggal penerimaan
+                  example: "2026-01-20"
+                petugas_penerima:
+                  type: string
+                  description: Nama petugas penerima
+                  example: John Doe
+                keterangan:
+                  type: string
+                  description: Keterangan tambahan
+                  example: Barang dalam kondisi baik
+                foto_barang:
+                  type: string
+                  format: binary
+                  description: Foto barang (max 10MB)
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Penerimaan barang berhasil dibuat
+                  data:
+                    $ref: '#/components/schemas/PenerimaanBarang'
+
+  /penerimaan-barang/{id}:
+    get:
+      tags:
+        - Penerimaan Barang
+      summary: Get detail penerimaan barang
+      description: Mendapatkan detail penerimaan barang berdasarkan ID
+      parameters:
+        - name: id
+          in: path
+          description: Hash ID penerimaan barang
+          required: true
+          schema:
+            type: string
+            example: abc123def456
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Data berhasil diambil
+                  data:
+                    $ref: '#/components/schemas/PenerimaanBarang'
+
+    put:
+      tags:
+        - Penerimaan Barang
+      summary: Update penerimaan barang
+      description: Mengupdate data penerimaan barang
+      parameters:
+        - name: id
+          in: path
+          description: Hash ID penerimaan barang
+          required: true
+          schema:
+            type: string
+            example: abc123def456
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                _method:
+                  type: string
+                  example: PUT
+                  description: Method override untuk form-data
+                project_id:
+                  type: integer
+                  description: ID Project
+                  example: 1
+                area_id:
+                  type: integer
+                  description: ID Area penyimpanan
+                  example: 1
+                pos:
+                  type: string
+                  description: Point of Storage
+                  example: A1-B2-C3
+                nama_barang:
+                  type: string
+                  description: Nama barang
+                  example: Laptop Dell Inspiron
+                kategori_barang:
+                  type: string
+                  enum: [Dokumen, Material, Elektronik, Logistik]
+                  example: Elektronik
+                jumlah_barang:
+                  type: integer
+                  description: Jumlah barang
+                  example: 2
+                satuan:
+                  type: string
+                  description: Satuan barang
+                  example: unit
+                kondisi_barang:
+                  type: string
+                  enum: [Baik, Rusak, Segel Terbuka]
+                  example: Baik
+                pengirim:
+                  type: string
+                  description: Nama pengirim
+                  example: PT. Supplier ABC
+                tujuan_departemen:
+                  type: string
+                  description: Departemen tujuan
+                  example: IT Department
+                tanggal_terima:
+                  type: string
+                  format: date
+                  description: Tanggal penerimaan
+                  example: "2026-01-20"
+                petugas_penerima:
+                  type: string
+                  description: Nama petugas penerima
+                  example: John Doe
+                keterangan:
+                  type: string
+                  description: Keterangan tambahan
+                  example: Barang dalam kondisi baik
+                foto_barang:
+                  type: string
+                  format: binary
+                  description: Foto barang baru (max 10MB)
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Penerimaan barang berhasil diupdate
+                  data:
+                    $ref: '#/components/schemas/PenerimaanBarang'
+
+    delete:
+      tags:
+        - Penerimaan Barang
+      summary: Delete penerimaan barang
+      description: Menghapus data penerimaan barang (soft delete)
+      parameters:
+        - name: id
+          in: path
+          description: Hash ID penerimaan barang
+          required: true
+          schema:
+            type: string
+            example: abc123def456
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Penerimaan barang berhasil dihapus
+
+  /penerimaan-barang-projects:
+    get:
+      tags:
+        - Penerimaan Barang
+      summary: Get list projects untuk dropdown
+      description: Mendapatkan daftar project untuk dropdown penerimaan barang
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Data berhasil diambil
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        nama:
+                          type: string
+                          example: Kantor Jakarta
+
+  /penerimaan-barang-areas/{project_id}:
+    get:
+      tags:
+        - Penerimaan Barang
+      summary: Get list areas berdasarkan project
+      description: Mendapatkan daftar area berdasarkan project untuk dropdown
+      parameters:
+        - name: project_id
+          in: path
+          description: ID Project
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Data berhasil diambil
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        nama:
+                          type: string
+                          example: Gudang A
+                        alamat:
+                          type: string
+                          example: Lantai 1
+
 components:
   securitySchemes:
     BearerAuth:
@@ -1514,6 +2048,11 @@ components:
           type: string
           format: email
           example: john@nicepatrol.id
+        no_whatsapp:
+          type: string
+          nullable: true
+          example: "+628123456789"
+          description: "WhatsApp phone number for notifications"
         role:
           type: string
           enum: [superadmin, admin_perusahaan, security_officer, office_employee]
@@ -1574,39 +2113,102 @@ components:
     AbsensiSummary:
       type: object
       properties:
-        total_hari_kerja:
-          type: integer
-          example: 22
-        total_hadir:
-          type: integer
-          example: 20
-        total_terlambat:
-          type: integer
-          example: 2
-        total_alpha:
-          type: integer
-          example: 0
-        persentase_kehadiran:
-          type: number
-          format: float
-          example: 90.91
+        summary:
+          type: object
+          properties:
+            H:
+              type: integer
+              example: 18
+              description: "Hadir"
+            T:
+              type: integer
+              example: 2
+              description: "Terlambat"
+            PC:
+              type: integer
+              example: 1
+              description: "Pulang Cepat"
+            TPC:
+              type: integer
+              example: 0
+              description: "Terlambat & Pulang Cepat"
+            A:
+              type: integer
+              example: 1
+              description: "Alpa/Tidak Hadir"
+        total_jam_kerja:
+          type: object
+          properties:
+            H:
+              type: string
+              example: "144 Jam 0 Menit"
+              description: "Total jam kerja untuk status Hadir"
+            T:
+              type: string
+              example: "16 Jam 30 Menit"
+              description: "Total jam kerja untuk status Terlambat"
+            PC:
+              type: string
+              example: "7 Jam 45 Menit"
+              description: "Total jam kerja untuk status Pulang Cepat"
+            TPC:
+              type: string
+              example: "0 Jam 0 Menit"
+              description: "Total jam kerja untuk status Terlambat & Pulang Cepat"
+            A:
+              type: string
+              example: "0 Jam 0 Menit"
+              description: "Total jam kerja untuk status Alpa"
 
     AbsensiSchedule:
       type: object
       properties:
-        id:
-          type: integer
-          example: 1
         tanggal:
           type: string
           format: date
           example: "2024-01-17"
-        shift:
-          $ref: '#/components/schemas/ShiftSchedule'
-        status:
+        tanggal_formatted:
           type: string
-          enum: [scheduled, hadir, terlambat, alpha, izin, sakit]
-          example: scheduled
+          example: "Rabu, 17 Januari 2024"
+        day_short:
+          type: string
+          example: "RAB"
+        day_name:
+          type: string
+          example: "Rabu"
+        day_number:
+          type: integer
+          example: 17
+        absensi:
+          type: object
+          nullable: true
+          properties:
+            status:
+              type: string
+              enum: [H, T, PC, TPC, A]
+              example: "H"
+              description: "H=Hadir, T=Terlambat, PC=Pulang Cepat, TPC=Terlambat & Pulang Cepat, A=Alpa"
+            status_display:
+              type: string
+              example: "Hadir"
+            jam_masuk:
+              type: string
+              format: time
+              nullable: true
+              example: "08:00:00"
+            jam_keluar:
+              type: string
+              format: time
+              nullable: true
+              example: "17:00:00"
+            keterangan:
+              type: string
+              nullable: true
+              example: null
+            warna:
+              type: string
+              example: "#16a34a"
+              description: "Color code for status display"
 
     LokasiAbsensi:
       type: object
@@ -1614,12 +2216,15 @@ components:
         id:
           type: integer
           example: 1
-        nama:
+        hash_id:
           type: string
-          example: Kantor Pusat Jakarta
+          example: "abc123def456"
+        nama_lokasi:
+          type: string
+          example: "Kantor Pusat Jakarta"
         alamat:
           type: string
-          example: Jl. Sudirman No. 123, Jakarta
+          example: "Jl. Sudirman No. 123, Jakarta"
         latitude:
           type: number
           format: float
@@ -1631,48 +2236,94 @@ components:
         radius:
           type: integer
           example: 100
-        is_active:
-          type: boolean
-          example: true
+          description: "Allowed radius in meters"
 
     AbsensiStatus:
       type: object
       properties:
-        has_checked_in:
+        can_check_in:
+          type: boolean
+          example: false
+          description: "Whether user can perform check-in"
+        can_take_break:
           type: boolean
           example: true
-        has_checked_out:
+          description: "Whether user can take break"
+        can_return_from_break:
           type: boolean
           example: false
-        is_on_break:
+          description: "Whether user can return from break"
+        can_check_out:
           type: boolean
           example: false
-        check_in_time:
-          type: string
-          format: date-time
+          description: "Whether user can perform check-out"
+        kehadiran:
+          type: object
           nullable: true
-          example: "2024-01-17T08:00:00Z"
-        check_out_time:
-          type: string
-          format: date-time
-          nullable: true
-          example: null
-        break_start_time:
-          type: string
-          format: date-time
-          nullable: true
-          example: null
-        break_end_time:
-          type: string
-          format: date-time
-          nullable: true
-          example: null
+          description: "Today's attendance record if exists"
+          properties:
+            jam_masuk:
+              type: string
+              format: time
+              nullable: true
+              example: "08:00:00"
+            jam_keluar:
+              type: string
+              format: time
+              nullable: true
+              example: null
+            jam_istirahat:
+              type: string
+              format: time
+              nullable: true
+              example: null
+            jam_kembali:
+              type: string
+              format: time
+              nullable: true
+              example: null
+            status:
+              type: string
+              enum: [hadir, terlambat, pulang_cepat, alpa, izin, sakit, cuti]
+              example: "hadir"
+            lokasi_masuk:
+              type: string
+              nullable: true
+              example: "Kantor Pusat Jakarta"
+            lokasi_keluar:
+              type: string
+              nullable: true
+              example: null
+            lokasi_istirahat:
+              type: string
+              nullable: true
+              example: null
+            lokasi_kembali:
+              type: string
+              nullable: true
+              example: null
 
     Absensi:
       type: object
       properties:
         id:
           type: integer
+          example: 1
+        hash_id:
+          type: string
+          example: "abc123def456"
+        karyawan_id:
+          type: integer
+          example: 1
+        perusahaan_id:
+          type: integer
+          example: 1
+        project_id:
+          type: integer
+          example: 1
+        shift_id:
+          type: integer
+          nullable: true
           example: 1
         tanggal:
           type: string
@@ -1687,21 +2338,33 @@ components:
           type: string
           format: time
           nullable: true
-          example: "16:00:00"
-        jam_istirahat_mulai:
+          example: "17:00:00"
+        jam_istirahat:
           type: string
           format: time
           nullable: true
           example: "12:00:00"
-        jam_istirahat_selesai:
+        jam_kembali:
           type: string
           format: time
           nullable: true
           example: "13:00:00"
-        status:
+        foto_masuk:
           type: string
-          enum: [hadir, terlambat, alpha, izin, sakit]
-          example: hadir
+          nullable: true
+          example: "https://api.nicepatrol.id/storage/absensi/absensi_masuk_1_2024-01-17_08-00-00.jpg"
+        foto_keluar:
+          type: string
+          nullable: true
+          example: "https://api.nicepatrol.id/storage/absensi/absensi_keluar_1_2024-01-17_17-00-00.jpg"
+        foto_istirahat:
+          type: string
+          nullable: true
+          example: "https://api.nicepatrol.id/storage/absensi/absensi_istirahat_1_2024-01-17_12-00-00.jpg"
+        foto_kembali:
+          type: string
+          nullable: true
+          example: "https://api.nicepatrol.id/storage/absensi/absensi_kembali_1_2024-01-17_13-00-00.jpg"
         lokasi_masuk:
           type: string
           nullable: true
@@ -1710,22 +2373,100 @@ components:
           type: string
           nullable: true
           example: "Kantor Pusat Jakarta"
-        foto_masuk:
+        lokasi_istirahat:
           type: string
           nullable: true
-          example: https://api.nicepatrol.id/storage/absensi/foto/checkin_1.jpg
-        foto_keluar:
+          example: "Kantor Pusat Jakarta"
+        lokasi_kembali:
           type: string
           nullable: true
-          example: https://api.nicepatrol.id/storage/absensi/foto/checkout_1.jpg
-        catatan_masuk:
+          example: "Kantor Pusat Jakarta"
+        status:
+          type: string
+          enum: [hadir, terlambat, pulang_cepat, alpa, izin, sakit, cuti]
+          example: "hadir"
+        keterangan:
           type: string
           nullable: true
-          example: Masuk tepat waktu
-        catatan_keluar:
+          example: null
+        durasi_kerja:
+          type: integer
+          nullable: true
+          example: 540
+          description: "Work duration in minutes"
+        durasi_istirahat:
+          type: integer
+          nullable: true
+          example: 60
+          description: "Break duration in minutes"
+        on_radius:
+          type: boolean
+          example: true
+          description: "Legacy field for radius validation"
+        on_radius_masuk:
+          type: boolean
+          example: true
+          description: "Whether check-in was within allowed radius"
+        on_radius_keluar:
+          type: boolean
+          example: true
+          description: "Whether check-out was within allowed radius"
+        jarak_masuk:
+          type: integer
+          nullable: true
+          example: 25
+          description: "Distance from location during check-in (meters)"
+        jarak_keluar:
+          type: integer
+          nullable: true
+          example: 30
+          description: "Distance from location during check-out (meters)"
+        latitude_masuk:
+          type: number
+          format: float
+          nullable: true
+          example: -6.2088
+          description: "GPS latitude during check-in"
+        longitude_masuk:
+          type: number
+          format: float
+          nullable: true
+          example: 106.8456
+          description: "GPS longitude during check-in"
+        latitude_keluar:
+          type: number
+          format: float
+          nullable: true
+          example: -6.2088
+          description: "GPS latitude during check-out"
+        longitude_keluar:
+          type: number
+          format: float
+          nullable: true
+          example: 106.8456
+          description: "GPS longitude during check-out"
+        map_absen_masuk:
           type: string
           nullable: true
-          example: Selesai kerja
+          example: "https://www.google.com/maps?q=-6.2088,106.8456"
+          description: "Google Maps URL for check-in location"
+        map_absen_keluar:
+          type: string
+          nullable: true
+          example: "https://www.google.com/maps?q=-6.2088,106.8456"
+          description: "Google Maps URL for check-out location"
+        sumber_data:
+          type: string
+          example: "mobile"
+          description: "Data source (mobile/web/system)"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-17T08:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-17T17:00:00Z"
 
     Lokasi:
       type: object
@@ -2134,6 +2875,114 @@ components:
           type: boolean
           example: true
 
+    PenerimaanBarang:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        hash_id:
+          type: string
+          example: abc123def456
+        perusahaan_id:
+          type: integer
+          example: 1
+        project_id:
+          type: integer
+          nullable: true
+          example: 1
+        area_id:
+          type: integer
+          nullable: true
+          example: 1
+        pos:
+          type: string
+          nullable: true
+          example: A1-B2-C3
+        nomor_penerimaan:
+          type: string
+          example: PB202601200001
+        nama_barang:
+          type: string
+          example: Laptop Dell Inspiron
+        kategori_barang:
+          type: string
+          enum: [Dokumen, Material, Elektronik, Logistik]
+          example: Elektronik
+        jumlah_barang:
+          type: integer
+          example: 2
+        satuan:
+          type: string
+          example: unit
+        kondisi_barang:
+          type: string
+          enum: [Baik, Rusak, Segel Terbuka]
+          example: Baik
+        pengirim:
+          type: string
+          example: PT. Supplier ABC
+        tujuan_departemen:
+          type: string
+          example: IT Department
+        foto_barang:
+          type: string
+          nullable: true
+          example: penerimaan-barang/foto/1768619162_696afc9a0f8d6.jpg
+        foto_url:
+          type: string
+          nullable: true
+          example: https://devapi.nicepatrol.id/storage/penerimaan-barang/foto/1768619162_696afc9a0f8d6.jpg
+        tanggal_terima:
+          type: string
+          format: datetime
+          example: "2026-01-20T10:30:00.000000Z"
+        formatted_tanggal_terima:
+          type: string
+          example: "20/01/2026 10:30"
+        status:
+          type: string
+          example: Diterima
+        petugas_penerima:
+          type: string
+          example: John Doe
+        keterangan:
+          type: string
+          nullable: true
+          example: Barang dalam kondisi baik
+        created_at:
+          type: string
+          format: datetime
+          example: "2026-01-20T10:30:00.000000Z"
+        updated_at:
+          type: string
+          format: datetime
+          example: "2026-01-20T10:30:00.000000Z"
+        project:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 1
+            nama:
+              type: string
+              example: Kantor Jakarta
+        area:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 1
+            nama:
+              type: string
+              example: Gudang A
+            alamat:
+              type: string
+              nullable: true
+              example: Lantai 1
+
 tags:
   - name: Authentication
     description: User authentication and profile management
@@ -2149,3 +2998,5 @@ tags:
     description: Security patrol management
   - name: Project Contacts
     description: Project contact management
+  - name: Penerimaan Barang
+    description: Goods receipt management
