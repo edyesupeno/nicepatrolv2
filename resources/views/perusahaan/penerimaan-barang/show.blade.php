@@ -150,7 +150,7 @@
                         
                         @if($penerimaanBarang->pos)
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">POS (Point of Storage)</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">POS (Pos Jaga Security)</label>
                             <p class="text-gray-900">{{ $penerimaanBarang->pos }}</p>
                         </div>
                         @endif

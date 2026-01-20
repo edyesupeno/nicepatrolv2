@@ -61,40 +61,14 @@ class AuthController extends Controller
         
         if ($user->karyawan && $user->karyawan->jabatan) {
             $jabatanName = $user->karyawan->jabatan->nama;
-        }
-        
-        // Get project_id from jabatan->projects (CRITICAL untuk multi-tenancy)
-        $activeProject = $user->getFirstAccessibleProject();
-        if ($activeProject) {
-            $projectId = $activeProject->id;
-            $projectName = $activeProject->nama;
-        }
-
-        // Get user's assigned areas (NEW: Include area data)
-        $areas = [];
-        $primaryAreaId = null;
-        if ($user->karyawan && !$user->isSuperAdmin() && !$user->isAdmin()) {
-            $userAreas = $user->karyawan->areas()
-                ->select('areas.id', 'areas.nama', 'areas.alamat', 'areas.project_id', 'karyawan_areas.is_primary')
-                ->with('project:id,nama')
-                ->orderByDesc('karyawan_areas.is_primary') // Primary area first
-                ->orderBy('areas.nama')
-                ->get();
-                
-            $areas = $userAreas->map(function ($area) {
-                return [
-                    'id' => $area->id,
-                    'nama' => $area->nama,
-                    'alamat' => $area->alamat,
-                    'is_primary' => (bool) $area->pivot->is_primary,
-                    'project_id' => $area->project_id,
-                    'project_name' => $area->project ? $area->project->nama : null,
-                ];
-            })->toArray();
             
-            // Get primary area ID
-            $primaryArea = $userAreas->where('pivot.is_primary', true)->first();
-            $primaryAreaId = $primaryArea ? $primaryArea->id : null;
+            // Get project_id from jabatan->projects (CRITICAL untuk multi-tenancy)
+            // Ambil project pertama dari jabatan (asumsi 1 jabatan = 1 project aktif)
+            $activeProject = $user->karyawan->jabatan->projects()->first();
+            if ($activeProject) {
+                $projectId = $activeProject->id;
+                $projectName = $activeProject->nama;
+            }
         }
 
         return response()->json([
@@ -113,15 +87,12 @@ class AuthController extends Controller
                     'jabatan_name' => $jabatanName,
                     'perusahaan' => $user->perusahaan ? [
                         'id' => $user->perusahaan->id,
-                        'nama' => $user->perusahaan->nama,
+                        'nama' => $user->perusahaan->nama_perusahaan,
                     ] : null,
                     'project' => $projectId ? [
                         'id' => $projectId,
                         'nama' => $projectName,
                     ] : null,
-                    'areas' => $areas, // NEW: Include user's assigned areas
-                    'primary_area_id' => $primaryAreaId, // NEW: Include primary area ID
-                    'area_names' => $areas ? array_column($areas, 'nama') : [], // NEW: Area names for easy display
                 ],
                 'token' => $token,
             ],
@@ -172,40 +143,14 @@ class AuthController extends Controller
         
         if ($user->karyawan && $user->karyawan->jabatan) {
             $jabatanName = $user->karyawan->jabatan->nama;
-        }
-        
-        // Get project_id from jabatan->projects (CRITICAL untuk multi-tenancy)
-        $activeProject = $user->getFirstAccessibleProject();
-        if ($activeProject) {
-            $projectId = $activeProject->id;
-            $projectName = $activeProject->nama;
-        }
-        
-        // Get user's assigned areas (NEW: Include area data)
-        $areas = [];
-        $primaryAreaId = null;
-        if ($user->karyawan && !$user->isSuperAdmin() && !$user->isAdmin()) {
-            $userAreas = $user->karyawan->areas()
-                ->select('areas.id', 'areas.nama', 'areas.alamat', 'areas.project_id', 'karyawan_areas.is_primary')
-                ->with('project:id,nama')
-                ->orderByDesc('karyawan_areas.is_primary') // Primary area first
-                ->orderBy('areas.nama')
-                ->get();
-                
-            $areas = $userAreas->map(function ($area) {
-                return [
-                    'id' => $area->id,
-                    'nama' => $area->nama,
-                    'alamat' => $area->alamat,
-                    'is_primary' => (bool) $area->pivot->is_primary,
-                    'project_id' => $area->project_id,
-                    'project_name' => $area->project ? $area->project->nama : null,
-                ];
-            })->toArray();
             
-            // Get primary area ID
-            $primaryArea = $userAreas->where('pivot.is_primary', true)->first();
-            $primaryAreaId = $primaryArea ? $primaryArea->id : null;
+            // Get project_id from jabatan->projects (CRITICAL untuk multi-tenancy)
+            // Ambil project pertama dari jabatan (asumsi 1 jabatan = 1 project aktif)
+            $activeProject = $user->karyawan->jabatan->projects()->first();
+            if ($activeProject) {
+                $projectId = $activeProject->id;
+                $projectName = $activeProject->nama;
+            }
         }
         
         return response()->json([
@@ -222,15 +167,12 @@ class AuthController extends Controller
                 'jabatan_name' => $jabatanName,
                 'perusahaan' => $user->perusahaan ? [
                     'id' => $user->perusahaan->id,
-                    'nama' => $user->perusahaan->nama, // Fixed: use 'nama' not 'nama_perusahaan'
+                    'nama' => $user->perusahaan->nama_perusahaan,
                 ] : null,
                 'project' => $projectId ? [
                     'id' => $projectId,
                     'nama' => $projectName,
                 ] : null,
-                'areas' => $areas, // NEW: Include user's assigned areas
-                'primary_area_id' => $primaryAreaId, // NEW: Include primary area ID
-                'area_names' => $areas ? array_column($areas, 'nama') : [], // NEW: Area names for easy display
             ],
         ]);
     }

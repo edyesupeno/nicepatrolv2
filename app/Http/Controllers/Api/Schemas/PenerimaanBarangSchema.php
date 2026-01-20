@@ -13,7 +13,7 @@ namespace App\Http\Controllers\Api\Schemas;
  *     @OA\Property(property="perusahaan_id", type="integer", example=1, description="ID perusahaan"),
  *     @OA\Property(property="project_id", type="integer", nullable=true, example=1, description="ID project"),
  *     @OA\Property(property="area_id", type="integer", nullable=true, example=1, description="ID area penyimpanan"),
- *     @OA\Property(property="pos", type="string", nullable=true, example="A1-B2-C3", description="Point of Storage"),
+ *     @OA\Property(property="pos", type="string", nullable=true, example="Pos Jaga Utama", description="Pos jaga security"),
  *     @OA\Property(property="nomor_penerimaan", type="string", example="PB202601200001", description="Nomor penerimaan otomatis"),
  *     @OA\Property(property="nama_barang", type="string", example="Laptop Dell Inspiron", description="Nama barang"),
  *     @OA\Property(property="kategori_barang", type="string", enum={"Dokumen", "Material", "Elektronik", "Logistik"}, example="Elektronik", description="Kategori barang"),

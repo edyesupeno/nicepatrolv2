@@ -5,6 +5,85 @@
 @section('page-subtitle', 'Kelola area di setiap project')
 
 @section('content')
+<!-- CRITICAL ALERT: Project Tanpa Area -->
+@if($projectsWithoutAreas->count() > 0)
+<div class="mb-6 bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 rounded-xl shadow-lg">
+    <div class="p-6">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="ml-4 flex-1">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-bold text-red-800">
+                        <i class="fas fa-warning mr-2"></i>Perhatian: Project Tanpa Area Kerja
+                    </h3>
+                    <span class="px-3 py-1 bg-red-100 text-red-800 text-sm font-semibold rounded-full">
+                        {{ $projectsWithoutAreas->count() }} Project
+                    </span>
+                </div>
+                <p class="text-red-700 text-sm mb-4 leading-relaxed">
+                    <strong>{{ $projectsWithoutAreas->count() }} project</strong> belum memiliki area kerja yang akan <strong>berpengaruh pada {{ $affectedKaryawanCount }} karyawan aktif</strong>. 
+                    @if($affectedKaryawanCount > 0)
+                        Karyawan tidak akan memiliki area tugas dan tidak dapat menggunakan fitur penerimaan barang dengan benar.
+                    @else
+                        Meskipun belum ada karyawan yang terpengaruh, sebaiknya area ditambahkan sebelum ada penugasan karyawan.
+                    @endif
+                </p>
+                
+                <div class="bg-white rounded-lg p-4 mb-4 border border-red-200">
+                    <h4 class="font-semibold text-red-800 mb-2">
+                        <i class="fas fa-list mr-2"></i>Project yang perlu ditambahkan area:
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        @foreach($projectsWithoutAreas as $project)
+                        @php
+                            $karyawanCount = \App\Models\Karyawan::where('project_id', $project->id)->where('is_active', true)->count();
+                        @endphp
+                        <div class="flex items-center justify-between bg-red-50 px-3 py-2 rounded-lg border border-red-200">
+                            <div class="flex items-center">
+                                <i class="fas fa-project-diagram text-red-600 mr-2"></i>
+                                <div>
+                                    <span class="text-sm font-medium text-red-800 block">{{ $project->nama }}</span>
+                                    @if($karyawanCount > 0)
+                                        <span class="text-xs text-red-600">{{ $karyawanCount }} karyawan terpengaruh</span>
+                                    @else
+                                        <span class="text-xs text-gray-500">Belum ada karyawan</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <button 
+                                onclick="addAreaForProject({{ $project->id }}, '{{ $project->nama }}')"
+                                class="px-3 py-1 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition"
+                                title="Tambah Area untuk {{ $project->nama }}"
+                            >
+                                <i class="fas fa-plus mr-1"></i>Tambah
+                            </button>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button 
+                        onclick="openCreateModal()"
+                        class="px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition shadow-lg inline-flex items-center justify-center"
+                    >
+                        <i class="fas fa-plus mr-2"></i>Tambah Area Sekarang
+                    </button>
+                    <div class="text-xs text-red-600 flex items-center">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <span>Setiap project harus memiliki minimal 1 area untuk operasional yang optimal</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 <!-- Stats & Actions Bar -->
 <div class="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
     <div class="flex items-center gap-4">
@@ -397,6 +476,38 @@ function closeCreateModal() {
     document.getElementById('formCreate').reset();
 }
 
+// NEW: Function untuk menambah area untuk project tertentu
+function addAreaForProject(projectId, projectName) {
+    // Buka modal create
+    openCreateModal();
+    
+    // Set project yang dipilih
+    const projectSelect = document.querySelector('#formCreate select[name="project_id"]');
+    projectSelect.value = projectId;
+    
+    // Highlight project yang dipilih
+    projectSelect.style.borderColor = '#ef4444';
+    projectSelect.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+    
+    // Focus ke nama area
+    const namaInput = document.querySelector('#formCreate input[name="nama"]');
+    setTimeout(() => {
+        namaInput.focus();
+        namaInput.placeholder = `Contoh: Area Utama ${projectName}, Lobby ${projectName}, dll`;
+    }, 100);
+    
+    // Show notification
+    Swal.fire({
+        icon: 'info',
+        title: 'Tambah Area',
+        text: `Silakan isi nama area untuk project "${projectName}"`,
+        timer: 3000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+    });
+}
+
 async function openEditModal(hashId) {
     try {
         const response = await fetch(`/perusahaan/areas/${hashId}/edit`);
@@ -447,6 +558,12 @@ document.getElementById('modalCreate')?.addEventListener('click', function(e) {
 
 document.getElementById('modalEdit')?.addEventListener('click', function(e) {
     if (e.target === this) closeEditModal();
+});
+
+// Reset project select styling when changed
+document.querySelector('#formCreate select[name="project_id"]')?.addEventListener('change', function() {
+    this.style.borderColor = '';
+    this.style.boxShadow = '';
 });
 </script>
 @endpush

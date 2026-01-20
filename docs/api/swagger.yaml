@@ -1668,8 +1668,8 @@ paths:
                   example: 1
                 pos:
                   type: string
-                  description: Point of Storage
-                  example: A1-B2-C3
+                  description: Pos jaga security
+                  example: Pos Jaga Utama
                 nama_barang:
                   type: string
                   description: Nama barang
@@ -1797,8 +1797,8 @@ paths:
                   example: 1
                 pos:
                   type: string
-                  description: Point of Storage
-                  example: A1-B2-C3
+                  description: Pos jaga security
+                  example: Pos Jaga Utama
                 nama_barang:
                   type: string
                   description: Nama barang
@@ -2898,7 +2898,7 @@ components:
         pos:
           type: string
           nullable: true
-          example: A1-B2-C3
+          example: Pos Jaga Utama
         nomor_penerimaan:
           type: string
           example: PB202601200001

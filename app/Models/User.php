@@ -165,6 +165,56 @@ class User extends Authenticatable
         };
     }
 
+    /**
+     * Get project IDs yang bisa diakses user melalui jabatan
+     * IMPORTANT: Tidak menggunakan global scope untuk menghindari circular dependency
+     */
+    public function getAccessibleProjectIds(): array
+    {
+        if ($this->isSuperAdmin()) {
+            // Superadmin bisa akses semua project di perusahaan mereka
+            return Project::withoutGlobalScope('project_access')
+                ->where('perusahaan_id', $this->perusahaan_id)
+                ->pluck('id')->toArray();
+        }
+        
+        // PRIORITAS 1: Gunakan project_id langsung dari karyawan (lebih akurat)
+        if ($this->karyawan && $this->karyawan->project_id) {
+            return [$this->karyawan->project_id];
+        }
+        
+        // FALLBACK: Gunakan project dari jabatan (untuk backward compatibility)
+        if ($this->karyawan && $this->karyawan->jabatan) {
+            return $this->karyawan->jabatan->projects()
+                ->withoutGlobalScope('project_access')
+                ->pluck('projects.id')->toArray();
+        }
+        
+        return [];
+    }
+    
+    /**
+     * Get project pertama yang bisa diakses user
+     */
+    public function getFirstAccessibleProject(): ?Project
+    {
+        // PRIORITAS 1: Gunakan project_id langsung dari karyawan
+        if ($this->karyawan && $this->karyawan->project_id) {
+            return Project::withoutGlobalScope('project_access')
+                ->find($this->karyawan->project_id);
+        }
+        
+        // FALLBACK: Gunakan method lama
+        $projectIds = $this->getAccessibleProjectIds();
+        
+        if (!empty($projectIds)) {
+            return Project::withoutGlobalScope('project_access')
+                ->whereIn('id', $projectIds)->first();
+        }
+        
+        return null;
+    }
+
     // Get all available roles
     public static function getAllRoles(): array
     {

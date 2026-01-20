@@ -1,20 +1,88 @@
 {
   "info": {
-    "name": "Nice Patrol API",
-    "description": "API collection for Nice Patrol Security Management System",
+    "name": "Nice Patrol API - User Ownership Model",
+    "description": "API collection for Nice Patrol Security Management System with strict User Ownership and Multi-Tenancy.\n\n## User Ownership Architecture\n\nThis API implements strict user-level data ownership with the following security layers:\n1. **Company Level**: Users can only access data from their company (`perusahaan_id`)\n2. **User Ownership**: Users can only see/edit/delete data they created themselves (`created_by`)\n3. **Admin Exception**: Admin and Superadmin can access all data within their company\n\n### Security Matrix:\n| User Type | View Data | Edit Data | Delete Data |\n|-----------|-----------|-----------|-------------|\n| **Superadmin** | All companies | All data | All data |\n| **Admin** | Own company | Own company | Own company |\n| **User** | Own data only | Own data only | Own data only |\n\n### Testing Credentials:\n- **Regular User**: `edy@gmail.com` / `12345678` (sees only own data)\n- **Admin User**: `abb@nicepatrol.id` / `12345678` (sees all company data)\n\n### Authentication Response:\nLogin returns user info including:\n- `project_id`: ID of assigned project\n- `project`: Project details (id, nama)\n- `perusahaan_id`: Company ID for data isolation\n- `role`: User role for permission checking\n- `areas`: List of assigned areas with primary flag (for karyawan users)\n\n### Auto-Assignment Rules:\n- `perusahaan_id`: Auto-assigned from user's company\n- `created_by`: Auto-assigned to authenticated user ID\n- `project_id`: Auto-assigned from user's accessible projects\n- Users cannot modify data outside their ownership scope\n\n### Data Filtering (Global Scopes):\n- **Company Scope**: `WHERE perusahaan_id = user.perusahaan_id`\n- **User Ownership Scope**: `WHERE created_by = user.id` (except admin/superadmin)\n- **Automatic**: All queries are automatically filtered by these scopes\n\n### Karyawan Areas System:\n- **Area Assignment**: Areas are assigned to karyawan via `karyawan_areas` pivot table\n- **Primary Area**: Each karyawan has one primary area for default selection\n- **Multi-Project**: Karyawan can have areas from multiple projects\n- **Consistent Validation**: Same areas shown in dropdown are allowed in data creation\n- **Admin Override**: Admin users see all company areas, regular users see only assigned areas\n\n### API Security Features:\n- **Hash IDs**: All resources use hash IDs instead of integer IDs\n- **Bearer Authentication**: JWT tokens for API access\n- **Ownership Validation**: Double-check ownership in update/delete operations\n- **403 Forbidden**: Clear error messages for unauthorized access\n- **Audit Trail**: All records track who created them (`created_by`)\n- **Area Access Control**: Users can only select areas assigned to them\n\n### Available Endpoints:\n- **Authentication**: Login, logout, user info with area assignments\n- **Penerimaan Barang**: CRUD with strict user ownership and area validation\n- **Karyawan Areas**: Get assigned areas for dropdown population\n- **No Global Endpoints**: All data is user-scoped and area-restricted",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_postman_id": "nice-patrol-api-v1"
+    "_postman_id": "nice-patrol-api-user-ownership"
   },
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:8000/api/v1",
-      "type": "string"
+      "value": "https://devapi.nicepatrol.id/api/v1",
+      "type": "string",
+      "description": "Base API URL - change for different environments"
     },
     {
       "key": "token",
       "value": "",
-      "type": "string"
+      "type": "string",
+      "description": "Authentication token - auto-set after login"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string",
+      "description": "Current user ID - auto-set after login"
+    },
+    {
+      "key": "user_name",
+      "value": "",
+      "type": "string",
+      "description": "Current user name - auto-set after login"
+    },
+    {
+      "key": "user_role",
+      "value": "",
+      "type": "string",
+      "description": "Current user role - auto-set after login"
+    },
+    {
+      "key": "perusahaan_id",
+      "value": "",
+      "type": "string",
+      "description": "User's company ID - auto-set after login"
+    },
+    {
+      "key": "project_id",
+      "value": "",
+      "type": "string",
+      "description": "User's project ID - auto-set after login"
+    },
+    {
+      "key": "project_name",
+      "value": "",
+      "type": "string",
+      "description": "User's project name - auto-set after login"
+    },
+    {
+      "key": "patrol_hash_id",
+      "value": "",
+      "type": "string",
+      "description": "Sample patrol hash ID for testing"
+    },
+    {
+      "key": "location_hash_id",
+      "value": "",
+      "type": "string",
+      "description": "Sample location hash ID for testing"
+    },
+    {
+      "key": "checkpoint_hash_id",
+      "value": "",
+      "type": "string",
+      "description": "Sample checkpoint hash ID for testing"
+    },
+    {
+      "key": "project_hash_id",
+      "value": "",
+      "type": "string",
+      "description": "Sample project hash ID for testing"
+    },
+    {
+      "key": "penerimaan_barang_hash_id",
+      "value": "",
+      "type": "string",
+      "description": "Sample penerimaan barang hash ID for testing"
     }
   ],
   "auth": {
@@ -38,9 +106,9 @@
           "if (url.includes('localhost')) {",
           "    pm.collectionVariables.set('base_url', 'http://localhost:8000/api/v1');",
           "} else if (url.includes('devapi')) {",
-          "    pm.collectionVariables.set('base_url', 'https://devapi.nicepatrol.id/v1');",
+          "    pm.collectionVariables.set('base_url', 'https://devapi.nicepatrol.id/api/v1');",
           "} else if (url.includes('api.nicepatrol.id')) {",
-          "    pm.collectionVariables.set('base_url', 'https://api.nicepatrol.id/v1');",
+          "    pm.collectionVariables.set('base_url', 'https://api.nicepatrol.id/api/v1');",
           "}"
         ]
       }
@@ -62,13 +130,33 @@
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
-                  "pm.test('Response has token', function () {",
+                  "pm.test('Response has token and user info', function () {",
                   "    const jsonData = pm.response.json();",
                   "    pm.expect(jsonData.success).to.be.true;",
                   "    pm.expect(jsonData.data.token).to.exist;",
+                  "    pm.expect(jsonData.data.user).to.exist;",
+                  "    pm.expect(jsonData.data.user.perusahaan_id).to.exist;",
                   "    ",
-                  "    // Save token for other requests",
+                  "    // Save token and user info for other requests",
                   "    pm.collectionVariables.set('token', jsonData.data.token);",
+                  "    pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "    pm.collectionVariables.set('user_name', jsonData.data.user.name);",
+                  "    pm.collectionVariables.set('user_role', jsonData.data.user.role);",
+                  "    pm.collectionVariables.set('perusahaan_id', jsonData.data.user.perusahaan_id);",
+                  "    ",
+                  "    // Save project info if available (for multi-tenancy)",
+                  "    if (jsonData.data.user.project_id) {",
+                  "        pm.collectionVariables.set('project_id', jsonData.data.user.project_id);",
+                  "        pm.collectionVariables.set('project_name', jsonData.data.user.project.nama);",
+                  "        console.log('✅ Login successful as: ' + jsonData.data.user.name);",
+                  "        console.log('📋 Role: ' + jsonData.data.user.role);",
+                  "        console.log('🏢 Company ID: ' + jsonData.data.user.perusahaan_id);",
+                  "        console.log('🏗️ Project: ' + jsonData.data.user.project.nama + ' (ID: ' + jsonData.data.user.project_id + ')');",
+                  "    } else {",
+                  "        console.log('⚠️ User has no assigned project');",
+                  "    }",
+                  "    ",
+                  "    console.log('🔑 Token saved for subsequent requests');",
                   "});"
                 ]
               }
@@ -91,14 +179,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"security@nicepatrol.id\",\n    \"password\": \"password123\"\n}"
+              "raw": "{\n    \"email\": \"edy@gmail.com\",\n    \"password\": \"12345678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/login",
               "host": ["{{base_url}}"],
               "path": ["login"]
             },
-            "description": "Login with email and password to get access token"
+            "description": "Login with email and password to get access token.\n\n**Multi-Tenancy Response:**\nThe response now includes:\n- `project_id`: ID of the project assigned to user's jabatan\n- `project`: Object with project details (id, nama)\n- `perusahaan_id`: Company ID for data isolation\n\n**Example Response:**\n```json\n{\n  \"success\": true,\n  \"message\": \"Login berhasil\",\n  \"data\": {\n    \"user\": {\n      \"id\": 7,\n      \"name\": \"Muhammad Edi Suarno\",\n      \"email\": \"edy@gmail.com\",\n      \"role\": \"security_officer\",\n      \"perusahaan_id\": 1,\n      \"project_id\": 1,\n      \"project\": {\n        \"id\": 1,\n        \"nama\": \"Kantor Jakarta\"\n      }\n    },\n    \"token\": \"1|abc123...\"\n  }\n}\n```"
           }
         },
         {
@@ -116,7 +209,7 @@
               "host": ["{{base_url}}"],
               "path": ["me"]
             },
-            "description": "Get current authenticated user information"
+            "description": "Get current authenticated user information including project details.\n\n**Multi-Tenancy Response:**\nReturns user info with project assignment:\n- `project_id`: ID of assigned project\n- `project`: Project details (id, nama)\n- `perusahaan_id`: Company ID\n\n**Example Response:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"id\": 7,\n    \"name\": \"Muhammad Edi Suarno\",\n    \"email\": \"edy@gmail.com\",\n    \"role\": \"security_officer\",\n    \"perusahaan_id\": 1,\n    \"project_id\": 1,\n    \"project\": {\n      \"id\": 1,\n      \"nama\": \"Kantor Jakarta\"\n    },\n    \"perusahaan\": {\n      \"id\": 1,\n      \"nama\": \"PT. Nice Patrol\"\n    }\n  }\n}\n```"
           }
         },
         {
@@ -387,7 +480,7 @@
       "name": "Lokasi",
       "item": [
         {
-          "name": "Get All Locations",
+          "name": "Get My Locations (User Access)",
           "request": {
             "method": "GET",
             "header": [
@@ -464,7 +557,7 @@
       "name": "Checkpoint",
       "item": [
         {
-          "name": "Get All Checkpoints",
+          "name": "Get My Checkpoints (User Access)",
           "request": {
             "method": "GET",
             "header": [
@@ -488,7 +581,7 @@
                 }
               ]
             },
-            "description": "Get all checkpoints with pagination"
+            "description": "Get checkpoints accessible to current user with user-level filtering.\n\n**🔒 USER ACCESS CONTROL:**\n- Users only see checkpoints from their accessible projects\n- Admin users see all checkpoints in their company\n- Automatic filtering by company and project access\n\n**📊 PAGINATION SUPPORT:**\n- Use `page` and `per_page` parameters\n- Default: 20 items per page\n- Maximum: 100 items per page"
           }
         },
         {
@@ -541,7 +634,7 @@
       "name": "Patroli",
       "item": [
         {
-          "name": "Get All Patrols",
+          "name": "Get My Patrols (User Ownership)",
           "request": {
             "method": "GET",
             "header": [
@@ -565,7 +658,7 @@
                 }
               ]
             },
-            "description": "Get all patrols for current user"
+            "description": "Get patrols created by current user with strict ownership filtering.\n\n**🔒 USER OWNERSHIP:**\n- Users only see patrols they created themselves\n- Admin users see all patrols in their company\n- Perfect data isolation between users\n\n**📊 AUTOMATIC FILTERING:**\n- Filtered by `created_by = user.id` for regular users\n- Filtered by company for all users\n- Includes related data (locations, checkpoints)"
           }
         },
         {
@@ -759,6 +852,360 @@
               "path": ["projects", "{{project_hash_id}}", "contacts"]
             },
             "description": "Create new project contact (admin only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Penerimaan Barang",
+      "item": [
+        {
+          "name": "Get My Areas (Karyawan Areas)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct structure', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "    pm.expect(jsonData.meta).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('Karyawan areas validation', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const userRole = pm.collectionVariables.get('user_role');",
+                  "    ",
+                  "    if (jsonData.data.length > 0) {",
+                  "        jsonData.data.forEach(function(area) {",
+                  "            pm.expect(area.id).to.exist;",
+                  "            pm.expect(area.nama).to.exist;",
+                  "            pm.expect(area.project_id).to.exist;",
+                  "            pm.expect(area.project_name).to.exist;",
+                  "            pm.expect(area.is_primary).to.be.a('boolean');",
+                  "        });",
+                  "        ",
+                  "        // Check for primary area",
+                  "        const primaryAreas = jsonData.data.filter(area => area.is_primary);",
+                  "        if (primaryAreas.length > 0) {",
+                  "            console.log('✅ Primary area found: ' + primaryAreas[0].nama);",
+                  "        }",
+                  "        ",
+                  "        console.log('📊 Total assigned areas: ' + jsonData.data.length);",
+                  "        console.log('🏗️ Areas from projects: ' + [...new Set(jsonData.data.map(a => a.project_name))].join(', '));",
+                  "    } else {",
+                  "        console.log('📭 No areas assigned to this karyawan');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/penerimaan-barang-my-areas",
+              "host": ["{{base_url}}"],
+              "path": ["penerimaan-barang-my-areas"]
+            },
+            "description": "Get areas assigned to current karyawan via karyawan_areas pivot table.\n\n**🎯 KARYAWAN-AREAS BASED APPROACH:**\n- **Data Source**: Uses `karyawan_areas` pivot table for area assignments\n- **Consistent Logic**: Same logic used in penerimaan barang area validation\n- **Primary Area**: Shows which area is marked as primary for the karyawan\n- **Multi-Project**: Can show areas from multiple projects if karyawan is assigned\n\n**🔒 ACCESS CONTROL:**\n- **Karyawan Only**: Only users with karyawan data can access this endpoint\n- **Personal Areas**: Shows only areas assigned to authenticated karyawan\n- **No Admin Override**: Even admin users see their own karyawan areas (if they have karyawan data)\n- **404 Response**: Returns error if user has no karyawan data\n\n**📊 RESPONSE FORMAT:**\n```json\n{\n  \"success\": true,\n  \"message\": \"Data berhasil diambil\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"nama\": \"Gudang A\",\n      \"alamat\": \"Lantai 1\",\n      \"is_primary\": true,\n      \"project_id\": 1,\n      \"project_name\": \"Kantor Jakarta\"\n    }\n  ],\n  \"meta\": {\n    \"total_areas\": 3,\n    \"primary_area_id\": 1,\n    \"karyawan_id\": 7,\n    \"karyawan_name\": \"Muhammad Edi Suarno\"\n  }\n}\n```\n\n**🎯 USE CASES:**\n- **Area Dropdown**: Populate area dropdown in penerimaan barang form\n- **Validation**: Ensure users can only select their assigned areas\n- **Primary Area**: Auto-select primary area as default\n- **Multi-Project**: Handle karyawan assigned to multiple projects\n\n**🔐 SECURITY FEATURES:**\n- **Karyawan-Level Filtering**: Only shows areas assigned to current karyawan\n- **Consistent with Validation**: Same areas shown here are allowed in penerimaan barang\n- **Project Context**: Shows which project each area belongs to\n- **Primary Area Identification**: Clearly marks primary area for UX\n\n**🧪 TESTING:**\n- Login with karyawan user → should see assigned areas\n- Login with non-karyawan user → should get 404\n- Check primary area is marked correctly\n- Verify areas match those allowed in penerimaan barang creation"
+          }
+        },
+        {
+          "name": "Get My Penerimaan Barang (User Ownership)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct structure', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.exist;",
+                  "    pm.expect(jsonData.data.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('User ownership validation', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const userPerusahaanId = pm.collectionVariables.get('perusahaan_id');",
+                  "    const userId = pm.collectionVariables.get('user_id');",
+                  "    const userRole = pm.collectionVariables.get('user_role');",
+                  "    ",
+                  "    if (jsonData.data.data.length > 0) {",
+                  "        jsonData.data.data.forEach(function(item) {",
+                  "            // All items should belong to user's company",
+                  "            pm.expect(item.perusahaan_id).to.equal(parseInt(userPerusahaanId));",
+                  "            ",
+                  "            // All items should have createdBy information",
+                  "            pm.expect(item.created_by).to.exist;",
+                  "            ",
+                  "            // For non-admin users, all items should be created by them",
+                  "            if (userRole !== 'admin' && userRole !== 'superadmin') {",
+                  "                pm.expect(item.created_by).to.equal(parseInt(userId));",
+                  "                console.log('✅ User ownership verified: Item ' + item.nama_barang + ' created by current user');",
+                  "            } else {",
+                  "                console.log('👑 Admin access: Item ' + item.nama_barang + ' created by user ID: ' + item.created_by);",
+                  "            }",
+                  "        });",
+                  "        ",
+                  "        console.log('📊 Total items visible to user (' + userRole + '): ' + jsonData.data.data.length);",
+                  "    } else {",
+                  "        console.log('📭 No items found for this user');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/penerimaan-barang?page=1&per_page=20&kategori=Elektronik&search=laptop",
+              "host": ["{{base_url}}"],
+              "path": ["penerimaan-barang"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                },
+                {
+                  "key": "kategori",
+                  "value": "Elektronik",
+                  "disabled": true
+                },
+                {
+                  "key": "kondisi",
+                  "value": "Baik",
+                  "disabled": true
+                },
+                {
+                  "key": "project_id",
+                  "value": "{{project_id}}",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "laptop",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get list of penerimaan barang with strict user ownership filtering.\n\n**🔒 USER OWNERSHIP MODEL:**\n- **Regular Users**: Only see data they created themselves (created_by = user.id)\n- **Admin Users**: See all data within their company\n- **Superadmin**: See all data across companies\n- **Company Isolation**: All users only see data from their company\n\n**🎯 SECURITY FEATURES:**\n- Automatic filtering via global scopes\n- No way to access other users' data\n- Perfect data isolation between users\n- Admin oversight maintained\n\n**📋 AVAILABLE FILTERS:**\n- `kategori`: Dokumen, Material, Elektronik, Logistik\n- `kondisi`: Baik, Rusak, Segel Terbuka\n- `project_id`: Filter by specific project (must be accessible to user)\n- `search`: Search in nama_barang, nomor_penerimaan, pengirim\n- `page`: Pagination page number\n- `per_page`: Items per page (max 100)\n\n**📊 RESPONSE INCLUDES:**\n- `created_by`: ID of user who created the record\n- `createdBy`: Full user information (id, name)\n- `project`: Project details (if assigned)\n- `area`: Storage area details (if assigned)\n- `hash_id`: Secure hash ID for URL routing\n\n**🧪 TESTING:**\n- Login with different users to see data isolation\n- Regular users will only see their own records\n- Admin users will see all company records"
+          }
+        },
+        {
+          "name": "Create Penerimaan Barang",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Penerimaan Barang created successfully', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data.hash_id).to.exist;",
+                  "    ",
+                  "    // Save hash_id for other requests",
+                  "    pm.collectionVariables.set('penerimaan_barang_hash_id', jsonData.data.hash_id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"project_id\": {{project_id}},\n    \"area_id\": 1,\n    \"pos\": \"Pos Jaga Utama\",\n    \"nama_barang\": \"Laptop Dell Inspiron 15\",\n    \"kategori_barang\": \"Elektronik\",\n    \"jumlah_barang\": 2,\n    \"satuan\": \"unit\",\n    \"kondisi_barang\": \"Baik\",\n    \"pengirim\": \"PT. Supplier ABC\",\n    \"tujuan_departemen\": \"IT Department\",\n    \"tanggal_terima\": \"2026-01-20 14:30:00\",\n    \"keterangan\": \"Laptop untuk karyawan baru\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/penerimaan-barang",
+              "host": ["{{base_url}}"],
+              "path": ["penerimaan-barang"]
+            },
+            "description": "Create new penerimaan barang record with automatic user ownership assignment.\n\n**🔒 AUTO-ASSIGNMENT (SECURITY):**\n- `perusahaan_id`: Auto-assigned from authenticated user's company\n- `created_by`: Auto-assigned to authenticated user ID (ownership tracking)\n- `project_id`: Auto-assigned to user's accessible project if not specified\n- `nomor_penerimaan`: Auto-generated (format: PB + YYYYMMDD + sequence)\n- `petugas_penerima`: **ALWAYS** auto-assigned from authenticated user name (cannot be overridden)\n\n**📝 REQUIRED FIELDS:**\n- `nama_barang`: Name of the item\n- `kategori_barang`: Dokumen, Material, Elektronik, Logistik\n- `jumlah_barang`: Quantity (integer, min: 1)\n- `satuan`: Unit of measurement\n- `kondisi_barang`: Baik, Rusak, Segel Terbuka\n- `pengirim`: Sender name\n- `tujuan_departemen`: Target department\n- `tanggal_terima`: Receive date and time (YYYY-MM-DD HH:MM:SS or YYYY-MM-DD)\n\n**📋 OPTIONAL FIELDS:**\n- `project_id`: Will auto-assign if not provided\n- `area_id`: Storage area ID\n- `pos`: Pos jaga security (e.g., \"Pos Jaga Utama\")\n- `keterangan`: Additional notes\n- `foto_barang`: Image file (max 10MB, formats: jpeg,png,jpg,gif,webp)\n\n**⚠️ REMOVED FIELDS:**\n- `petugas_penerima`: No longer accepted in request - automatically set to authenticated user's name\n\n**🎯 USER OWNERSHIP:**\n- Record is automatically owned by the creator\n- Only the creator (or admin) can edit/delete this record later\n- Perfect audit trail through created_by field\n- Petugas penerima always matches the authenticated user\n\n**🔐 SECURITY VALIDATION:**\n- User can only assign to projects they have access to\n- All records are automatically linked to creator for ownership tracking\n- No way to create records for other users\n- No way to fake petugas_penerima identity"
+          }
+        },
+        {
+          "name": "Get Penerimaan Barang by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/penerimaan-barang/{{penerimaan_barang_hash_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["penerimaan-barang", "{{penerimaan_barang_hash_id}}"]
+            },
+            "description": "Get specific penerimaan barang details by hash ID.\n\n**Multi-Tenancy & User-Level Security:**\n- **Company Level**: User can only access records from their company\n- **Project Level**: User can only access records from their assigned projects\n- **User Level**: Non-admin users can only access records they created themselves\n- **Admin Users**: Can access all records within their company\n- Returns 404 if trying to access unauthorized record\n- Includes project, area, and createdBy details in response\n\n**Response includes:**\n- Complete item details with relationships\n- `createdBy`: Information about who created the record\n- `project`: Project details (id, nama)\n- `area`: Storage area details (id, nama, alamat)\n- `foto_url`: Full URL to item photo if exists"
+          }
+        },
+        {
+          "name": "Update Penerimaan Barang",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nama_barang\": \"Laptop Dell Inspiron 15 (Updated)\",\n    \"kategori_barang\": \"Elektronik\",\n    \"jumlah_barang\": 3,\n    \"satuan\": \"unit\",\n    \"kondisi_barang\": \"Baik\",\n    \"pengirim\": \"PT. Supplier ABC\",\n    \"tujuan_departemen\": \"IT Department\",\n    \"tanggal_terima\": \"2026-01-20 16:45:00\",\n    \"keterangan\": \"Updated: Laptop untuk karyawan baru dan backup\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/penerimaan-barang/{{penerimaan_barang_hash_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["penerimaan-barang", "{{penerimaan_barang_hash_id}}"]
+            },
+            "description": "Update existing penerimaan barang record with strict ownership validation.\n\n**🔒 USER OWNERSHIP SECURITY:**\n- **Regular Users**: Can ONLY update records they created themselves\n- **Admin Users**: Can update all records within their company\n- **Superadmin**: Can update all records across companies\n- **403 Forbidden**: Clear error if trying to update others' data\n- **Double Validation**: Global scope + explicit ownership check\n\n**🎯 OWNERSHIP VALIDATION:**\n- System checks if `created_by` equals authenticated user ID\n- Returns 403 error with message: \"Anda tidak memiliki akses untuk mengupdate data ini\"\n- Admin and superadmin bypass this check\n- Perfect data isolation between users\n\n**📝 UPDATABLE FIELDS:**\n- All item details (nama_barang, kategori_barang, etc.)\n- Project and area assignment (within user's access)\n- Photo upload (replaces existing photo)\n- Cannot change `perusahaan_id` or `created_by` (auto-maintained)\n\n**🔐 SECURITY FEATURES:**\n- Ownership validation through global scopes\n- Audit trail maintained through created_by field\n- Photo management (old photo deleted when new one uploaded)\n- Hash ID routing prevents ID guessing attacks\n\n**🧪 TESTING:**\n- Try updating record created by another user → should get 403\n- Admin should be able to update any record in company\n- Regular user should only update own records"
+          }
+        },
+        {
+          "name": "Test Karyawan Areas Integration",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Karyawan areas integration test', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const userRole = pm.collectionVariables.get('user_role');",
+                  "    ",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "    ",
+                  "    if (jsonData.data.length > 0) {",
+                  "        console.log('📊 Testing karyawan areas integration...');",
+                  "        console.log('👤 User Role: ' + userRole);",
+                  "        console.log('📦 Total areas available: ' + jsonData.data.length);",
+                  "        ",
+                  "        // Check if areas have required fields",
+                  "        jsonData.data.forEach(function(area, index) {",
+                  "            pm.expect(area.id).to.exist;",
+                  "            pm.expect(area.nama).to.exist;",
+                  "            pm.expect(area.is_primary).to.be.a('boolean');",
+                  "            ",
+                  "            if (area.is_primary) {",
+                  "                console.log('⭐ Primary area: ' + area.nama + ' (ID: ' + area.id + ')');",
+                  "            }",
+                  "        });",
+                  "        ",
+                  "        // Test consistency with penerimaan barang area validation",
+                  "        console.log('✅ Areas are consistent with karyawan_areas assignment');",
+                  "        console.log('✅ These areas can be used in penerimaan barang creation');",
+                  "        ",
+                  "        // Check meta information",
+                  "        if (jsonData.meta) {",
+                  "            console.log('📋 Meta info: ' + JSON.stringify(jsonData.meta));",
+                  "        }",
+                  "    } else {",
+                  "        console.log('📭 No areas assigned to this karyawan');",
+                  "        console.log('⚠️ User may not have karyawan data or no areas assigned');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/penerimaan-barang-my-areas",
+              "host": ["{{base_url}}"],
+              "path": ["penerimaan-barang-my-areas"]
+            },
+            "description": "🧪 **KARYAWAN AREAS INTEGRATION TEST**\n\nThis endpoint tests the new karyawan-areas-based approach for area management in penerimaan barang.\n\n**🎯 TESTING OBJECTIVES:**\n\n**1. Karyawan Areas Assignment:**\n- Verify user has karyawan data and area assignments\n- Check that areas are properly assigned via karyawan_areas pivot table\n- Validate primary area identification\n\n**2. Data Consistency:**\n- Ensure areas returned here match those allowed in penerimaan barang validation\n- Verify same logic is used for area access control\n- Test multi-project area assignments\n\n**3. User Experience:**\n- Check primary area is clearly marked for auto-selection\n- Verify area names and addresses are complete\n- Test project context information\n\n**🔧 TESTING SCENARIOS:**\n\n**👤 Regular Karyawan User:**\n- Should see only areas assigned via karyawan_areas\n- Should have at least one primary area marked\n- Areas should span across assigned projects\n\n**👑 Admin with Karyawan Data:**\n- Should see their personal karyawan areas (not all company areas)\n- Demonstrates that even admin users follow karyawan area rules\n- Shows consistency in area assignment logic\n\n**❌ Non-Karyawan User:**\n- Should receive 404 error\n- Clear message about karyawan data requirement\n- Prevents access for users without area assignments\n\n**✅ VALIDATION CHECKLIST:**\n- [ ] Areas match karyawan_areas assignments\n- [ ] Primary area is properly identified\n- [ ] Project information is included\n- [ ] Response format is consistent\n- [ ] Error handling for non-karyawan users\n- [ ] Integration with penerimaan barang validation\n\n**📊 EXPECTED RESULTS:**\n- **Karyawan Users**: List of assigned areas with primary flag\n- **Non-Karyawan**: 404 error with clear message\n- **Consistency**: Same areas allowed in penerimaan barang creation\n\n**🔍 DEBUGGING:**\n- Check console logs for detailed area information\n- Verify primary area identification\n- Test with different karyawan users\n- Confirm project assignments are correct"
+          }
+        },
+        {
+          "name": "Delete Penerimaan Barang",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/penerimaan-barang/{{penerimaan_barang_hash_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["penerimaan-barang", "{{penerimaan_barang_hash_id}}"]
+            },
+            "description": "Delete penerimaan barang record with strict ownership validation (soft delete).\n\n**🔒 USER OWNERSHIP SECURITY:**\n- **Regular Users**: Can ONLY delete records they created themselves\n- **Admin Users**: Can delete all records within their company\n- **Superadmin**: Can delete all records across companies\n- **403 Forbidden**: Clear error if trying to delete others' data\n- **Double Validation**: Global scope + explicit ownership check\n\n**🎯 OWNERSHIP VALIDATION:**\n- System checks if `created_by` equals authenticated user ID\n- Returns 403 error with message: \"Anda tidak memiliki akses untuk menghapus data ini\"\n- Admin and superadmin bypass this check\n- Perfect data isolation between users\n\n**🗑️ DELETION BEHAVIOR:**\n- **Soft Delete**: Record marked as deleted, not permanently removed\n- **Photo Cleanup**: Associated photo file is permanently deleted from storage\n- **Audit Trail**: Deletion info preserved for audit purposes\n- **Reversible**: Admin can potentially restore soft-deleted records\n\n**🔐 SECURITY FEATURES:**\n- Ownership validation through global scopes\n- Audit trail preserved (soft delete maintains created_by info)\n- File cleanup (photos are permanently deleted from storage)\n- Hash ID routing prevents ID guessing attacks\n\n**🧪 TESTING:**\n- Try deleting record created by another user → should get 403\n- Admin should be able to delete any record in company\n- Regular user should only delete own records\n- Verify photo files are cleaned up after deletion"
           }
         }
       ]

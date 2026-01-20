@@ -33,7 +33,22 @@ class AreaController extends Controller
         $areas = $query->latest()->paginate(15)->withQueryString();
         $projects = Project::where('is_active', true)->orderBy('nama')->get();
 
-        return view('perusahaan.areas.index', compact('areas', 'projects'));
+        // CRITICAL: Deteksi project tanpa area untuk alert
+        $projectsWithoutAreas = Project::where('is_active', true)
+            ->whereDoesntHave('areas')
+            ->orderBy('nama')
+            ->get();
+
+        // Hitung total karyawan yang terpengaruh
+        $affectedKaryawanCount = 0;
+        if ($projectsWithoutAreas->count() > 0) {
+            $projectIdsWithoutAreas = $projectsWithoutAreas->pluck('id');
+            $affectedKaryawanCount = \App\Models\Karyawan::whereIn('project_id', $projectIdsWithoutAreas)
+                ->where('is_active', true)
+                ->count();
+        }
+
+        return view('perusahaan.areas.index', compact('areas', 'projects', 'projectsWithoutAreas', 'affectedKaryawanCount'));
     }
 
     public function store(Request $request)

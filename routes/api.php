@@ -73,6 +73,7 @@ $apiRoutes = function () {
         Route::apiResource('penerimaan-barang', \App\Http\Controllers\Api\PenerimaanBarangController::class);
         Route::get('penerimaan-barang-projects', [\App\Http\Controllers\Api\PenerimaanBarangController::class, 'getProjects']);
         Route::get('penerimaan-barang-areas/{project}', [\App\Http\Controllers\Api\PenerimaanBarangController::class, 'getAreasByProject']);
+        Route::get('penerimaan-barang-my-areas', [\App\Http\Controllers\Api\PenerimaanBarangController::class, 'getMyAreas']);
     });
 };
 

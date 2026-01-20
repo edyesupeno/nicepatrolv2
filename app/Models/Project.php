@@ -43,21 +43,23 @@ class Project extends Model
             }
         });
         
-        // CRITICAL: Project scope untuk non-superadmin
-        static::addGlobalScope('project', function (Builder $builder) {
+        // CRITICAL: Project scope - HANYA untuk non-admin dan non-superadmin
+        static::addGlobalScope('project_access', function (Builder $builder) {
             if (auth()->check()) {
                 $user = auth()->user();
                 
-                // Jika bukan superadmin, batasi hanya project mereka
-                if (!$user->isSuperAdmin()) {
-                    // Get project_id dari karyawan
-                    if ($user->karyawan && $user->karyawan->project_id) {
-                        $builder->where('id', $user->karyawan->project_id);
+                // HANYA user biasa yang dibatasi project access
+                // Admin dan Superadmin bisa lihat semua project di perusahaan mereka
+                if (!$user->isSuperAdmin() && !$user->isAdmin()) {
+                    $projectIds = $user->getAccessibleProjectIds();
+                    if (!empty($projectIds)) {
+                        $builder->whereIn('id', $projectIds);
                     } else {
                         // Jika tidak ada project_id, return empty result
                         $builder->whereRaw('1 = 0');
                     }
                 }
+                // Admin dan Superadmin tidak ada filter project - bisa lihat semua
             }
         });
     }

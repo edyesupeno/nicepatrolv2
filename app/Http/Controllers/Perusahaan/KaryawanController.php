@@ -492,6 +492,12 @@ class KaryawanController extends Controller
         ]);
 
         try {
+            DB::beginTransaction();
+            
+            // Cek apakah project_id berubah
+            $projectChanged = $karyawan->project_id != $validated['project_id'];
+            
+            // Update data karyawan
             $karyawan->update([
                 'project_id' => $validated['project_id'],
                 'jabatan_id' => $validated['jabatan_id'],
@@ -501,9 +507,41 @@ class KaryawanController extends Controller
                 'is_active' => $validated['is_active'],
             ]);
 
+            // CRITICAL: Jika project berubah, update karyawan areas
+            if ($projectChanged) {
+                // Hapus semua area assignments lama
+                $karyawan->areas()->detach();
+                
+                // Ambil semua area di project baru
+                $newAreas = \App\Models\Area::where('project_id', $validated['project_id'])->get();
+                
+                if ($newAreas->count() > 0) {
+                    // Assign semua area di project baru
+                    $areaData = [];
+                    foreach ($newAreas as $index => $area) {
+                        $areaData[$area->id] = [
+                            'is_primary' => $index === 0, // Area pertama jadi primary
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                    
+                    $karyawan->areas()->attach($areaData);
+                    
+                    $message = 'Informasi pekerjaan berhasil diperbarui. Area kerja otomatis disesuaikan dengan project baru (' . $newAreas->count() . ' area).';
+                } else {
+                    $message = 'Informasi pekerjaan berhasil diperbarui. Project baru belum memiliki area kerja.';
+                }
+            } else {
+                $message = 'Informasi pekerjaan berhasil diperbarui.';
+            }
+
+            DB::commit();
+
             return redirect()->route('perusahaan.karyawans.show', $karyawan->hash_id)
-                            ->with(['success' => 'Informasi pekerjaan berhasil diperbarui', 'active_tab' => 'informasi']);
+                            ->with(['success' => $message, 'active_tab' => 'informasi']);
         } catch (\Exception $e) {
+            DB::rollBack();
             return redirect()->back()
                             ->with('error', 'Gagal memperbarui informasi pekerjaan: ' . $e->getMessage());
         }

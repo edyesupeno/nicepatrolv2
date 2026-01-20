@@ -138,8 +138,20 @@
         <p><strong>🧪 Test Credentials (Security Officer):</strong></p>
         <div style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px; padding: 10px; font-family: monospace;">
             <strong>Email:</strong> edy@gmail.com<br>
-            <strong>Password:</strong> 12345678
+            <strong>Password:</strong> 12345678<br>
+            <strong>Role:</strong> security_officer<br>
+            <strong>Project:</strong> Kantor Jakarta (ID: 1)<br>
+            <strong>Company:</strong> PT. Nice Patrol (ID: 1)
         </div>
+        
+        <p><strong>🔒 Multi-Tenancy Features:</strong></p>
+        <ul style="margin-bottom: 0;">
+            <li><strong>Company Isolation:</strong> Users only see data from their company</li>
+            <li><strong>Project Filtering:</strong> Users only access assigned projects</li>
+            <li><strong>User-Level Security:</strong> Regular users only see data they created</li>
+            <li><strong>Auto-Assignment:</strong> New records automatically assigned to user's context</li>
+            <li><strong>Hash IDs:</strong> All resources use hash IDs for security</li>
+        </ul>
         
         
     </div>
@@ -216,7 +228,7 @@
                         post: {
                             tags: ["Authentication"],
                             summary: "User login",
-                            description: "Authenticate user and get access token",
+                            description: "Authenticate user and get access token. Returns user info including project assignment for multi-tenancy.",
                             security: [],
                             requestBody: {
                                 required: true,
@@ -246,10 +258,266 @@
                                                     data: {
                                                         type: "object",
                                                         properties: {
-                                                            user: { type: "object" },
+                                                            user: {
+                                                                type: "object",
+                                                                properties: {
+                                                                    id: { type: "integer", example: 7 },
+                                                                    name: { type: "string", example: "Muhammad Edi Suarno" },
+                                                                    email: { type: "string", example: "edy@gmail.com" },
+                                                                    role: { type: "string", example: "security_officer" },
+                                                                    perusahaan_id: { type: "integer", example: 1 },
+                                                                    project_id: { type: "integer", example: 1 },
+                                                                    project: {
+                                                                        type: "object",
+                                                                        properties: {
+                                                                            id: { type: "integer", example: 1 },
+                                                                            nama: { type: "string", example: "Kantor Jakarta" }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
                                                             token: { type: "string", example: "1|abc123def456..." }
                                                         }
                                                     }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "/me": {
+                        get: {
+                            tags: ["Authentication"],
+                            summary: "Get current user info",
+                            description: "Get authenticated user information including project assignment",
+                            security: [{ BearerAuth: [] }],
+                            responses: {
+                                "200": {
+                                    description: "User info retrieved successfully",
+                                    content: {
+                                        "application/json": {
+                                            schema: {
+                                                type: "object",
+                                                properties: {
+                                                    success: { type: "boolean", example: true },
+                                                    data: {
+                                                        type: "object",
+                                                        properties: {
+                                                            id: { type: "integer", example: 7 },
+                                                            name: { type: "string", example: "Muhammad Edi Suarno" },
+                                                            email: { type: "string", example: "edy@gmail.com" },
+                                                            role: { type: "string", example: "security_officer" },
+                                                            perusahaan_id: { type: "integer", example: 1 },
+                                                            project_id: { type: "integer", example: 1 },
+                                                            project: {
+                                                                type: "object",
+                                                                properties: {
+                                                                    id: { type: "integer", example: 1 },
+                                                                    nama: { type: "string", example: "Kantor Jakarta" }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "/penerimaan-barang-projects": {
+                        get: {
+                            tags: ["Penerimaan Barang"],
+                            summary: "Get projects for dropdown",
+                            description: "Get list of projects accessible to current user (filtered by multi-tenancy)",
+                            security: [{ BearerAuth: [] }],
+                            responses: {
+                                "200": {
+                                    description: "Projects retrieved successfully",
+                                    content: {
+                                        "application/json": {
+                                            schema: {
+                                                type: "object",
+                                                properties: {
+                                                    success: { type: "boolean", example: true },
+                                                    message: { type: "string", example: "Data berhasil diambil" },
+                                                    data: {
+                                                        type: "array",
+                                                        items: {
+                                                            type: "object",
+                                                            properties: {
+                                                                id: { type: "integer", example: 1 },
+                                                                nama: { type: "string", example: "Kantor Jakarta" }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "/penerimaan-barang-areas/{project_id}": {
+                        get: {
+                            tags: ["Penerimaan Barang"],
+                            summary: "Get areas by project",
+                            description: "Get list of areas for specific project (user must have access to the project)",
+                            security: [{ BearerAuth: [] }],
+                            parameters: [
+                                {
+                                    name: "project_id",
+                                    in: "path",
+                                    required: true,
+                                    schema: { type: "integer", example: 1 },
+                                    description: "Project ID"
+                                }
+                            ],
+                            responses: {
+                                "200": {
+                                    description: "Areas retrieved successfully",
+                                    content: {
+                                        "application/json": {
+                                            schema: {
+                                                type: "object",
+                                                properties: {
+                                                    success: { type: "boolean", example: true },
+                                                    message: { type: "string", example: "Data berhasil diambil" },
+                                                    data: {
+                                                        type: "array",
+                                                        items: {
+                                                            type: "object",
+                                                            properties: {
+                                                                id: { type: "integer", example: 1 },
+                                                                nama: { type: "string", example: "Gudang A" },
+                                                                alamat: { type: "string", example: "Lantai 1" }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "403": {
+                                    description: "Access denied - user doesn't have access to this project"
+                                }
+                            }
+                        }
+                    },
+                    "/penerimaan-barang": {
+                        get: {
+                            tags: ["Penerimaan Barang"],
+                            summary: "Get all penerimaan barang",
+                            description: "Get list of penerimaan barang with multi-tenancy filtering. Regular users only see data they created.",
+                            security: [{ BearerAuth: [] }],
+                            parameters: [
+                                {
+                                    name: "page",
+                                    in: "query",
+                                    schema: { type: "integer", example: 1 },
+                                    description: "Page number"
+                                },
+                                {
+                                    name: "per_page",
+                                    in: "query",
+                                    schema: { type: "integer", example: 20 },
+                                    description: "Items per page (max 100)"
+                                },
+                                {
+                                    name: "kategori",
+                                    in: "query",
+                                    schema: { type: "string", enum: ["Dokumen", "Material", "Elektronik", "Logistik"] },
+                                    description: "Filter by category"
+                                },
+                                {
+                                    name: "kondisi",
+                                    in: "query",
+                                    schema: { type: "string", enum: ["Baik", "Rusak", "Segel Terbuka"] },
+                                    description: "Filter by condition"
+                                },
+                                {
+                                    name: "search",
+                                    in: "query",
+                                    schema: { type: "string" },
+                                    description: "Search in item name, receipt number, or sender"
+                                }
+                            ],
+                            responses: {
+                                "200": {
+                                    description: "Items retrieved successfully",
+                                    content: {
+                                        "application/json": {
+                                            schema: {
+                                                type: "object",
+                                                properties: {
+                                                    success: { type: "boolean", example: true },
+                                                    message: { type: "string", example: "Data berhasil diambil" },
+                                                    data: {
+                                                        type: "object",
+                                                        properties: {
+                                                            current_page: { type: "integer", example: 1 },
+                                                            per_page: { type: "integer", example: 20 },
+                                                            total: { type: "integer", example: 50 },
+                                                            data: {
+                                                                type: "array",
+                                                                items: { $ref: "#/components/schemas/PenerimaanBarang" }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        post: {
+                            tags: ["Penerimaan Barang"],
+                            summary: "Create penerimaan barang",
+                            description: "Create new penerimaan barang record. Company ID, project ID, and created_by are auto-assigned.",
+                            security: [{ BearerAuth: [] }],
+                            requestBody: {
+                                required: true,
+                                content: {
+                                    "application/json": {
+                                        schema: {
+                                            type: "object",
+                                            required: ["nama_barang", "kategori_barang", "jumlah_barang", "satuan", "kondisi_barang", "pengirim", "tujuan_departemen", "tanggal_terima"],
+                                            properties: {
+                                                nama_barang: { type: "string", example: "Laptop Dell Inspiron 15" },
+                                                kategori_barang: { type: "string", enum: ["Dokumen", "Material", "Elektronik", "Logistik"], example: "Elektronik" },
+                                                jumlah_barang: { type: "integer", minimum: 1, example: 2 },
+                                                satuan: { type: "string", example: "unit" },
+                                                kondisi_barang: { type: "string", enum: ["Baik", "Rusak", "Segel Terbuka"], example: "Baik" },
+                                                pengirim: { type: "string", example: "PT. Supplier ABC" },
+                                                tujuan_departemen: { type: "string", example: "IT Department" },
+                                                tanggal_terima: { type: "string", format: "date", example: "2026-01-20" },
+                                                project_id: { type: "integer", example: 1, description: "Optional - auto-assigned if not provided" },
+                                                area_id: { type: "integer", example: 1, description: "Optional - storage area" },
+                                                pos: { type: "string", example: "Pos Jaga Utama", description: "Optional - pos jaga security tempat penerimaan barang" },
+                                                petugas_penerima: { type: "string", example: "John Doe", description: "Optional - defaults to current user" },
+                                                keterangan: { type: "string", example: "Additional notes" }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            responses: {
+                                "201": {
+                                    description: "Item created successfully",
+                                    content: {
+                                        "application/json": {
+                                            schema: {
+                                                type: "object",
+                                                properties: {
+                                                    success: { type: "boolean", example: true },
+                                                    message: { type: "string", example: "Penerimaan barang berhasil dibuat" },
+                                                    data: { $ref: "#/components/schemas/PenerimaanBarang" }
                                                 }
                                             }
                                         }
@@ -264,7 +532,61 @@
                         BearerAuth: {
                             type: "http",
                             scheme: "bearer",
-                            bearerFormat: "JWT"
+                            bearerFormat: "JWT",
+                            description: "Enter your bearer token in the format: Bearer {token}"
+                        }
+                    },
+                    schemas: {
+                        PenerimaanBarang: {
+                            type: "object",
+                            properties: {
+                                id: { type: "integer", example: 23 },
+                                hash_id: { type: "string", example: "xAVz5QD4EMeGqmZl", description: "Hash ID for URL obfuscation" },
+                                nomor_penerimaan: { type: "string", example: "PB20260120004", description: "Auto-generated receipt number" },
+                                nama_barang: { type: "string", example: "Laptop Dell Inspiron 15" },
+                                kategori_barang: { type: "string", enum: ["Dokumen", "Material", "Elektronik", "Logistik"], example: "Elektronik" },
+                                jumlah_barang: { type: "integer", example: 2 },
+                                satuan: { type: "string", example: "unit" },
+                                kondisi_barang: { type: "string", enum: ["Baik", "Rusak", "Segel Terbuka"], example: "Baik" },
+                                pengirim: { type: "string", example: "PT. Supplier ABC" },
+                                tujuan_departemen: { type: "string", example: "IT Department" },
+                                tanggal_terima: { type: "string", format: "date-time", example: "2026-01-20T00:00:00.000000Z" },
+                                petugas_penerima: { type: "string", example: "Muhammad Edi Suarno" },
+                                keterangan: { type: "string", example: "Additional notes" },
+                                status: { type: "string", example: "Diterima" },
+                                pos: { type: "string", example: "Pos Jaga Utama", description: "Pos jaga security tempat penerimaan barang" },
+                                foto_barang: { type: "string", nullable: true, description: "Photo file path" },
+                                perusahaan_id: { type: "integer", example: 1, description: "Auto-assigned company ID" },
+                                project_id: { type: "integer", example: 1, description: "Auto-assigned project ID" },
+                                area_id: { type: "integer", nullable: true, example: 1 },
+                                created_by: { type: "integer", example: 7, description: "Auto-assigned user ID who created the record" },
+                                created_at: { type: "string", format: "date-time", example: "2026-01-20T11:53:17.000000Z" },
+                                updated_at: { type: "string", format: "date-time", example: "2026-01-20T11:53:17.000000Z" },
+                                project: {
+                                    type: "object",
+                                    nullable: true,
+                                    properties: {
+                                        id: { type: "integer", example: 1 },
+                                        nama: { type: "string", example: "Kantor Jakarta" }
+                                    }
+                                },
+                                area: {
+                                    type: "object",
+                                    nullable: true,
+                                    properties: {
+                                        id: { type: "integer", example: 1 },
+                                        nama: { type: "string", example: "Gudang A" },
+                                        alamat: { type: "string", example: "Lantai 1" }
+                                    }
+                                },
+                                createdBy: {
+                                    type: "object",
+                                    properties: {
+                                        id: { type: "integer", example: 7 },
+                                        name: { type: "string", example: "Muhammad Edi Suarno" }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

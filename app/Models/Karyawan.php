@@ -94,6 +94,29 @@ class Karyawan extends Model
         return $this->belongsTo(Jabatan::class);
     }
 
+    // Area kerja karyawan (many-to-many)
+    public function areas()
+    {
+        return $this->belongsToMany(Area::class, 'karyawan_areas')
+                    ->withPivot('is_primary')
+                    ->withTimestamps();
+    }
+
+    // Area utama karyawan
+    public function primaryArea()
+    {
+        return $this->belongsToMany(Area::class, 'karyawan_areas')
+                    ->wherePivot('is_primary', true)
+                    ->withPivot('is_primary')
+                    ->withTimestamps();
+    }
+
+    // Get area utama (single)
+    public function getPrimaryAreaAttribute()
+    {
+        return $this->primaryArea()->first();
+    }
+
     public function pengalamanKerjas()
     {
         return $this->hasMany(PengalamanKerja::class);
