@@ -123,6 +123,19 @@
                 Rincian Gaji
             </h3>
 
+            @if($payroll->status == 'draft')
+                <!-- Info Box for Editable Components -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-info-circle text-blue-600 mt-0.5"></i>
+                        <div class="text-sm text-blue-800">
+                            <p class="font-semibold mb-1">Komponen yang Bisa Diedit</p>
+                            <p class="text-xs">Komponen dengan icon <i class="fas fa-edit text-blue-500"></i> bisa diedit langsung dengan klik pada nilainya. Perubahan akan otomatis menghitung ulang total gaji.</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <!-- Gaji Pokok -->
             <div class="space-y-3">
                 <div class="flex items-center justify-between py-3 border-b border-gray-200">
@@ -134,7 +147,12 @@
                 @if($payroll->tunjangan_detail && count($payroll->tunjangan_detail) > 0)
                     <div class="bg-green-50 rounded-lg p-4">
                         <p class="text-sm font-semibold text-green-900 mb-2">Tunjangan</p>
-                        @foreach($payroll->tunjangan_detail as $tunjangan)
+                        @foreach($payroll->tunjangan_detail as $index => $tunjangan)
+                            @php
+                                // For existing payrolls without kode, use nama as fallback
+                                $componentCode = $tunjangan['kode'] ?? $tunjangan['nama'];
+                                $isEditable = isset($komponenPayrolls[$componentCode]) && $komponenPayrolls[$componentCode]->boleh_edit && $payroll->status == 'draft';
+                            @endphp
                             <div class="flex items-center justify-between py-2 text-xs">
                                 <span class="text-gray-700">
                                     {{ $tunjangan['nama'] }}
@@ -145,13 +163,36 @@
                                     @elseif($tunjangan['tipe'] == 'Lembur Per Hari')
                                         ({{ number_format($tunjangan['nilai_dasar'], 0) }} x {{ $payroll->hari_lembur }} hari)
                                     @endif
+                                    @if($isEditable)
+                                        <i class="fas fa-edit text-blue-500 ml-1" title="Bisa diedit"></i>
+                                    @endif
                                 </span>
-                                <span class="font-medium text-green-700">+ Rp {{ number_format($tunjangan['nilai_hitung'], 0, ',', '.') }}</span>
+                                <div class="flex items-center gap-2">
+                                    @if($isEditable)
+                                        <div class="inline-edit-container" data-component-type="tunjangan" data-component-code="{{ $componentCode }}" data-component-index="{{ $index }}">
+                                            <div class="view-mode">
+                                                <span class="component-value font-medium text-green-700 cursor-pointer hover:bg-green-100 px-2 py-1 rounded" onclick="enableEdit(this)">
+                                                    + Rp {{ number_format($tunjangan['nilai_hitung'], 0, ',', '.') }}
+                                                </span>
+                                            </div>
+                                            <div class="edit-mode hidden">
+                                                <input type="number" 
+                                                       class="component-input w-24 px-2 py-1 text-xs border border-green-500 rounded focus:ring-1 focus:ring-green-500" 
+                                                       value="{{ $tunjangan['nilai_hitung'] }}"
+                                                       data-original="{{ $tunjangan['nilai_hitung'] }}"
+                                                       onblur="saveEdit(this)"
+                                                       onkeypress="handleKeyPress(event, this)">
+                                            </div>
+                                        </div>
+                                    @else
+                                        <span class="font-medium text-green-700">+ Rp {{ number_format($tunjangan['nilai_hitung'], 0, ',', '.') }}</span>
+                                    @endif
+                                </div>
                             </div>
                         @endforeach
                         <div class="flex items-center justify-between pt-2 mt-2 border-t border-green-200">
                             <span class="text-sm font-semibold text-green-900">Total Tunjangan</span>
-                            <span class="text-sm font-bold text-green-700">Rp {{ number_format($payroll->total_tunjangan, 0, ',', '.') }}</span>
+                            <span class="text-sm font-bold text-green-700" id="total-tunjangan">Rp {{ number_format($payroll->total_tunjangan, 0, ',', '.') }}</span>
                         </div>
                     </div>
                 @endif
@@ -176,27 +217,55 @@
                 <!-- Gaji Bruto -->
                 <div class="flex items-center justify-between py-3 bg-gray-100 rounded-lg px-4">
                     <span class="text-sm font-bold text-gray-900">Gaji Bruto</span>
-                    <span class="text-lg font-bold text-gray-900">Rp {{ number_format($payroll->gaji_bruto, 0, ',', '.') }}</span>
+                    <span class="text-lg font-bold text-gray-900" id="gaji-bruto">Rp {{ number_format($payroll->gaji_bruto, 0, ',', '.') }}</span>
                 </div>
 
                 <!-- Potongan -->
                 @if($payroll->potongan_detail && count($payroll->potongan_detail) > 0)
                     <div class="bg-red-50 rounded-lg p-4">
                         <p class="text-sm font-semibold text-red-900 mb-2">Potongan</p>
-                        @foreach($payroll->potongan_detail as $potongan)
+                        @foreach($payroll->potongan_detail as $index => $potongan)
+                            @php
+                                // For existing payrolls without kode, use nama as fallback
+                                $componentCode = $potongan['kode'] ?? $potongan['nama'];
+                                $isEditable = isset($komponenPayrolls[$componentCode]) && $komponenPayrolls[$componentCode]->boleh_edit && $payroll->status == 'draft';
+                            @endphp
                             <div class="flex items-center justify-between py-2 text-xs">
                                 <span class="text-gray-700">
                                     {{ $potongan['nama'] }}
                                     @if($potongan['tipe'] == 'Persentase')
                                         ({{ number_format($potongan['nilai_dasar'], 0) }}%)
                                     @endif
+                                    @if($isEditable)
+                                        <i class="fas fa-edit text-blue-500 ml-1" title="Bisa diedit"></i>
+                                    @endif
                                 </span>
-                                <span class="font-medium text-red-700">- Rp {{ number_format($potongan['nilai_hitung'], 0, ',', '.') }}</span>
+                                <div class="flex items-center gap-2">
+                                    @if($isEditable)
+                                        <div class="inline-edit-container" data-component-type="potongan" data-component-code="{{ $componentCode }}" data-component-index="{{ $index }}">
+                                            <div class="view-mode">
+                                                <span class="component-value font-medium text-red-700 cursor-pointer hover:bg-red-100 px-2 py-1 rounded" onclick="enableEdit(this)">
+                                                    - Rp {{ number_format($potongan['nilai_hitung'], 0, ',', '.') }}
+                                                </span>
+                                            </div>
+                                            <div class="edit-mode hidden">
+                                                <input type="number" 
+                                                       class="component-input w-24 px-2 py-1 text-xs border border-red-500 rounded focus:ring-1 focus:ring-red-500" 
+                                                       value="{{ $potongan['nilai_hitung'] }}"
+                                                       data-original="{{ $potongan['nilai_hitung'] }}"
+                                                       onblur="saveEdit(this)"
+                                                       onkeypress="handleKeyPress(event, this)">
+                                            </div>
+                                        </div>
+                                    @else
+                                        <span class="font-medium text-red-700">- Rp {{ number_format($potongan['nilai_hitung'], 0, ',', '.') }}</span>
+                                    @endif
+                                </div>
                             </div>
                         @endforeach
                         <div class="flex items-center justify-between pt-2 mt-2 border-t border-red-200">
                             <span class="text-sm font-semibold text-red-900">Total Potongan</span>
-                            <span class="text-sm font-bold text-red-700">Rp {{ number_format($payroll->total_potongan, 0, ',', '.') }}</span>
+                            <span class="text-sm font-bold text-red-700" id="total-potongan">Rp {{ number_format($payroll->total_potongan, 0, ',', '.') }}</span>
                         </div>
                     </div>
                 @endif
@@ -210,7 +279,7 @@
                 <!-- Gaji Netto -->
                 <div class="flex items-center justify-between py-4 bg-gradient-to-r from-green-500 to-green-600 rounded-lg px-4">
                     <span class="text-base font-bold text-white">Gaji Netto (Take Home Pay)</span>
-                    <span class="text-2xl font-bold text-white">Rp {{ number_format($payroll->gaji_netto, 0, ',', '.') }}</span>
+                    <span class="text-2xl font-bold text-white" id="gaji-netto">Rp {{ number_format($payroll->gaji_netto, 0, ',', '.') }}</span>
                 </div>
             </div>
         </div>
@@ -497,5 +566,193 @@ function deletePayroll() {
         }
     });
 }
+
+// Inline editing functions
+function enableEdit(element) {
+    const container = element.closest('.inline-edit-container');
+    const viewMode = container.querySelector('.view-mode');
+    const editMode = container.querySelector('.edit-mode');
+    const input = container.querySelector('.component-input');
+    
+    viewMode.classList.add('hidden');
+    editMode.classList.remove('hidden');
+    
+    setTimeout(() => {
+        input.focus();
+        input.select();
+    }, 100);
+}
+
+function handleKeyPress(event, input) {
+    if (event.key === 'Enter') {
+        input.blur(); // This will trigger saveEdit
+    } else if (event.key === 'Escape') {
+        cancelEdit(input);
+    }
+}
+
+function cancelEdit(input) {
+    const container = input.closest('.inline-edit-container');
+    const viewMode = container.querySelector('.view-mode');
+    const editMode = container.querySelector('.edit-mode');
+    
+    // Reset to original value
+    input.value = input.dataset.original;
+    
+    viewMode.classList.remove('hidden');
+    editMode.classList.add('hidden');
+}
+
+function saveEdit(input) {
+    const container = input.closest('.inline-edit-container');
+    const componentType = container.dataset.componentType;
+    const componentCode = container.dataset.componentCode;
+    const componentIndex = container.dataset.componentIndex;
+    const newValue = parseFloat(input.value) || 0;
+    const originalValue = parseFloat(input.dataset.original) || 0;
+    
+    // If no change, just cancel edit
+    if (newValue === originalValue) {
+        cancelEdit(input);
+        return;
+    }
+    
+    // Show loading
+    const viewMode = container.querySelector('.view-mode');
+    const editMode = container.querySelector('.edit-mode');
+    
+    editMode.innerHTML = '<span class="text-xs text-gray-500">Menyimpan...</span>';
+    
+    // Prepare request body
+    const requestBody = {
+        component_type: componentType,
+        component_code: componentCode,
+        new_value: newValue
+    };
+    
+    // Add component index if available
+    if (componentIndex !== undefined) {
+        requestBody.component_index = parseInt(componentIndex);
+    }
+    
+    // Send AJAX request
+    fetch('{{ route("perusahaan.daftar-payroll.update-component", $payroll->hash_id) }}', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the display value
+            const valueSpan = container.querySelector('.component-value');
+            const prefix = componentType === 'tunjangan' ? '+ ' : '- ';
+            valueSpan.textContent = prefix + data.data.new_value_formatted;
+            
+            // Update original value for future edits
+            input.dataset.original = data.data.new_value;
+            input.value = data.data.new_value;
+            
+            // Update totals
+            const totalElement = document.getElementById('total-' + componentType);
+            if (totalElement) {
+                totalElement.textContent = data.data.new_total_formatted;
+            }
+            
+            // Update gaji bruto and netto
+            const gajiBrutoElement = document.getElementById('gaji-bruto');
+            const gajiNettoElement = document.getElementById('gaji-netto');
+            
+            if (gajiBrutoElement) {
+                gajiBrutoElement.textContent = data.data.new_gaji_bruto_formatted;
+            }
+            
+            if (gajiNettoElement) {
+                gajiNettoElement.textContent = data.data.new_gaji_netto_formatted;
+            }
+            
+            // Reset edit mode
+            editMode.innerHTML = `
+                <input type="number" 
+                       class="component-input w-24 px-2 py-1 text-xs border border-${componentType === 'tunjangan' ? 'green' : 'red'}-500 rounded focus:ring-1 focus:ring-${componentType === 'tunjangan' ? 'green' : 'red'}-500" 
+                       value="${data.data.new_value}"
+                       data-original="${data.data.new_value}"
+                       onblur="saveEdit(this)"
+                       onkeypress="handleKeyPress(event, this)">
+            `;
+            
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            // Switch back to view mode
+            viewMode.classList.remove('hidden');
+            editMode.classList.add('hidden');
+            
+        } else {
+            // Show error and revert
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: data.message
+            });
+            
+            // Reset edit mode
+            editMode.innerHTML = `
+                <input type="number" 
+                       class="component-input w-24 px-2 py-1 text-xs border border-${componentType === 'tunjangan' ? 'green' : 'red'}-500 rounded focus:ring-1 focus:ring-${componentType === 'tunjangan' ? 'green' : 'red'}-500" 
+                       value="${originalValue}"
+                       data-original="${originalValue}"
+                       onblur="saveEdit(this)"
+                       onkeypress="handleKeyPress(event, this)">
+            `;
+            
+            cancelEdit(editMode.querySelector('.component-input'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'Terjadi kesalahan saat menyimpan'
+        });
+        
+        // Reset edit mode
+        editMode.innerHTML = `
+            <input type="number" 
+                   class="component-input w-24 px-2 py-1 text-xs border border-${componentType === 'tunjangan' ? 'green' : 'red'}-500 rounded focus:ring-1 focus:ring-${componentType === 'tunjangan' ? 'green' : 'red'}-500" 
+                   value="${originalValue}"
+                   data-original="${originalValue}"
+                   onblur="saveEdit(this)"
+                   onkeypress="handleKeyPress(event, this)">
+        `;
+        
+        cancelEdit(editMode.querySelector('.component-input'));
+    });
+}
+
+// Add click outside to cancel edit
+document.addEventListener('click', function(event) {
+    const editContainers = document.querySelectorAll('.inline-edit-container .edit-mode:not(.hidden)');
+    
+    editContainers.forEach(editMode => {
+        if (!editMode.contains(event.target) && !editMode.closest('.inline-edit-container').querySelector('.view-mode').contains(event.target)) {
+            const input = editMode.querySelector('.component-input');
+            if (input) {
+                cancelEdit(input);
+            }
+        }
+    });
+});
 </script>
 @endpush

@@ -113,6 +113,7 @@ class RecalculatePayroll extends Command
             if ($payrollSetting->bpjs_kesehatan_karyawan > 0) {
                 $potonganBpjsKes = ($gajiPokok * $payrollSetting->bpjs_kesehatan_karyawan) / 100;
                 $potonganDetail[] = [
+                    'kode' => 'BPJS_KES_KARYAWAN',
                     'nama' => 'Potongan BPJS Kesehatan',
                     'tipe' => 'Persentase',
                     'nilai_dasar' => $payrollSetting->bpjs_kesehatan_karyawan,
@@ -127,6 +128,7 @@ class RecalculatePayroll extends Command
             
             if ($potonganBpjsKer > 0) {
                 $potonganDetail[] = [
+                    'kode' => 'BPJS_TK_KARYAWAN',
                     'nama' => 'Potongan BPJS Ketenagakerjaan (JHT + JP)',
                     'tipe' => 'Persentase',
                     'nilai_dasar' => $payrollSetting->bpjs_jht_karyawan + $payrollSetting->bpjs_jp_karyawan,

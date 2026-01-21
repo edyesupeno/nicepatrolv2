@@ -267,6 +267,7 @@ Route::middleware('auth')->group(function () {
         Route::post('payroll/generate', [\App\Http\Controllers\Perusahaan\PayrollController::class, 'store'])->name('payroll.store');
         Route::get('daftar-payroll', [\App\Http\Controllers\Perusahaan\DaftarPayrollController::class, 'index'])->name('daftar-payroll.index');
         Route::get('daftar-payroll/{payroll}', [\App\Http\Controllers\Perusahaan\DaftarPayrollController::class, 'show'])->name('daftar-payroll.show');
+        Route::put('daftar-payroll/{payroll}/update-component', [\App\Http\Controllers\Perusahaan\DaftarPayrollController::class, 'updateComponent'])->name('daftar-payroll.update-component');
         Route::post('daftar-payroll/{payroll}/approve', [\App\Http\Controllers\Perusahaan\DaftarPayrollController::class, 'approve'])->name('daftar-payroll.approve');
         Route::post('daftar-payroll/bulk-approve', [\App\Http\Controllers\Perusahaan\DaftarPayrollController::class, 'bulkApprove'])->name('daftar-payroll.bulk-approve');
         Route::delete('daftar-payroll/{payroll}', [\App\Http\Controllers\Perusahaan\DaftarPayrollController::class, 'destroy'])->name('daftar-payroll.destroy');

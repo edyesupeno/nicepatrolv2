@@ -139,7 +139,13 @@ class DaftarPayrollController extends Controller
             ->orderBy('tanggal', 'asc')
             ->get();
         
-        return view('perusahaan.payroll.detail', compact('payroll', 'kehadirans'));
+        // Get komponen payroll data for editing capability check
+        $komponenPayrolls = \App\Models\KomponenPayroll::select(['id', 'kode', 'nama_komponen', 'boleh_edit'])
+            ->where('aktif', true)
+            ->get()
+            ->keyBy('kode');
+        
+        return view('perusahaan.payroll.detail', compact('payroll', 'kehadirans', 'komponenPayrolls'));
     }
     
     public function approve(Request $request, Payroll $payroll)
@@ -195,6 +201,135 @@ class DaftarPayrollController extends Controller
             return redirect()->back()->with('success', 'Payroll berhasil dihapus');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal menghapus payroll: ' . $e->getMessage());
+        }
+    }
+    
+    public function updateComponent(Request $request, Payroll $payroll)
+    {
+        try {
+            // Only allow editing if payroll is still draft
+            if ($payroll->status != 'draft') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya payroll dengan status draft yang bisa diedit'
+                ], 400);
+            }
+            
+            $validated = $request->validate([
+                'component_type' => 'required|in:tunjangan,potongan',
+                'component_code' => 'required|string',
+                'component_index' => 'nullable|integer|min:0',
+                'new_value' => 'required|numeric|min:0',
+            ]);
+            
+            $componentType = $validated['component_type'];
+            $componentCode = $validated['component_code'];
+            $componentIndex = $validated['component_index'] ?? null;
+            $newValue = (float) $validated['new_value'];
+            
+            // Get current component details
+            $detailField = $componentType . '_detail';
+            $totalField = 'total_' . $componentType;
+            $currentDetails = $payroll->$detailField ?? [];
+            
+            // Find and update the specific component
+            $componentFound = false;
+            $oldValue = 0;
+            
+            foreach ($currentDetails as $index => &$component) {
+                $matchFound = false;
+                
+                // Try to match by kode first (for new payrolls)
+                if (isset($component['kode']) && $component['kode'] === $componentCode) {
+                    $matchFound = true;
+                }
+                // Fallback to match by nama (for existing payrolls without kode)
+                else if (!isset($component['kode']) && $component['nama'] === $componentCode) {
+                    $matchFound = true;
+                }
+                // Fallback to match by index if provided
+                else if ($componentIndex !== null && $index == $componentIndex) {
+                    $matchFound = true;
+                }
+                
+                if ($matchFound) {
+                    // Check if this component is editable
+                    // Use kode if available, otherwise use nama
+                    $lookupKey = $component['kode'] ?? $component['nama'];
+                    $komponenPayroll = \App\Models\KomponenPayroll::where('kode', $lookupKey)
+                        ->orWhere('nama_komponen', $lookupKey)
+                        ->first();
+                        
+                    if (!$komponenPayroll || !$komponenPayroll->boleh_edit) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Komponen ini tidak bisa diedit'
+                        ], 400);
+                    }
+                    
+                    $oldValue = $component['nilai_hitung'];
+                    $component['nilai_hitung'] = $newValue;
+                    $componentFound = true;
+                    break;
+                }
+            }
+            
+            if (!$componentFound) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Komponen tidak ditemukan'
+                ], 404);
+            }
+            
+            // Recalculate totals
+            $newTotal = array_sum(array_column($currentDetails, 'nilai_hitung'));
+            $totalDifference = $newValue - $oldValue;
+            
+            // Update payroll data
+            $updateData = [
+                $detailField => $currentDetails,
+                $totalField => $newTotal,
+            ];
+            
+            // Recalculate gaji_bruto and gaji_netto
+            if ($componentType === 'tunjangan') {
+                // Recalculate gaji_bruto: gaji_pokok + total_tunjangan + bpjs
+                $updateData['gaji_bruto'] = $payroll->gaji_pokok + $newTotal + ($payroll->bpjs_kesehatan + $payroll->bpjs_ketenagakerjaan);
+                // Recalculate gaji_netto: gaji_bruto - total_potongan - pajak
+                $updateData['gaji_netto'] = $updateData['gaji_bruto'] - $payroll->total_potongan - $payroll->pajak_pph21;
+            } else { // potongan
+                // Gaji bruto doesn't change when potongan changes
+                // Only recalculate gaji_netto: gaji_bruto - total_potongan - pajak
+                $updateData['gaji_netto'] = $payroll->gaji_bruto - $newTotal - $payroll->pajak_pph21;
+            }
+            
+            $payroll->update($updateData);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Komponen berhasil diupdate',
+                'data' => [
+                    'new_value' => $newValue,
+                    'new_value_formatted' => 'Rp ' . number_format($newValue, 0, ',', '.'),
+                    'new_total' => $newTotal,
+                    'new_total_formatted' => 'Rp ' . number_format($newTotal, 0, ',', '.'),
+                    'new_gaji_bruto' => $updateData['gaji_bruto'] ?? $payroll->gaji_bruto,
+                    'new_gaji_bruto_formatted' => 'Rp ' . number_format($updateData['gaji_bruto'] ?? $payroll->gaji_bruto, 0, ',', '.'),
+                    'new_gaji_netto' => $updateData['gaji_netto'],
+                    'new_gaji_netto_formatted' => 'Rp ' . number_format($updateData['gaji_netto'], 0, ',', '.'),
+                ]
+            ]);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . implode(', ', $e->validator->errors()->all())
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal update komponen: ' . $e->getMessage()
+            ], 500);
         }
     }
     

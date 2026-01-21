@@ -224,6 +224,7 @@ class PayrollController extends Controller
                 );
                 
                 $tunjanganDetail[] = [
+                    'kode' => $template->komponenPayroll->kode,
                     'nama' => $template->komponenPayroll->nama_komponen,
                     'tipe' => $template->komponenPayroll->tipe_perhitungan,
                     'nilai_dasar' => $template->nilai,
@@ -265,6 +266,7 @@ class PayrollController extends Controller
                 );
                 
                 $potonganDetail[] = [
+                    'kode' => $template->komponenPayroll->kode,
                     'nama' => $template->komponenPayroll->nama_komponen,
                     'tipe' => $template->komponenPayroll->tipe_perhitungan,
                     'nilai_dasar' => $template->nilai,
@@ -281,6 +283,7 @@ class PayrollController extends Controller
             if ($payrollSetting->bpjs_kesehatan_karyawan > 0) {
                 $potonganBpjsKes = ($gajiPokok * $payrollSetting->bpjs_kesehatan_karyawan) / 100;
                 $potonganDetail[] = [
+                    'kode' => 'BPJS_KES_KARYAWAN',
                     'nama' => 'Potongan BPJS Kesehatan',
                     'tipe' => 'Persentase',
                     'nilai_dasar' => $payrollSetting->bpjs_kesehatan_karyawan,
@@ -296,6 +299,7 @@ class PayrollController extends Controller
             
             if ($potonganBpjsKer > 0) {
                 $potonganDetail[] = [
+                    'kode' => 'BPJS_TK_KARYAWAN',
                     'nama' => 'Potongan BPJS Ketenagakerjaan (JHT + JP)',
                     'tipe' => 'Persentase',
                     'nilai_dasar' => $payrollSetting->bpjs_jht_karyawan + $payrollSetting->bpjs_jp_karyawan,
