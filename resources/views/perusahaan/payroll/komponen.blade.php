@@ -115,6 +115,14 @@
             
             <!-- Filter Buttons -->
             <div class="flex gap-2">
+                <select name="project_id" id="projectFilter" onchange="applyFilters()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">Semua Project</option>
+                    <option value="global" {{ request('project_id') === 'global' ? 'selected' : '' }}>Global Only</option>
+                    @foreach($projects as $project)
+                        <option value="{{ $project->id }}" {{ request('project_id') == $project->id ? 'selected' : '' }}>{{ $project->nama }}</option>
+                    @endforeach
+                </select>
+                
                 <select name="status" id="statusFilter" onchange="applyFilters()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
                     <option value="">Semua Status</option>
                     <option value="aktif" {{ request('status') === 'aktif' ? 'selected' : '' }}>Aktif</option>
@@ -138,13 +146,16 @@
         </form>
         
         <!-- Search Results Info -->
-        <div id="searchInfo" class="mt-3 text-sm text-gray-600 {{ request()->hasAny(['search', 'status', 'kategori']) ? '' : 'hidden' }}">
+        <div id="searchInfo" class="mt-3 text-sm text-gray-600 {{ request()->hasAny(['search', 'status', 'kategori', 'project_id']) ? '' : 'hidden' }}">
             <i class="fas fa-info-circle mr-1"></i>
             <span id="searchResultText">
-                @if(request()->hasAny(['search', 'status', 'kategori']))
+                @if(request()->hasAny(['search', 'status', 'kategori', 'project_id']))
                     Menampilkan {{ $komponens->count() }} komponen dari pencarian
                     @if(request('search'))
                         : "{{ request('search') }}"
+                    @endif
+                    @if(request('project_id'))
+                        , Project: {{ request('project_id') === 'global' ? 'Global Only' : ($projects->where('id', request('project_id'))->first()->nama ?? 'Unknown') }}
                     @endif
                     @if(request('status'))
                         , Status: {{ request('status') }}
@@ -180,6 +191,7 @@
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nama Komponen</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kode</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Project</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Jenis</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kategori</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nilai</th>
@@ -208,6 +220,17 @@
                                 <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-mono">{{ $komponen->kode }}</span>
                             </td>
                             <td class="px-4 py-3">
+                                @if($komponen->project_id)
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">
+                                        <i class="fas fa-building mr-1"></i>{{ $komponen->project->nama }}
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-semibold">
+                                        <i class="fas fa-globe mr-1"></i>Global
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
                                 @if($komponen->jenis == 'Tunjangan')
                                 <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
                                     <i class="fas fa-arrow-up mr-1"></i>{{ $komponen->jenis }}
@@ -230,6 +253,12 @@
                                     @endif
                                 </div>
                                 <div class="text-xs text-gray-500">{{ $komponen->tipe_perhitungan }}</div>
+                                @if($komponen->nilai_maksimal && in_array($komponen->tipe_perhitungan, ['Per Hari Masuk', 'Lembur Per Hari']))
+                                <div class="text-xs text-orange-600 mt-1">
+                                    <i class="fas fa-limit mr-1"></i>
+                                    Max: Rp {{ number_format($komponen->nilai_maksimal, 0, ',', '.') }}
+                                </div>
+                                @endif
                             </td>
                             <td class="px-4 py-3">
                                 @if($komponen->kena_pajak)
@@ -265,7 +294,7 @@
                         </tr>
                         @empty
                         <tr id="emptyState">
-                            <td colspan="9" class="px-4 py-12 text-center">
+                            <td colspan="10" class="px-4 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <i class="fas fa-puzzle-piece text-gray-300 text-5xl mb-4"></i>
                                     <p class="text-gray-500 font-semibold">Belum ada komponen payroll</p>
@@ -277,7 +306,7 @@
                         
                         <!-- No Search Results State -->
                         <tr id="noSearchResults" class="hidden">
-                            <td colspan="9" class="px-4 py-12 text-center">
+                            <td colspan="10" class="px-4 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <i class="fas fa-search text-gray-300 text-5xl mb-4"></i>
                                     <p class="text-gray-500 font-semibold">Tidak ada komponen yang ditemukan</p>
@@ -353,6 +382,38 @@
                     </div>
                 </div>
 
+                <!-- Project Scope -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-blue-900 mb-3">
+                        <i class="fas fa-building mr-2"></i>Cakupan Project
+                    </h4>
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="radio" name="project_scope" value="global" checked 
+                                   onchange="toggleProjectSelect()" class="text-blue-600">
+                            <div>
+                                <span class="text-sm font-semibold text-blue-900">Semua Project (Global)</span>
+                                <p class="text-xs text-blue-700">Komponen ini berlaku untuk semua project di perusahaan</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="radio" name="project_scope" value="specific" 
+                                   onchange="toggleProjectSelect()" class="text-blue-600">
+                            <div>
+                                <span class="text-sm font-semibold text-blue-900">Project Spesifik</span>
+                                <p class="text-xs text-blue-700">Komponen ini hanya berlaku untuk project tertentu</p>
+                            </div>
+                        </label>
+                    </div>
+                    <select name="project_id" id="project_select" disabled 
+                            class="mt-3 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100">
+                        <option value="">Pilih Project</option>
+                        @foreach($projects as $project)
+                            <option value="{{ $project->id }}">{{ $project->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <!-- Tipe Perhitungan -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -376,6 +437,18 @@
                         <span id="nilaiLabel">Jumlah Tetap (Rp)</span> <span class="text-red-500">*</span>
                     </label>
                     <input type="number" name="nilai" id="nilai" placeholder="1000000" step="0.01" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                </div>
+
+                <!-- Nilai Maksimal (hanya untuk Per Hari) -->
+                <div id="nilai_maksimal_section" class="hidden">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Nilai Maksimal Per Bulan (Rp)
+                    </label>
+                    <input type="number" name="nilai_maksimal" id="nilai_maksimal" placeholder="300000" step="0.01" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-blue-600 mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <span id="maxValueExample">Contoh: Uang makan Rp 10.000/hari, maksimal Rp 300.000/bulan (30 hari)</span>
+                    </p>
                 </div>
 
                 <!-- Deskripsi -->
@@ -442,6 +515,10 @@ function openModal(mode, id = null) {
         form.reset();
         document.getElementById('boleh_edit').checked = true;
         document.getElementById('aktif').checked = true;
+        
+        // Reset project scope
+        document.querySelector('input[name="project_scope"][value="global"]').checked = true;
+        toggleProjectSelect();
     } else {
         const komponen = komponenData.find(k => k.id === id);
         if (komponen) {
@@ -455,10 +532,20 @@ function openModal(mode, id = null) {
             document.getElementById('kategori').value = komponen.kategori;
             document.getElementById('tipe_perhitungan').value = komponen.tipe_perhitungan;
             document.getElementById('nilai').value = komponen.nilai;
+            document.getElementById('nilai_maksimal').value = komponen.nilai_maksimal || '';
             document.getElementById('deskripsi').value = komponen.deskripsi || '';
             document.getElementById('kena_pajak').checked = komponen.kena_pajak;
             document.getElementById('boleh_edit').checked = komponen.boleh_edit;
             document.getElementById('aktif').checked = komponen.aktif;
+            
+            // Set project scope
+            if (komponen.project_id) {
+                document.querySelector('input[name="project_scope"][value="specific"]').checked = true;
+                document.getElementById('project_select').value = komponen.project_id;
+            } else {
+                document.querySelector('input[name="project_scope"][value="global"]').checked = true;
+            }
+            toggleProjectSelect();
             
             updateNilaiLabel();
         }
@@ -466,6 +553,22 @@ function openModal(mode, id = null) {
     
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+}
+
+function toggleProjectSelect() {
+    const projectScope = document.querySelector('input[name="project_scope"]:checked').value;
+    const projectSelect = document.getElementById('project_select');
+    
+    if (projectScope === 'specific') {
+        projectSelect.disabled = false;
+        projectSelect.classList.remove('disabled:bg-gray-100');
+        projectSelect.required = true;
+    } else {
+        projectSelect.disabled = true;
+        projectSelect.classList.add('disabled:bg-gray-100');
+        projectSelect.value = '';
+        projectSelect.required = false;
+    }
 }
 
 function closeModal() {
@@ -478,19 +581,27 @@ function updateNilaiLabel() {
     const tipe = document.getElementById('tipe_perhitungan').value;
     const label = document.getElementById('nilaiLabel');
     const contohText = document.getElementById('contohText');
+    const maxSection = document.getElementById('nilai_maksimal_section');
+    const maxExample = document.getElementById('maxValueExample');
     
     if (tipe === 'Tetap') {
         label.textContent = 'Jumlah Tetap (Rp)';
         contohText.textContent = 'Contoh: Tunjangan jabatan Rp 1.000.000 setiap bulan';
+        maxSection.classList.add('hidden');
     } else if (tipe === 'Persentase') {
         label.textContent = 'Persentase (%)';
         contohText.textContent = 'Contoh: Tunjangan performa 10% × Gaji pokok Rp 5.000.000 = Rp 500.000';
+        maxSection.classList.add('hidden');
     } else if (tipe === 'Per Hari Masuk') {
         label.textContent = 'Nilai Per Hari (Rp)';
         contohText.textContent = 'Contoh: Uang makan Rp 10.000/hari × 22 hari masuk = Rp 220.000';
+        maxSection.classList.remove('hidden');
+        maxExample.textContent = 'Contoh: Uang makan Rp 10.000/hari, maksimal Rp 300.000/bulan (30 hari)';
     } else if (tipe === 'Lembur Per Hari') {
         label.textContent = 'Nilai Per Hari Lembur (Rp)';
         contohText.textContent = 'Contoh: Uang makan lembur Rp 15.000/hari × 5 hari lembur = Rp 75.000';
+        maxSection.classList.remove('hidden');
+        maxExample.textContent = 'Contoh: Uang makan lembur Rp 15.000/hari, maksimal Rp 450.000/bulan (30 hari)';
     }
 }
 
