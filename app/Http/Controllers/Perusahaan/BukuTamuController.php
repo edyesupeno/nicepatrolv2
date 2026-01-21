@@ -11,13 +11,14 @@ use App\Models\AreaPatrol;
 use App\Models\JawabanKuesionerTamu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class BukuTamuController extends Controller
 {
     public function index(Request $request)
     {
-        $query = BukuTamu::with(['project', 'area', 'inputBy']);
+        $query = BukuTamu::with(['project', 'area', 'inputBy', 'jawabanKuesioner']);
 
         // Search functionality
         if ($request->filled('search')) {
@@ -81,6 +82,16 @@ class BukuTamuController extends Controller
         $projects = Project::where('is_active', true)->get();
         $areas = \App\Models\Area::get();
 
+        // Get enabled project-area combinations for guest cards
+        $enabledGuestCardAreas = DB::table('project_guest_card_areas')
+            ->select('project_id', 'area_id')
+            ->get()
+            ->groupBy('project_id')
+            ->map(function ($areas) {
+                return $areas->pluck('area_id')->toArray();
+            })
+            ->toArray();
+
         // Statistics
         $stats = [
             'total_today' => BukuTamu::today()->count(),
@@ -89,7 +100,7 @@ class BukuTamuController extends Controller
             'total_all' => BukuTamu::count(),
         ];
 
-        return view('perusahaan.buku-tamu.index', compact('bukuTamus', 'projects', 'areas', 'stats'));
+        return view('perusahaan.buku-tamu.index', compact('bukuTamus', 'projects', 'areas', 'stats', 'enabledGuestCardAreas'));
     }
 
     public function create()
@@ -97,7 +108,10 @@ class BukuTamuController extends Controller
         $projects = Project::where('is_active', true)->get();
         $users = User::where('is_active', true)->get();
         $areas = \App\Models\Area::with('project')->orderBy('nama')->get();
-        $areaPatrols = AreaPatrol::with(['project', 'kuesionerTamus.pertanyaans'])
+        
+        // Perbaiki: AreaPatrol tidak lagi memiliki relasi kuesionerTamus
+        // Karena sekarang kuesioner terkait dengan Area, bukan AreaPatrol
+        $areaPatrols = AreaPatrol::with(['project'])
             ->where('is_active', true)
             ->orderBy('nama')
             ->get();
@@ -171,54 +185,109 @@ class BukuTamuController extends Controller
             'kuesioner_answers.*' => 'nullable|string',
         ];
         
-        // Simplified validation for debugging
-        $rules = [
+        // Base validation rules that apply to both modes
+        $baseRules = [
             'project_id' => 'required|exists:projects,id',
             'nama_tamu' => 'required|string|max:255',
             'perusahaan_tamu' => 'required|string|max:255',
-            'jabatan' => 'required|string|max:255',
-            'foto' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'keperluan' => 'required|string|max:255',
+            'foto' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'area_id' => 'required|exists:areas,id',
             'mulai_kunjungan' => 'required|date',
-            'selesai_kunjungan' => 'required|date|after:mulai_kunjungan',
-            'lama_kunjungan' => 'required|string|max:100',
-            
-            // Make everything else optional for now
-            'nik' => 'nullable|string',
-            'tanggal_lahir' => 'nullable|date',
-            'domisili' => 'nullable|string',
-            'foto_identitas' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'lokasi_dituju' => 'nullable|string',
-            'email' => 'nullable|email',
-            'no_whatsapp' => 'nullable|string',
-            'kontak_darurat_telepon' => 'nullable|string',
-            'kontak_darurat_nama' => 'nullable|string',
-            'kontak_darurat_hubungan' => 'nullable|string',
+            'lama_kunjungan' => 'nullable|string|max:100',
+        ];
+
+        // Additional rules for MIGAS mode
+        $migasRules = [
+            'nik' => 'required|string|size:16|regex:/^[0-9]{16}$/',
+            'tanggal_lahir' => 'required|date|before:today',
+            'domisili' => 'required|string',
+            'jabatan' => 'required|string|max:255',
+            'foto_identitas' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'email' => 'required|email|max:255',
+            'no_whatsapp' => 'required|string|max:20',
+            'kontak_darurat_telepon' => 'required|string|max:20',
+            'kontak_darurat_nama' => 'required|string|max:255',
+            'kontak_darurat_hubungan' => 'required|string|max:100',
+            'lokasi_dituju' => 'required|string|max:255',
+            'selesai_kunjungan' => 'nullable|date|after:mulai_kunjungan',
+        ];
+
+        // Optional fields for both modes
+        $optionalRules = [
             'area_patrol_id' => 'nullable|exists:area_patrols,id',
-            'bertemu' => 'nullable|string',
-            'no_kartu_pinjam' => 'nullable|string',
+            'bertemu' => 'nullable|string|max:255',
+            'no_kartu_pinjam' => 'nullable|string|max:50',
             'keterangan_tambahan' => 'nullable|string',
             'catatan' => 'nullable|string',
-            'kuesioner_answers' => 'nullable|array',
-            'kuesioner_answers.*' => 'nullable|string',
+            'kuesioner_answers' => 'nullable|string', // Accept as JSON string
         ];
+
+        // Combine rules based on mode
+        if ($guestBookMode === 'migas' || $guestBookMode === 'standard_migas') {
+            $rules = array_merge($baseRules, $migasRules, $optionalRules);
+        } else {
+            // Simple mode - make selesai_kunjungan required
+            $rules = array_merge($baseRules, $optionalRules, [
+                'selesai_kunjungan' => 'required|date|after:mulai_kunjungan',
+            ]);
+            
+            // Make some MIGAS fields optional for simple mode
+            $rules = array_merge($rules, [
+                'jabatan' => 'nullable|string|max:255',
+                'nik' => 'nullable|string',
+                'tanggal_lahir' => 'nullable|date',
+                'domisili' => 'nullable|string',
+                'foto_identitas' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'lokasi_dituju' => 'nullable|string',
+                'email' => 'nullable|email',
+                'no_whatsapp' => 'nullable|string',
+                'kontak_darurat_telepon' => 'nullable|string',
+                'kontak_darurat_nama' => 'nullable|string',
+                'kontak_darurat_hubungan' => 'nullable|string',
+            ]);
+        }
         
         // Debug: Log validation rules
         \Log::info('Validation Rules:', $rules);
         
-        // Simplified validation messages
+        // Comprehensive validation messages
         $messages = [
+            // Base fields
             'project_id.required' => 'Project wajib dipilih',
             'nama_tamu.required' => 'Nama tamu wajib diisi',
             'perusahaan_tamu.required' => 'Instansi wajib diisi',
-            'jabatan.required' => 'Jabatan wajib diisi',
-            'foto.required' => 'Foto selfie wajib diupload',
-            'keperluan.required' => 'Maksud & tujuan wajib diisi',
+            'keperluan.required' => 'Keperluan wajib diisi',
+            'foto.required' => 'Foto tamu wajib diupload',
             'area_id.required' => 'Area/lokasi wajib dipilih',
             'mulai_kunjungan.required' => 'Waktu mulai kunjungan wajib diisi',
             'selesai_kunjungan.required' => 'Waktu selesai kunjungan wajib diisi',
-            'lama_kunjungan.required' => 'Lama kunjungan wajib diisi',
+            'selesai_kunjungan.after' => 'Waktu selesai harus setelah waktu mulai',
+            
+            // MIGAS specific fields
+            'nik.required' => 'NIK wajib diisi',
+            'nik.size' => 'NIK harus 16 digit',
+            'nik.regex' => 'NIK harus berupa angka 16 digit',
+            'tanggal_lahir.required' => 'Tanggal lahir wajib diisi',
+            'tanggal_lahir.before' => 'Tanggal lahir harus sebelum hari ini',
+            'domisili.required' => 'Domisili wajib diisi',
+            'jabatan.required' => 'Jabatan wajib diisi',
+            'foto_identitas.required' => 'Foto KTP wajib diupload',
+            'foto_identitas.image' => 'File foto KTP harus berupa gambar',
+            'foto_identitas.mimes' => 'Format foto KTP harus jpeg, png, atau jpg',
+            'foto_identitas.max' => 'Ukuran foto KTP maksimal 2MB',
+            'email.required' => 'Email wajib diisi',
+            'email.email' => 'Format email tidak valid',
+            'no_whatsapp.required' => 'Nomor WhatsApp wajib diisi',
+            'kontak_darurat_telepon.required' => 'Kontak darurat wajib diisi',
+            'kontak_darurat_nama.required' => 'Nama kontak darurat wajib diisi',
+            'kontak_darurat_hubungan.required' => 'Hubungan kontak darurat wajib dipilih',
+            'lokasi_dituju.required' => 'Lokasi yang dituju wajib diisi',
+            
+            // File validation
+            'foto.image' => 'File foto harus berupa gambar',
+            'foto.mimes' => 'Format foto harus jpeg, png, atau jpg',
+            'foto.max' => 'Ukuran foto maksimal 2MB',
         ];
 
         try {
@@ -235,6 +304,22 @@ class BukuTamuController extends Controller
         $validated['input_by'] = auth()->id();
         $validated['status'] = 'sedang_berkunjung';
         $validated['check_in'] = $validated['mulai_kunjungan'];
+
+        // Handle duration calculation
+        if (!empty($validated['selesai_kunjungan'])) {
+            // Calculate duration if end time is provided
+            $mulai = new \DateTime($validated['mulai_kunjungan']);
+            $selesai = new \DateTime($validated['selesai_kunjungan']);
+            $diff = $mulai->diff($selesai);
+            
+            $hours = $diff->h + ($diff->days * 24);
+            $minutes = $diff->i;
+            
+            $validated['lama_kunjungan'] = "{$hours} jam {$minutes} menit";
+        } else {
+            // For MIGAS mode, if no end time provided, leave duration empty
+            $validated['lama_kunjungan'] = null;
+        }
 
         // Set lokasi_dituju from area if not provided (for Simple mode)
         if (empty($validated['lokasi_dituju']) && !empty($validated['area_id'])) {
@@ -264,13 +349,26 @@ class BukuTamuController extends Controller
 
         // Save dynamic questionnaire answers if questionnaire is enabled and answers provided
         if ($enableQuestionnaire && !empty($validated['kuesioner_answers'])) {
-            foreach ($validated['kuesioner_answers'] as $pertanyaanId => $jawaban) {
-                if (!empty($jawaban)) {
-                    JawabanKuesionerTamu::create([
-                        'buku_tamu_id' => $bukuTamu->id,
-                        'pertanyaan_tamu_id' => $pertanyaanId,
-                        'jawaban' => is_array($jawaban) ? implode(', ', $jawaban) : $jawaban,
-                    ]);
+            // Parse JSON if it's a string
+            $answers = $validated['kuesioner_answers'];
+            if (is_string($answers)) {
+                $answers = json_decode($answers, true);
+            }
+            
+            if (is_array($answers)) {
+                foreach ($answers as $pertanyaanId => $jawaban) {
+                    if (!empty($jawaban)) {
+                        // Handle array answers (checkboxes)
+                        if (is_array($jawaban)) {
+                            $jawaban = implode(', ', $jawaban);
+                        }
+                        
+                        JawabanKuesionerTamu::create([
+                            'buku_tamu_id' => $bukuTamu->id,
+                            'pertanyaan_tamu_id' => $pertanyaanId,
+                            'jawaban' => $jawaban,
+                        ]);
+                    }
                 }
             }
         }
@@ -666,37 +764,465 @@ class BukuTamuController extends Controller
     }
 
     /**
-     * Get kuesioner by area patrol (legacy method - now updated)
+     * Get kuesioner by project and area (new method for area-based questionnaire)
      */
     public function getKuesionerByArea(Request $request)
     {
-        $areaPatrolId = $request->get('area_patrol_id');
-        
-        if (!$areaPatrolId) {
+        try {
+            $projectId = $request->get('project_id');
+            $areaId = $request->get('area_id');
+            $guestHashId = $request->get('guest_id'); // Optional guest ID to load existing answers
+            
+            \Log::info('getKuesionerByArea called', [
+                'project_id' => $projectId,
+                'area_id' => $areaId,
+                'guest_id' => $guestHashId,
+                'user_id' => auth()->id(),
+                'perusahaan_id' => auth()->user()->perusahaan_id ?? null
+            ]);
+            
+            if (!$projectId || !$areaId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Project ID and Area ID required'
+                ]);
+            }
+
+            // Find active kuesioner for this project and area
+            $kuesioner = KuesionerTamu::with(['pertanyaans' => function($query) {
+                    $query->orderBy('urutan');
+                }])
+                ->where('project_id', $projectId)
+                ->where('area_id', $areaId)
+                ->where('is_active', true)
+                ->first();
+
+            \Log::info('Kuesioner search result by area', [
+                'found' => $kuesioner ? true : false,
+                'kuesioner_id' => $kuesioner ? $kuesioner->id : null,
+                'pertanyaans_count' => $kuesioner && $kuesioner->pertanyaans ? $kuesioner->pertanyaans->count() : 0
+            ]);
+
+            if (!$kuesioner || !$kuesioner->pertanyaans || $kuesioner->pertanyaans->count() === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kuesioner tidak ditemukan untuk project dan area ini'
+                ]);
+            }
+
+            // Get existing answers if guest ID is provided
+            $existingAnswers = [];
+            if ($guestHashId) {
+                // Decode hash ID to get actual guest ID
+                $guestId = \Vinkla\Hashids\Facades\Hashids::decode($guestHashId)[0] ?? null;
+                
+                if ($guestId) {
+                    $bukuTamu = BukuTamu::find($guestId);
+                    if ($bukuTamu) {
+                        $answers = JawabanKuesionerTamu::where('buku_tamu_id', $bukuTamu->id)
+                            ->get()
+                            ->keyBy('pertanyaan_tamu_id');
+                        
+                        foreach ($answers as $answer) {
+                            $existingAnswers[$answer->pertanyaan_tamu_id] = $answer->jawaban;
+                        }
+                        
+                        \Log::info('Loaded existing answers', [
+                            'guest_id' => $guestId,
+                            'answers_count' => count($existingAnswers),
+                            'answers' => $existingAnswers
+                        ]);
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $kuesioner->id,
+                    'judul' => $kuesioner->judul,
+                    'deskripsi' => $kuesioner->deskripsi,
+                    'existing_answers' => $existingAnswers,
+                    'pertanyaans' => $kuesioner->pertanyaans->map(function($pertanyaan) {
+                        return [
+                            'id' => $pertanyaan->id,
+                            'pertanyaan' => $pertanyaan->pertanyaan,
+                            'tipe_jawaban' => $pertanyaan->tipe_jawaban,
+                            'opsi_jawaban' => $pertanyaan->opsi_jawaban,
+                            'is_required' => $pertanyaan->is_required,
+                            'urutan' => $pertanyaan->urutan,
+                        ];
+                    })
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in getKuesionerByArea', [
+                'error' => $e->getMessage(),
+                'project_id' => $request->get('project_id'),
+                'area_id' => $request->get('area_id'),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Area patrol ID required'
+                'message' => 'Error: ' . $e->getMessage()
             ]);
         }
+    }
 
-        $kuesioner = KuesionerTamu::with('pertanyaans')
-            ->where('area_patrol_id', $areaPatrolId)
-            ->where('is_active', true)
-            ->first();
+    /**
+     * Get karyawan by project
+     */
+    public function getKaryawanByProject(Request $request, $projectId)
+    {
+        try {
+            $project = Project::find($projectId);
+            
+            if (!$project) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Project tidak ditemukan'
+                ], 404);
+            }
 
-        if (!$kuesioner) {
+            $karyawans = \App\Models\Karyawan::with(['jabatan:id,nama'])
+                ->where('project_id', $projectId)
+                ->where('is_active', true)
+                ->select('id', 'nama_lengkap', 'jabatan_id', 'email')
+                ->orderBy('nama_lengkap')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $karyawans
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in getKaryawanByProject:', [
+                'error' => $e->getMessage(),
+                'project_id' => $projectId
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Kuesioner tidak ditemukan untuk area ini'
-            ]);
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
+    }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'kuesioner' => $kuesioner,
-                'pertanyaans' => $kuesioner->pertanyaans
-            ]
+    /**
+     * Get security officers by project
+     */
+    public function getSecurityOfficersByProject(Request $request, $projectId)
+    {
+        try {
+            $project = Project::find($projectId);
+            
+            if (!$project) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Project tidak ditemukan'
+                ], 404);
+            }
+
+            // Get karyawan with security role in this project
+            $securityOfficers = \App\Models\Karyawan::with(['jabatan:id,nama', 'user:id,role,email'])
+                ->where('project_id', $projectId)
+                ->where('is_active', true)
+                ->whereHas('user', function($query) {
+                    $query->where('role', 'security_officer');
+                })
+                ->select('id', 'nama_lengkap', 'jabatan_id', 'user_id')
+                ->orderBy('nama_lengkap')
+                ->get();
+
+            // If no security officers found, get all karyawan as fallback
+            if ($securityOfficers->isEmpty()) {
+                $securityOfficers = \App\Models\Karyawan::with(['jabatan:id,nama'])
+                    ->where('project_id', $projectId)
+                    ->where('is_active', true)
+                    ->select('id', 'nama_lengkap', 'jabatan_id')
+                    ->orderBy('nama_lengkap')
+                    ->get();
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $securityOfficers
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in getSecurityOfficersByProject:', [
+                'error' => $e->getMessage(),
+                'project_id' => $projectId
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get areas by security officer (from karyawan_areas)
+     */
+    public function getAreasBySecurityOfficer(Request $request)
+    {
+        try {
+            $securityOfficerName = $request->get('security_officer');
+            $projectId = $request->get('project_id');
+            
+            if (!$securityOfficerName || !$projectId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Security officer name and project ID required'
+                ]);
+            }
+
+            // Find the karyawan by name and project
+            $karyawan = \App\Models\Karyawan::where('nama_lengkap', $securityOfficerName)
+                ->where('project_id', $projectId)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$karyawan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Security officer tidak ditemukan'
+                ]);
+            }
+
+            // Get areas assigned to this karyawan
+            $areas = $karyawan->areas()
+                ->select('areas.id', 'areas.nama', 'areas.alamat', 'karyawan_areas.is_primary')
+                ->orderBy('karyawan_areas.is_primary', 'desc') // Primary area first
+                ->orderBy('areas.nama')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $areas
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in getAreasBySecurityOfficer:', [
+                'error' => $e->getMessage(),
+                'security_officer' => $request->get('security_officer'),
+                'project_id' => $request->get('project_id')
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Save questionnaire answers for existing guest
+     */
+    public function saveGuestQuestionnaire(Request $request, BukuTamu $bukuTamu)
+    {
+        try {
+            $validated = $request->validate([
+                'kuesioner_answers' => 'required|array',
+            ]);
+
+            // Parse answers
+            $answers = $validated['kuesioner_answers'];
+            
+            // Delete existing answers for this guest
+            JawabanKuesionerTamu::where('buku_tamu_id', $bukuTamu->id)->delete();
+            
+            // Save new answers
+            foreach ($answers as $pertanyaanId => $jawaban) {
+                if (!empty($jawaban)) {
+                    // Handle array answers (checkboxes)
+                    if (is_array($jawaban)) {
+                        $jawaban = implode(', ', $jawaban);
+                    }
+                    
+                    JawabanKuesionerTamu::create([
+                        'buku_tamu_id' => $bukuTamu->id,
+                        'pertanyaan_tamu_id' => $pertanyaanId,
+                        'jawaban' => $jawaban,
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Jawaban kuesioner berhasil disimpan'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error saving guest questionnaire:', [
+                'error' => $e->getMessage(),
+                'buku_tamu_id' => $bukuTamu->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan jawaban: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    /**
+     * Show questionnaire page for guest
+     */
+    public function showQuestionnaire(Request $request)
+    {
+        // Validate required parameters
+        $request->validate([
+            'guest' => 'required|string',
+            'project' => 'required|exists:projects,id',
+            'area' => 'required|exists:areas,id',
         ]);
+
+        return view('perusahaan.buku-tamu.questionnaire');
+    }
+
+    /**
+     * Get guest info for questionnaire page
+     */
+    public function getGuestInfo(Request $request)
+    {
+        try {
+            $guestHashId = $request->get('guest');
+            
+            if (!$guestHashId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Guest hash ID required'
+                ], 400);
+            }
+
+            // Decode hash ID to get actual ID
+            $guestId = \Vinkla\Hashids\Facades\Hashids::decode($guestHashId)[0] ?? null;
+            
+            if (!$guestId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid guest hash ID'
+                ], 400);
+            }
+
+            $bukuTamu = BukuTamu::with(['project:id,nama', 'area:id,nama'])
+                ->where('id', $guestId)
+                ->first();
+
+            if (!$bukuTamu) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Guest not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $bukuTamu->id,
+                    'hash_id' => $bukuTamu->hash_id,
+                    'nama_tamu' => $bukuTamu->nama_tamu,
+                    'perusahaan_tamu' => $bukuTamu->perusahaan_tamu,
+                    'keperluan' => $bukuTamu->keperluan,
+                    'check_in_formatted' => $bukuTamu->check_in->format('d M Y H:i'),
+                    'project' => $bukuTamu->project,
+                    'area' => $bukuTamu->area,
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in getGuestInfo:', [
+                'error' => $e->getMessage(),
+                'guest' => $request->get('guest')
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getPosJagaByArea(Request $request)
+    {
+        try {
+            $areaId = $request->get('area_id');
+            
+            if (!$areaId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Area ID required'
+                ]);
+            }
+
+            $posJagas = AreaPatrol::where('area_id', $areaId)
+                ->where('is_active', true)
+                ->select('id', 'nama', 'deskripsi', 'alamat')
+                ->orderBy('nama')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $posJagas
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in getPosJagaByArea:', [
+                'error' => $e->getMessage(),
+                'area_id' => $request->get('area_id')
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Return guest card
+     */
+    public function returnCard(Request $request, BukuTamu $bukuTamu)
+    {
+        try {
+            if (!$bukuTamu->no_kartu_pinjam) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tamu tidak memiliki kartu yang dipinjam'
+                ], 400);
+            }
+
+            // Find the card and return it
+            $kartuTamu = \App\Models\KartuTamu::where('no_kartu', $bukuTamu->no_kartu_pinjam)->first();
+            if ($kartuTamu) {
+                $kartuTamu->returnFromGuest();
+            }
+
+            // Clear card from guest record
+            $bukuTamu->update([
+                'no_kartu_pinjam' => null
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kartu berhasil dikembalikan'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error in returnCard:', [
+                'error' => $e->getMessage(),
+                'guest_id' => $bukuTamu->id
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -20,7 +20,7 @@
             </span>
             <span class="flex items-center gap-2">
                 <i class="fas fa-map-marker-alt text-green-600"></i>
-                {{ $kuesionerTamu->areaPatrol->nama }}
+                {{ $kuesionerTamu->area->nama }}
             </span>
             <span class="flex items-center gap-2">
                 <i class="fas fa-question-circle text-purple-600"></i>
@@ -324,9 +324,10 @@ function toggleOpsiJawaban() {
         });
     } else {
         opsiContainer.style.display = 'none';
-        // Remove required from opsi inputs
+        // Remove required from opsi inputs and clear values
         document.querySelectorAll('input[name="opsi_jawaban[]"]').forEach(input => {
             input.required = false;
+            input.value = ''; // Clear the value
         });
     }
 }
@@ -496,6 +497,19 @@ function updateUrutan() {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     toggleOpsiJawaban();
+    
+    // Add form submit handler
+    document.getElementById('pertanyaanForm').addEventListener('submit', function(e) {
+        const tipeJawaban = document.querySelector('input[name="tipe_jawaban"]:checked');
+        
+        // If tipe jawaban is 'text', remove all opsi_jawaban inputs before submit
+        if (tipeJawaban && tipeJawaban.value === 'text') {
+            const opsiInputs = document.querySelectorAll('input[name="opsi_jawaban[]"]');
+            opsiInputs.forEach(input => {
+                input.remove();
+            });
+        }
+    });
 });
 </script>
 

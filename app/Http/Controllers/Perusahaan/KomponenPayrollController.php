@@ -8,9 +8,38 @@ use Illuminate\Http\Request;
 
 class KomponenPayrollController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $komponens = KomponenPayroll::orderBy('created_at', 'desc')->get();
+        $query = KomponenPayroll::query();
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_komponen', 'ILIKE', "%{$search}%")
+                  ->orWhere('kode', 'ILIKE', "%{$search}%")
+                  ->orWhere('deskripsi', 'ILIKE', "%{$search}%");
+            });
+        }
+        
+        // Filter by jenis
+        if ($request->filled('jenis')) {
+            $query->where('jenis', $request->jenis);
+        }
+        
+        // Filter by status
+        if ($request->filled('status')) {
+            $aktif = $request->status === 'aktif' ? 1 : 0;
+            $query->where('aktif', $aktif);
+        }
+        
+        // Filter by kategori
+        if ($request->filled('kategori')) {
+            $query->where('kategori', $request->kategori);
+        }
+        
+        $komponens = $query->orderBy('created_at', 'desc')->get();
+        
         return view('perusahaan.payroll.komponen', compact('komponens'));
     }
 

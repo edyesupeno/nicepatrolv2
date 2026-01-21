@@ -187,7 +187,7 @@
                         <i class="fas fa-clipboard mr-2" style="color: #3B82C8;"></i>Keperluan
                     </th>
                     <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                        <i class="fas fa-handshake mr-2" style="color: #3B82C8;"></i>Bertemu
+                        <i class="fas fa-handshake mr-2" style="color: #3B82C8;"></i>Nama Petugas
                     </th>
                     <th class="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                         <i class="fas fa-clock mr-2" style="color: #3B82C8;"></i>Check In
@@ -255,6 +255,11 @@
                             @if($tamu->lokasi_dituju)
                                 <p class="text-xs text-gray-500">Ke: {{ Str::limit($tamu->lokasi_dituju, 25) }}</p>
                             @endif
+                            @if($tamu->no_kartu_pinjam)
+                                <p class="text-xs text-indigo-600 font-medium">
+                                    <i class="fas fa-id-card mr-1"></i>Kartu: {{ $tamu->no_kartu_pinjam }}
+                                </p>
+                            @endif
                         </div>
                     </td>
                     <td class="px-6 py-4">
@@ -282,35 +287,78 @@
                         </span>
                     </td>
                     <td class="px-6 py-4">
-                        <div class="flex items-center justify-center gap-2">
-                            <a href="{{ route('perusahaan.buku-tamu.show', $tamu->hash_id) }}" 
-                               class="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
-                               title="Lihat Detail">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ route('perusahaan.buku-tamu.qr-code', $tamu->hash_id) }}" 
-                               target="_blank"
-                               class="px-3 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition text-sm font-medium"
-                               title="Lihat QR Code">
-                                <i class="fas fa-qrcode"></i>
-                            </a>
-                            @if($tamu->is_visiting)
-                                <button onclick="checkOutGuest('{{ $tamu->hash_id }}')" 
-                                        class="px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition text-sm font-medium"
-                                        title="Check Out">
-                                    <i class="fas fa-sign-out-alt"></i>
+                        <div class="flex flex-col gap-2">
+                            <!-- Row 1: View, QR Code, Questionnaire -->
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="{{ route('perusahaan.buku-tamu.show', $tamu->hash_id) }}" 
+                                   class="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
+                                   title="Lihat Detail">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ route('perusahaan.buku-tamu.qr-code', $tamu->hash_id) }}" 
+                                   target="_blank"
+                                   class="px-3 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition text-sm font-medium"
+                                   title="Lihat QR Code">
+                                    <i class="fas fa-qrcode"></i>
+                                </a>
+                                @if($tamu->is_visiting)
+                                    <!-- Questionnaire Button - only show if project has questionnaire enabled -->
+                                    @if($tamu->project->enable_questionnaire)
+                                        @php
+                                            $hasAnswers = $tamu->jawabanKuesioner->count() > 0;
+                                        @endphp
+                                        <a href="{{ route('perusahaan.buku-tamu.questionnaire', ['guest' => $tamu->hash_id, 'project' => $tamu->project->id, 'area' => $tamu->area_id]) }}" 
+                                           class="px-3 py-2 {{ $hasAnswers ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600' }} rounded-lg hover:{{ $hasAnswers ? 'bg-blue-100' : 'bg-green-100' }} transition text-sm font-medium"
+                                           title="{{ $hasAnswers ? 'Edit Kuesioner' : 'Isi Kuesioner' }}">
+                                            <i class="fas fa-clipboard-list"></i>
+                                        </a>
+                                    @endif
+                                @endif
+                            </div>
+                            
+                            <!-- Row 2: Check Out, Edit, Delete, Card -->
+                            <div class="flex items-center justify-center gap-2">
+                                @if($tamu->is_visiting)
+                                    <button onclick="checkOutGuest('{{ $tamu->hash_id }}')" 
+                                            class="px-3 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition text-sm font-medium"
+                                            title="Check Out">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                    </button>
+                                    
+                                    <!-- Card Button - only show if project has guest card enabled and area is enabled -->
+                                    @php
+                                        $isAreaEnabledForCards = $tamu->project->enable_guest_card && 
+                                                               $tamu->area_id && 
+                                                               isset($enabledGuestCardAreas[$tamu->project_id]) && 
+                                                               in_array($tamu->area_id, $enabledGuestCardAreas[$tamu->project_id]);
+                                    @endphp
+                                    @if($isAreaEnabledForCards)
+                                        @if($tamu->no_kartu_pinjam)
+                                            <button onclick="returnGuestCard('{{ $tamu->hash_id }}', '{{ $tamu->no_kartu_pinjam }}')" 
+                                                    class="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium"
+                                                    title="Kembalikan Kartu {{ $tamu->no_kartu_pinjam }}">
+                                                <i class="fas fa-undo"></i>
+                                            </button>
+                                        @else
+                                            <button onclick="assignGuestCard('{{ $tamu->hash_id }}', {{ $tamu->project_id }}, {{ $tamu->area_id }})" 
+                                                    class="px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition text-sm font-medium"
+                                                    title="Berikan Kartu Tamu">
+                                                <i class="fas fa-id-card"></i>
+                                            </button>
+                                        @endif
+                                    @endif
+                                @endif
+                                <a href="{{ route('perusahaan.buku-tamu.edit', $tamu->hash_id) }}" 
+                                   class="px-3 py-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition text-sm font-medium"
+                                   title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button onclick="confirmDelete('{{ $tamu->hash_id }}')" 
+                                        class="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium"
+                                        title="Hapus">
+                                    <i class="fas fa-trash"></i>
                                 </button>
-                            @endif
-                            <a href="{{ route('perusahaan.buku-tamu.edit', $tamu->hash_id) }}" 
-                               class="px-3 py-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition text-sm font-medium"
-                               title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button onclick="confirmDelete('{{ $tamu->hash_id }}')" 
-                                    class="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium"
-                                    title="Hapus">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            </div>
                         </div>
                     </td>
                 </tr>
@@ -367,6 +415,7 @@
     @csrf
     @method('DELETE')
 </form>
+
 @endsection
 
 @push('scripts')
@@ -434,6 +483,199 @@ async function checkOutGuest(hashId) {
                 icon: 'error',
                 title: 'Gagal!',
                 text: error.message || 'Terjadi kesalahan saat check out'
+            });
+        }
+    }
+}
+
+async function assignGuestCard(guestHashId, projectId, areaId) {
+    try {
+        // Check if CSRF token exists
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfToken) {
+            throw new Error('CSRF token not found. Please refresh the page.');
+        }
+        
+        // First, get available cards for this area
+        const response = await fetch(`/perusahaan/kartu-tamu-available?area_id=${areaId}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken.getAttribute('content')
+            },
+            credentials: 'same-origin'
+        });
+        
+        // Check if we got redirected (usually means authentication failed)
+        if (response.redirected) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Session Expired',
+                text: 'Your session has expired. Please refresh the page and try again.',
+                confirmButtonText: 'Refresh Page'
+            }).then(() => {
+                location.reload();
+            });
+            return;
+        }
+        
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Authentication Required',
+                    text: 'Please refresh the page and try again.',
+                    confirmButtonText: 'Refresh Page'
+                }).then(() => {
+                    location.reload();
+                });
+                return;
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const responseText = await response.text();
+            
+            // If we get HTML instead of JSON, it's likely a redirect to login
+            if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Session Expired',
+                    text: 'Your session has expired. Please refresh the page and try again.',
+                    confirmButtonText: 'Refresh Page'
+                }).then(() => {
+                    location.reload();
+                });
+                return;
+            }
+            
+            throw new Error('Server returned non-JSON response');
+        }
+        
+        const result = await response.json();
+        
+        if (!result.success || result.data.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Tidak Ada Kartu Tersedia',
+                text: 'Tidak ada kartu tamu yang tersedia untuk area ini.',
+                confirmButtonColor: '#3B82C8'
+            });
+            return;
+        }
+        
+        // Create options for the select
+        const cardOptions = {};
+        result.data.forEach(card => {
+            cardOptions[card.id] = `${card.no_kartu}${card.nfc_kartu ? ` (NFC: ${card.nfc_kartu})` : ''}`;
+        });
+        
+        const { value: selectedCardId } = await Swal.fire({
+            title: 'Pilih Kartu Tamu',
+            text: 'Pilih kartu tamu yang akan diberikan kepada tamu',
+            input: 'select',
+            inputOptions: cardOptions,
+            inputPlaceholder: 'Pilih kartu...',
+            showCancelButton: true,
+            confirmButtonText: 'Berikan Kartu',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#6366f1',
+            cancelButtonColor: '#6b7280',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Anda harus memilih kartu!'
+                }
+            }
+        });
+        
+        if (selectedCardId) {
+            // Assign the card to the guest
+            const assignResponse = await fetch(`/perusahaan/kartu-tamu/${selectedCardId}/assign`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ guest_id: guestHashId })
+            });
+            
+            if (!assignResponse.ok) {
+                throw new Error(`Assignment failed! status: ${assignResponse.status}`);
+            }
+            
+            const assignResult = await assignResponse.json();
+            
+            if (assignResult.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: assignResult.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                throw new Error(assignResult.message);
+            }
+        }
+        
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: error.message || 'Terjadi kesalahan saat memberikan kartu'
+        });
+    }
+}
+
+async function returnGuestCard(guestHashId, cardNumber) {
+    const result = await Swal.fire({
+        title: 'Kembalikan Kartu Tamu',
+        text: `Yakin ingin mengembalikan kartu ${cardNumber} dari tamu?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Kembalikan',
+        cancelButtonText: 'Batal'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/perusahaan/buku-tamu/${guestHashId}/return-card`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: data.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                throw new Error(data.message);
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: error.message || 'Terjadi kesalahan saat mengembalikan kartu'
             });
         }
     }

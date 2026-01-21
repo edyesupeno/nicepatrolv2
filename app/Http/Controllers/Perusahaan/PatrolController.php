@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Perusahaan;
 use App\Http\Controllers\Controller;
 use App\Models\KategoriInsiden;
 use App\Models\AreaPatrol;
+use App\Models\Area;
 use App\Models\RutePatrol;
 use App\Models\Checkpoint;
 use App\Models\AsetKawasan;
@@ -1233,13 +1234,13 @@ class PatrolController extends Controller
                 'id',
                 'perusahaan_id',
                 'project_id',
-                'area_patrol_id',
+                'area_id',
                 'judul',
                 'deskripsi',
                 'is_active',
                 'created_at'
             ])
-            ->with(['project:id,nama', 'areaPatrol:id,nama'])
+            ->with(['project:id,nama', 'area:id,nama'])
             ->withCount('pertanyaans');
 
         // Search
@@ -1258,7 +1259,7 @@ class PatrolController extends Controller
 
         // Filter by area
         if ($request->filled('area_id')) {
-            $query->where('area_patrol_id', $request->area_id);
+            $query->where('area_id', $request->area_id);
         }
 
         // Filter by status
@@ -1273,39 +1274,38 @@ class PatrolController extends Controller
             ->orderBy('nama')
             ->get();
 
-        $areaPatrols = AreaPatrol::select('id', 'nama', 'project_id')
+        $areas = Area::select('id', 'nama', 'project_id')
             ->with('project:id,nama')
-            ->where('is_active', true)
             ->orderBy('nama')
             ->get();
 
-        return view('perusahaan.patrol.pertanyaan-tamu', compact('kuesionerTamus', 'projects', 'areaPatrols'));
+        return view('perusahaan.patrol.pertanyaan-tamu', compact('kuesionerTamus', 'projects', 'areas'));
     }
 
     public function storePertanyaanTamu(Request $request)
     {
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
-            'area_patrol_id' => 'required|exists:area_patrols,id',
+            'area_id' => 'required|exists:areas,id',
             'judul' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'is_active' => 'required|boolean',
         ], [
             'project_id.required' => 'Project wajib dipilih',
             'project_id.exists' => 'Project tidak valid',
-            'area_patrol_id.required' => 'Area wajib dipilih',
-            'area_patrol_id.exists' => 'Area tidak valid',
+            'area_id.required' => 'Area wajib dipilih',
+            'area_id.exists' => 'Area tidak valid',
             'judul.required' => 'Judul kuesioner wajib diisi',
             'judul.max' => 'Judul kuesioner maksimal 255 karakter',
             'is_active.required' => 'Status wajib dipilih',
         ]);
 
         // Check if area already has a kuesioner tamu
-        $existingKuesioner = KuesionerTamu::where('area_patrol_id', $validated['area_patrol_id'])->first();
+        $existingKuesioner = KuesionerTamu::where('area_id', $validated['area_id'])->first();
         if ($existingKuesioner) {
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['area_patrol_id' => 'Area ini sudah memiliki kuesioner tamu. Setiap area hanya boleh memiliki 1 kuesioner tamu.']);
+                ->withErrors(['area_id' => 'Area ini sudah memiliki kuesioner tamu. Setiap area hanya boleh memiliki 1 kuesioner tamu.']);
         }
 
         $validated['perusahaan_id'] = auth()->user()->perusahaan_id;
@@ -1318,12 +1318,12 @@ class PatrolController extends Controller
 
     public function editPertanyaanTamu(KuesionerTamu $kuesionerTamu)
     {
-        $kuesionerTamu->load(['project', 'areaPatrol']);
+        $kuesionerTamu->load(['project', 'area']);
         return response()->json([
             'id' => $kuesionerTamu->id,
             'hash_id' => $kuesionerTamu->hash_id,
             'project_id' => $kuesionerTamu->project_id,
-            'area_patrol_id' => $kuesionerTamu->area_patrol_id,
+            'area_id' => $kuesionerTamu->area_id,
             'judul' => $kuesionerTamu->judul,
             'deskripsi' => $kuesionerTamu->deskripsi,
             'is_active' => $kuesionerTamu->is_active,
@@ -1334,28 +1334,28 @@ class PatrolController extends Controller
     {
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
-            'area_patrol_id' => 'required|exists:area_patrols,id',
+            'area_id' => 'required|exists:areas,id',
             'judul' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'is_active' => 'required|boolean',
         ], [
             'project_id.required' => 'Project wajib dipilih',
             'project_id.exists' => 'Project tidak valid',
-            'area_patrol_id.required' => 'Area wajib dipilih',
-            'area_patrol_id.exists' => 'Area tidak valid',
+            'area_id.required' => 'Area wajib dipilih',
+            'area_id.exists' => 'Area tidak valid',
             'judul.required' => 'Judul kuesioner wajib diisi',
             'judul.max' => 'Judul kuesioner maksimal 255 karakter',
             'is_active.required' => 'Status wajib dipilih',
         ]);
 
         // Check if area already has a kuesioner tamu (excluding current one)
-        $existingKuesioner = KuesionerTamu::where('area_patrol_id', $validated['area_patrol_id'])
+        $existingKuesioner = KuesionerTamu::where('area_id', $validated['area_id'])
             ->where('id', '!=', $kuesionerTamu->id)
             ->first();
         if ($existingKuesioner) {
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['area_patrol_id' => 'Area ini sudah memiliki kuesioner tamu. Setiap area hanya boleh memiliki 1 kuesioner tamu.']);
+                ->withErrors(['area_id' => 'Area ini sudah memiliki kuesioner tamu. Setiap area hanya boleh memiliki 1 kuesioner tamu.']);
         }
 
         $kuesionerTamu->update($validated);
@@ -1374,23 +1374,31 @@ class PatrolController extends Controller
 
     public function kelolaPertanyaanTamu(KuesionerTamu $kuesionerTamu)
     {
-        $kuesionerTamu->load(['pertanyaans', 'project', 'areaPatrol']);
+        $kuesionerTamu->load(['pertanyaans', 'project', 'area']);
         return view('perusahaan.patrol.kelola-pertanyaan-tamu', compact('kuesionerTamu'));
     }
 
     public function storePertanyaanDetailTamu(Request $request, KuesionerTamu $kuesionerTamu)
     {
-        $validated = $request->validate([
+        // Custom validation based on tipe_jawaban
+        $rules = [
             'pertanyaan' => 'required|string',
             'tipe_jawaban' => 'required|in:pilihan,text',
-            'opsi_jawaban' => 'required_if:tipe_jawaban,pilihan|array|min:2',
-            'opsi_jawaban.*' => 'required_if:tipe_jawaban,pilihan|string',
             'is_required' => 'boolean',
-        ], [
+        ];
+
+        // Add opsi_jawaban validation only if tipe_jawaban is 'pilihan'
+        if ($request->tipe_jawaban === 'pilihan') {
+            $rules['opsi_jawaban'] = 'required|array|min:2';
+            $rules['opsi_jawaban.*'] = 'required|string';
+        }
+
+        $validated = $request->validate($rules, [
             'pertanyaan.required' => 'Pertanyaan wajib diisi',
             'tipe_jawaban.required' => 'Tipe jawaban wajib dipilih',
-            'opsi_jawaban.required_if' => 'Opsi jawaban wajib diisi untuk tipe pilihan',
+            'opsi_jawaban.required' => 'Opsi jawaban wajib diisi untuk tipe pilihan',
             'opsi_jawaban.min' => 'Minimal 2 opsi jawaban',
+            'opsi_jawaban.*.required' => 'Semua opsi jawaban wajib diisi',
         ]);
 
         // Get max urutan
@@ -1412,17 +1420,25 @@ class PatrolController extends Controller
 
     public function updatePertanyaanDetailTamu(Request $request, KuesionerTamu $kuesionerTamu, PertanyaanTamu $pertanyaan)
     {
-        $validated = $request->validate([
+        // Custom validation based on tipe_jawaban
+        $rules = [
             'pertanyaan' => 'required|string',
             'tipe_jawaban' => 'required|in:pilihan,text',
-            'opsi_jawaban' => 'required_if:tipe_jawaban,pilihan|array|min:2',
-            'opsi_jawaban.*' => 'required_if:tipe_jawaban,pilihan|string',
             'is_required' => 'boolean',
-        ], [
+        ];
+
+        // Add opsi_jawaban validation only if tipe_jawaban is 'pilihan'
+        if ($request->tipe_jawaban === 'pilihan') {
+            $rules['opsi_jawaban'] = 'required|array|min:2';
+            $rules['opsi_jawaban.*'] = 'required|string';
+        }
+
+        $validated = $request->validate($rules, [
             'pertanyaan.required' => 'Pertanyaan wajib diisi',
             'tipe_jawaban.required' => 'Tipe jawaban wajib dipilih',
-            'opsi_jawaban.required_if' => 'Opsi jawaban wajib diisi untuk tipe pilihan',
+            'opsi_jawaban.required' => 'Opsi jawaban wajib diisi untuk tipe pilihan',
             'opsi_jawaban.min' => 'Minimal 2 opsi jawaban',
+            'opsi_jawaban.*.required' => 'Semua opsi jawaban wajib diisi',
         ]);
 
         $validated['is_required'] = $request->has('is_required');
@@ -1464,7 +1480,7 @@ class PatrolController extends Controller
 
     public function previewKuesionerTamu(KuesionerTamu $kuesionerTamu)
     {
-        $kuesionerTamu->load(['pertanyaans', 'project', 'areaPatrol']);
+        $kuesionerTamu->load(['pertanyaans', 'project', 'area']);
         return view('perusahaan.patrol.preview-kuesioner-tamu', compact('kuesionerTamu'));
     }
 
@@ -1473,9 +1489,8 @@ class PatrolController extends Controller
         $projectId = $request->get('project_id');
         $kuesionerTamuId = $request->get('kuesioner_tamu_id'); // For edit mode
         
-        $query = AreaPatrol::select('id', 'nama')
-            ->where('project_id', $projectId)
-            ->where('is_active', true);
+        $query = Area::select('id', 'nama')
+            ->where('project_id', $projectId);
         
         // Exclude areas that already have kuesioner tamu
         $query->whereDoesntHave('kuesionerTamus', function($q) use ($kuesionerTamuId) {

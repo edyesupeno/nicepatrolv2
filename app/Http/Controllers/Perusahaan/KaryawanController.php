@@ -900,5 +900,119 @@ class KaryawanController extends Controller
             'data' => $progress,
         ]);
     }
+
+    public function exportPage(Request $request)
+    {
+        $projects = Project::where('perusahaan_id', auth()->user()->perusahaan_id)->get();
+        $jabatans = Jabatan::where('perusahaan_id', auth()->user()->perusahaan_id)->get();
+        $statusKaryawans = StatusKaryawan::all();
+
+        return view('perusahaan.karyawans.export', compact('projects', 'jabatans', 'statusKaryawans'));
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $request->validate([
+            'project_id' => 'nullable|exists:projects,id',
+            'format' => 'required|in:excel,pdf',
+        ]);
+
+        $projectId = $request->project_id;
+        $perusahaanId = auth()->user()->perusahaan_id;
+        
+        // Build filters
+        $filters = [];
+        if ($request->filled('search')) {
+            $filters['search'] = $request->search;
+        }
+        if ($request->filled('status_karyawan')) {
+            $filters['status_karyawan'] = $request->status_karyawan;
+        }
+        if ($request->filled('jabatan_id')) {
+            $filters['jabatan_id'] = $request->jabatan_id;
+        }
+        if ($request->filled('is_active')) {
+            $filters['is_active'] = $request->is_active;
+        }
+
+        // Get project name for filename
+        $projectName = 'Semua_Project';
+        if ($projectId) {
+            $project = Project::find($projectId);
+            $projectName = $project ? str_replace(' ', '_', $project->nama) : 'Project';
+        }
+
+        $fileName = 'Data_Karyawan_' . $projectName . '_' . date('Y-m-d_H-i-s');
+
+        if ($request->format === 'excel') {
+            return \Maatwebsite\Excel\Facades\Excel::download(
+                new \App\Exports\KaryawanExport($projectId, $perusahaanId, $filters),
+                $fileName . '.xlsx'
+            );
+        } else {
+            // For PDF export
+            return $this->exportPdf($request, $projectId, $perusahaanId, $filters, $fileName);
+        }
+    }
+
+    private function exportPdf($request, $projectId, $perusahaanId, $filters, $fileName)
+    {
+        $query = Karyawan::with(['project', 'jabatan', 'user'])
+            ->where('perusahaan_id', $perusahaanId);
+
+        // Filter by project if specified
+        if ($projectId) {
+            $query->where('project_id', $projectId);
+        }
+
+        // Apply additional filters
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('nik_karyawan', 'like', "%{$search}%")
+                  ->orWhere('nik_ktp', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($q) use ($search) {
+                      $q->where('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if (!empty($filters['status_karyawan'])) {
+            $query->where('status_karyawan', $filters['status_karyawan']);
+        }
+
+        if (!empty($filters['jabatan_id'])) {
+            $query->where('jabatan_id', $filters['jabatan_id']);
+        }
+
+        if (isset($filters['is_active']) && $filters['is_active'] !== '') {
+            $query->where('is_active', $filters['is_active']);
+        }
+
+        $karyawans = $query->orderBy('nama_lengkap')->get();
+
+        // Get project info
+        $project = null;
+        if ($projectId) {
+            $project = Project::find($projectId);
+        }
+
+        $perusahaan = auth()->user()->perusahaan;
+
+        $data = [
+            'karyawans' => $karyawans,
+            'project' => $project,
+            'perusahaan' => $perusahaan,
+            'filters' => $filters,
+            'total' => $karyawans->count(),
+            'generated_at' => now()->format('d/m/Y H:i:s'),
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('perusahaan.karyawans.export-pdf', $data);
+        $pdf->setPaper('a4', 'landscape');
+        
+        return $pdf->download($fileName . '.pdf');
+    }
 }
 

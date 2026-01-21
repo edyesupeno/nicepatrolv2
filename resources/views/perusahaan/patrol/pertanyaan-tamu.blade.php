@@ -81,7 +81,7 @@
                         class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                         <option value="">Semua Area</option>
-                        @foreach($areaPatrols as $area)
+                        @foreach($areas as $area)
                             <option value="{{ $area->id }}" data-project="{{ $area->project_id }}" {{ request('area_id') == $area->id ? 'selected' : '' }}>
                                 {{ $area->nama }} ({{ $area->project->nama }})
                             </option>
@@ -137,7 +137,7 @@
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
                                 <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                                    {{ $kuesioner->areaPatrol->nama }}
+                                    {{ $kuesioner->area->nama }}
                                 </span>
                                 <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                                     <i class="fas fa-lock mr-1"></i>Terkunci
@@ -259,8 +259,8 @@
                         Area <span class="text-red-500">*</span>
                     </label>
                     <select 
-                        name="area_patrol_id" 
-                        id="area_patrol_id"
+                        name="area_id" 
+                        id="area_id"
                         class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
                         disabled
@@ -411,18 +411,18 @@ function openModal() {
     document.getElementById('kuesionerForm').action = '{{ route("perusahaan.patrol.pertanyaan-tamu.store") }}';
     document.getElementById('formMethod').value = 'POST';
     document.getElementById('kuesionerForm').reset();
-    document.getElementById('area_patrol_id').disabled = true;
+    document.getElementById('area_id').disabled = true;
 }
 
 function closeModal() {
     document.getElementById('formModal').classList.add('hidden');
     document.getElementById('kuesionerForm').reset();
-    document.getElementById('area_patrol_id').disabled = true;
+    document.getElementById('area_id').disabled = true;
 }
 
 function loadAreas() {
     const projectId = document.getElementById('project_id').value;
-    const areaSelect = document.getElementById('area_patrol_id');
+    const areaSelect = document.getElementById('area_id');
     const kuesionerTamuId = document.getElementById('formMethod').value === 'PUT' ? 
         document.getElementById('kuesionerForm').action.split('/').pop() : null;
     
@@ -470,7 +470,7 @@ function editItem(hashId) {
             
             // Wait for areas to load then set area
             setTimeout(() => {
-                document.getElementById('area_patrol_id').value = data.area_patrol_id;
+                document.getElementById('area_id').value = data.area_id;
             }, 500);
             
             document.getElementById('judul').value = data.judul;

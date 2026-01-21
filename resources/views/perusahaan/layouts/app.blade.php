@@ -344,7 +344,7 @@
 
                 <!-- Buku Tamu Menu (Collapsible) -->
                 <div class="mb-1">
-                    <button onclick="toggleSubmenu('buku-tamu')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.buku-tamu.*') || request()->routeIs('perusahaan.penerimaan-barang.*') || request()->routeIs('perusahaan.pertanyaan-tamu.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                    <button onclick="toggleSubmenu('buku-tamu')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.buku-tamu.*') || request()->routeIs('perusahaan.penerimaan-barang.*') || request()->routeIs('perusahaan.kartu-tamu.*') || request()->routeIs('perusahaan.pertanyaan-tamu.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
                         <div class="flex items-center">
                             <i class="fas fa-address-book w-5 text-center mr-3"></i>
                             <span class="font-medium">Buku Tamu</span>
@@ -357,7 +357,7 @@
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-buku-tamu"></i>
                     </button>
-                    <div id="submenu-buku-tamu" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.buku-tamu.*') || request()->routeIs('perusahaan.penerimaan-barang.*') || request()->routeIs('perusahaan.pertanyaan-tamu.*') ? '' : 'hidden' }}">
+                    <div id="submenu-buku-tamu" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.buku-tamu.*') || request()->routeIs('perusahaan.penerimaan-barang.*') || request()->routeIs('perusahaan.kartu-tamu.*') || request()->routeIs('perusahaan.pertanyaan-tamu.*') ? '' : 'hidden' }}">
                         <a href="{{ route('perusahaan.buku-tamu.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.buku-tamu.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-book w-5 text-center mr-3 text-xs"></i>
                             <span>Buku Tamu</span>
@@ -369,6 +369,15 @@
                             <i class="fas fa-box w-5 text-center mr-3 text-xs"></i>
                             <span>Penerimaan Barang</span>
                         </a>
+                        @php
+                            $hasGuestCardProjects = \App\Models\Project::where('enable_guest_card', true)->exists();
+                        @endphp
+                        @if($hasGuestCardProjects)
+                        <a href="{{ route('perusahaan.kartu-tamu.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.kartu-tamu.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-id-card w-5 text-center mr-3 text-xs"></i>
+                            <span>Kartu Tamu</span>
+                        </a>
+                        @endif
                     </div>
                 </div>
 

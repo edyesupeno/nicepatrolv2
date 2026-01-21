@@ -24,11 +24,13 @@ class Project extends Model
         'is_active',
         'guest_book_mode',
         'enable_questionnaire',
+        'enable_guest_card',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'enable_questionnaire' => 'boolean',
+        'enable_guest_card' => 'boolean',
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
     ];
@@ -115,6 +117,12 @@ class Project extends Model
     public function areaPatrols(): HasMany
     {
         return $this->hasMany(AreaPatrol::class);
+    }
+
+    public function guestCardAreas(): BelongsToMany
+    {
+        return $this->belongsToMany(Area::class, 'project_guest_card_areas')
+                    ->withTimestamps();
     }
 
     /**

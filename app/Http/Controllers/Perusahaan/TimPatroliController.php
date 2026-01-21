@@ -24,6 +24,7 @@ class TimPatroliController extends Controller
                 'perusahaan_id',
                 'project_id',
                 'nama_tim',
+                'jenis_regu',
                 'shift_id',
                 'leader_id',
                 'is_active',
@@ -63,6 +64,11 @@ class TimPatroliController extends Controller
         // Filter by status
         if ($request->filled('status')) {
             $query->where('is_active', $request->status === 'aktif');
+        }
+
+        // Filter by jenis regu
+        if ($request->filled('jenis_regu')) {
+            $query->where('jenis_regu', $request->jenis_regu);
         }
 
         $timPatrolis = $query->latest()->paginate(15)->withQueryString();
@@ -306,6 +312,7 @@ class TimPatroliController extends Controller
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
             'nama_tim' => 'required|string|max:255',
+            'jenis_regu' => 'required|in:POS JAGA,PATROLI MOBIL,PATROLI MOTOR',
             'shift_id' => 'required|exists:shifts,id',
             'leader_id' => 'nullable|exists:users,id',
             'areas' => 'nullable|array',
@@ -324,6 +331,8 @@ class TimPatroliController extends Controller
         ], [
             'project_id.required' => 'Project wajib dipilih',
             'nama_tim.required' => 'Nama tim wajib diisi',
+            'jenis_regu.required' => 'Jenis regu wajib dipilih',
+            'jenis_regu.in' => 'Jenis regu harus salah satu dari: POS JAGA, PATROLI MOBIL, PATROLI MOTOR',
             'shift_id.required' => 'Shift wajib dipilih',
             'is_active.required' => 'Status wajib dipilih',
         ]);
@@ -335,6 +344,7 @@ class TimPatroliController extends Controller
                 'perusahaan_id' => $validated['perusahaan_id'],
                 'project_id' => $validated['project_id'],
                 'nama_tim' => $validated['nama_tim'],
+                'jenis_regu' => $validated['jenis_regu'],
                 'shift_id' => $validated['shift_id'],
                 'leader_id' => $validated['leader_id'] ?? null,
                 'is_active' => $validated['is_active'],
@@ -451,6 +461,7 @@ class TimPatroliController extends Controller
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
             'nama_tim' => 'required|string|max:255',
+            'jenis_regu' => 'required|in:POS JAGA,PATROLI MOBIL,PATROLI MOTOR',
             'shift_id' => 'required|exists:shifts,id',
             'leader_id' => 'nullable|exists:users,id',
             'areas' => 'nullable|array',
@@ -469,6 +480,8 @@ class TimPatroliController extends Controller
         ], [
             'project_id.required' => 'Project wajib dipilih',
             'nama_tim.required' => 'Nama tim wajib diisi',
+            'jenis_regu.required' => 'Jenis regu wajib dipilih',
+            'jenis_regu.in' => 'Jenis regu harus salah satu dari: POS JAGA, PATROLI MOBIL, PATROLI MOTOR',
             'shift_id.required' => 'Shift wajib dipilih',
             'is_active.required' => 'Status wajib dipilih',
         ]);
@@ -477,6 +490,7 @@ class TimPatroliController extends Controller
             $timPatroli->update([
                 'project_id' => $validated['project_id'],
                 'nama_tim' => $validated['nama_tim'],
+                'jenis_regu' => $validated['jenis_regu'],
                 'shift_id' => $validated['shift_id'],
                 'leader_id' => $validated['leader_id'] ?? null,
                 'is_active' => $validated['is_active'],

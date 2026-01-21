@@ -45,4 +45,9 @@ class Jabatan extends Model
         return $this->belongsToMany(Project::class, 'jabatan_project')
                     ->withTimestamps();
     }
+
+    public function karyawans()
+    {
+        return $this->hasMany(Karyawan::class);
+    }
 }

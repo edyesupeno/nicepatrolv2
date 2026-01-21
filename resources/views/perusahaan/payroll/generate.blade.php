@@ -95,13 +95,8 @@
                     </label>
                     <select name="jabatan_id" id="jabatan_id" 
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        onchange="filterKaryawansByJabatan()">
-                        <option value="">Semua Jabatan</option>
-                        @foreach($jabatans as $jabatan)
-                            <option value="{{ $jabatan->id }}" {{ old('jabatan_id') == $jabatan->id ? 'selected' : '' }}>
-                                {{ $jabatan->nama }}
-                            </option>
-                        @endforeach
+                        onchange="filterKaryawansByJabatan()" disabled>
+                        <option value="">Pilih project terlebih dahulu</option>
                     </select>
                     <p class="text-xs text-gray-500 mt-1" id="jabatan_info">Pilih project terlebih dahulu</p>
                 </div>
@@ -114,6 +109,31 @@
                             <span id="select_all_text">Pilih Semua</span>
                         </button>
                     </label>
+                    
+                    <!-- Search Box for Karyawan -->
+                    <div class="mb-3" id="karyawan_search_container" style="display: none;">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            <input type="text" id="karyawan_search" 
+                                   placeholder="Cari nama karyawan atau NIK..." 
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                   onkeyup="searchKaryawan()">
+                        </div>
+                        <div class="flex items-center justify-between mt-2 text-xs text-gray-600">
+                            <span id="search_result_info"></span>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="clearKaryawanSearch()" class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-times mr-1"></i>Reset Pencarian
+                                </button>
+                                <button type="button" onclick="clearAllFilters()" class="text-red-600 hover:text-red-800">
+                                    <i class="fas fa-refresh mr-1"></i>Reset Semua
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div id="karyawan_container" class="border border-gray-300 rounded-lg p-4 max-h-64 overflow-y-auto">
                         <p class="text-gray-500 text-sm" id="karyawan_placeholder">Pilih project terlebih dahulu</p>
                     </div>
@@ -251,7 +271,10 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 let allKaryawans = [];
+let filteredKaryawans = [];
 let selectedKaryawans = [];
+let currentSearchTerm = '';
+let projectJabatans = [];
 
 function loadKaryawans() {
     const projectId = document.getElementById('project_id').value;
@@ -259,11 +282,19 @@ function loadKaryawans() {
     const placeholder = document.getElementById('karyawan_placeholder');
     const submitBtn = document.getElementById('submit_btn');
     const jabatanInfo = document.getElementById('jabatan_info');
+    const searchContainer = document.getElementById('karyawan_search_container');
+    const jabatanSelect = document.getElementById('jabatan_id');
     
     if (!projectId) {
         container.innerHTML = '<p class="text-gray-500 text-sm" id="karyawan_placeholder">Pilih project terlebih dahulu</p>';
         submitBtn.disabled = true;
         jabatanInfo.textContent = 'Pilih project terlebih dahulu';
+        searchContainer.style.display = 'none';
+        
+        // Reset jabatan dropdown
+        jabatanSelect.innerHTML = '<option value="">Pilih project terlebih dahulu</option>';
+        jabatanSelect.disabled = true;
+        
         updateKaryawanCount();
         return;
     }
@@ -271,53 +302,113 @@ function loadKaryawans() {
     // Show loading
     container.innerHTML = '<p class="text-gray-500 text-sm"><i class="fas fa-spinner fa-spin mr-2"></i>Memuat karyawan...</p>';
     submitBtn.disabled = true;
+    searchContainer.style.display = 'none';
     
-    // Fetch karyawans
-    const url = `/perusahaan/karyawan/by-project/${projectId}`;
+    // Show loading for jabatan
+    jabatanSelect.innerHTML = '<option value="">Memuat jabatan...</option>';
+    jabatanSelect.disabled = true;
     
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            allKaryawans = data;
-            selectedKaryawans = [];
-            
-            if (data.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-sm">Tidak ada karyawan aktif di project ini</p>';
-                submitBtn.disabled = true;
-                jabatanInfo.textContent = 'Tidak ada karyawan';
-            } else {
-                renderKaryawans(data);
-                submitBtn.disabled = false;
-                jabatanInfo.textContent = `Ditemukan ${data.length} karyawan`;
-            }
-            
-            updateKaryawanCount();
-        })
-        .catch(error => {
-            console.error('Error loading karyawans:', error);
-            container.innerHTML = '<p class="text-red-500 text-sm">Gagal memuat karyawan</p>';
+    // Fetch karyawans and jabatans simultaneously
+    Promise.all([
+        fetch(`/perusahaan/karyawan/by-project/${projectId}`).then(r => r.json()),
+        fetch(`/perusahaan/jabatans/by-project/${projectId}`).then(r => r.json())
+    ])
+    .then(([karyawansData, jabatansData]) => {
+        allKaryawans = karyawansData;
+        filteredKaryawans = karyawansData;
+        selectedKaryawans = [];
+        currentSearchTerm = '';
+        projectJabatans = jabatansData;
+        
+        // Clear search
+        document.getElementById('karyawan_search').value = '';
+        
+        // Load jabatan dropdown
+        loadJabatanDropdown(jabatansData);
+        
+        if (karyawansData.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">Tidak ada karyawan aktif di project ini</p>';
             submitBtn.disabled = true;
-        });
+            jabatanInfo.textContent = 'Tidak ada karyawan';
+            searchContainer.style.display = 'none';
+        } else {
+            renderKaryawans(karyawansData);
+            submitBtn.disabled = false;
+            jabatanInfo.textContent = `Ditemukan ${karyawansData.length} karyawan, ${jabatansData.length} jabatan`;
+            searchContainer.style.display = 'block';
+            updateSearchInfo();
+        }
+        
+        updateKaryawanCount();
+    })
+    .catch(error => {
+        console.error('Error loading data:', error);
+        container.innerHTML = '<p class="text-red-500 text-sm">Gagal memuat data</p>';
+        submitBtn.disabled = true;
+        searchContainer.style.display = 'none';
+        
+        jabatanSelect.innerHTML = '<option value="">Gagal memuat jabatan</option>';
+        jabatanSelect.disabled = true;
+    });
+}
+
+function loadJabatanDropdown(jabatans) {
+    const jabatanSelect = document.getElementById('jabatan_id');
+    
+    // Clear existing options
+    jabatanSelect.innerHTML = '<option value="">Semua Jabatan</option>';
+    
+    // Add jabatan options
+    jabatans.forEach(jabatan => {
+        const option = document.createElement('option');
+        option.value = jabatan.id;
+        option.textContent = `${jabatan.nama} (${jabatan.karyawan_count} karyawan)`;
+        jabatanSelect.appendChild(option);
+    });
+    
+    // Enable dropdown
+    jabatanSelect.disabled = false;
 }
 
 function renderKaryawans(karyawans) {
     const container = document.getElementById('karyawan_container');
     
     if (karyawans.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 text-sm">Tidak ada karyawan</p>';
+        if (currentSearchTerm) {
+            container.innerHTML = `
+                <div class="text-center py-8">
+                    <i class="fas fa-search text-gray-300 text-3xl mb-2"></i>
+                    <p class="text-gray-500 text-sm">Tidak ada karyawan yang ditemukan</p>
+                    <p class="text-gray-400 text-xs">Coba ubah kata kunci pencarian</p>
+                    <button onclick="clearKaryawanSearch()" class="mt-2 text-blue-600 hover:text-blue-800 text-sm">
+                        <i class="fas fa-times mr-1"></i>Reset Pencarian
+                    </button>
+                </div>
+            `;
+        } else {
+            container.innerHTML = '<p class="text-gray-500 text-sm">Tidak ada karyawan</p>';
+        }
         return;
     }
     
     let html = '<div class="space-y-2">';
     karyawans.forEach(karyawan => {
+        const isChecked = selectedKaryawans.includes(karyawan.id);
         html += `
-            <label class="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+            <label class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer border border-transparent hover:border-gray-200 transition-all">
                 <input type="checkbox" name="karyawan_ids[]" value="${karyawan.id}" 
+                    ${isChecked ? 'checked' : ''}
                     class="karyawan-checkbox w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                     onchange="updateKaryawanCount()">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-gray-900">${karyawan.nama_lengkap}</p>
-                    <p class="text-xs text-gray-600">${karyawan.nik_karyawan} - ${karyawan.jabatan ? karyawan.jabatan.nama : 'No Jabatan'}</p>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <p class="text-sm font-medium text-gray-900 truncate">${karyawan.nama_lengkap}</p>
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                            ${karyawan.jabatan ? karyawan.jabatan.nama : 'Belum Ada Jabatan'}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-600">NIK: ${karyawan.nik_karyawan}</p>
+                    ${karyawan.gaji_pokok ? `<p class="text-xs text-green-600">Gaji: Rp ${new Intl.NumberFormat('id-ID').format(karyawan.gaji_pokok)}</p>` : ''}
                 </div>
             </label>
         `;
@@ -327,25 +418,141 @@ function renderKaryawans(karyawans) {
     container.innerHTML = html;
 }
 
-function filterKaryawansByJabatan() {
-    const jabatanId = document.getElementById('jabatan_id').value;
+function searchKaryawan() {
+    const searchTerm = document.getElementById('karyawan_search').value.toLowerCase();
+    currentSearchTerm = searchTerm;
     
-    if (!jabatanId) {
-        renderKaryawans(allKaryawans);
+    if (!searchTerm) {
+        // No search term, apply jabatan filter if any
+        filterKaryawansByJabatan();
         return;
     }
     
-    const filtered = allKaryawans.filter(k => k.jabatan_id == jabatanId);
-    renderKaryawans(filtered);
+    // Get base data (either all karyawans or filtered by jabatan)
+    const jabatanId = document.getElementById('jabatan_id').value;
+    let baseData = allKaryawans;
+    
+    if (jabatanId) {
+        baseData = allKaryawans.filter(k => k.jabatan_id == jabatanId);
+    }
+    
+    // Apply search filter
+    const searchResults = baseData.filter(karyawan => {
+        const nama = karyawan.nama_lengkap.toLowerCase();
+        const nik = karyawan.nik_karyawan.toLowerCase();
+        const jabatan = karyawan.jabatan ? karyawan.jabatan.nama.toLowerCase() : '';
+        
+        return nama.includes(searchTerm) || 
+               nik.includes(searchTerm) || 
+               jabatan.includes(searchTerm);
+    });
+    
+    filteredKaryawans = searchResults;
+    renderKaryawans(searchResults);
+    updateSearchInfo();
     updateKaryawanCount();
+}
+
+function clearKaryawanSearch() {
+    document.getElementById('karyawan_search').value = '';
+    currentSearchTerm = '';
+    filterKaryawansByJabatan(); // This will reset to jabatan filter or show all
+    updateSearchInfo();
+}
+
+function clearAllFilters() {
+    // Clear search
+    document.getElementById('karyawan_search').value = '';
+    currentSearchTerm = '';
+    
+    // Clear jabatan filter
+    document.getElementById('jabatan_id').value = '';
+    
+    // Reset to show all karyawans
+    filteredKaryawans = allKaryawans;
+    renderKaryawans(allKaryawans);
+    updateSearchInfo();
+    updateKaryawanCount();
+    
+    // Update jabatan info
+    const jabatanInfo = document.getElementById('jabatan_info');
+    jabatanInfo.textContent = `Ditemukan ${allKaryawans.length} karyawan, ${projectJabatans.length} jabatan`;
+}
+
+function updateSearchInfo() {
+    const searchInfo = document.getElementById('search_result_info');
+    const totalKaryawan = allKaryawans.length;
+    const filteredCount = filteredKaryawans.length;
+    const jabatanId = document.getElementById('jabatan_id').value;
+    
+    if (currentSearchTerm && jabatanId) {
+        const selectedJabatan = projectJabatans.find(j => j.id == jabatanId);
+        const jabatanName = selectedJabatan ? selectedJabatan.nama : 'Jabatan';
+        searchInfo.textContent = `Menampilkan ${filteredCount} dari ${totalKaryawan} karyawan (pencarian + filter ${jabatanName})`;
+    } else if (currentSearchTerm) {
+        searchInfo.textContent = `Menampilkan ${filteredCount} dari ${totalKaryawan} karyawan (pencarian)`;
+    } else if (jabatanId) {
+        const selectedJabatan = projectJabatans.find(j => j.id == jabatanId);
+        const jabatanName = selectedJabatan ? selectedJabatan.nama : 'Jabatan';
+        searchInfo.textContent = `Menampilkan ${filteredCount} karyawan (filter ${jabatanName})`;
+    } else {
+        searchInfo.textContent = `${totalKaryawan} karyawan tersedia`;
+    }
+}
+
+function filterKaryawansByJabatan() {
+    const jabatanId = document.getElementById('jabatan_id').value;
+    const searchTerm = document.getElementById('karyawan_search').value.toLowerCase();
+    
+    let baseData = allKaryawans;
+    
+    // Apply jabatan filter first
+    if (jabatanId) {
+        baseData = allKaryawans.filter(k => k.jabatan_id == jabatanId);
+    }
+    
+    // Apply search filter if exists
+    if (searchTerm) {
+        baseData = baseData.filter(karyawan => {
+            const nama = karyawan.nama_lengkap.toLowerCase();
+            const nik = karyawan.nik_karyawan.toLowerCase();
+            const jabatan = karyawan.jabatan ? karyawan.jabatan.nama.toLowerCase() : '';
+            
+            return nama.includes(searchTerm) || 
+                   nik.includes(searchTerm) || 
+                   jabatan.includes(searchTerm);
+        });
+    }
+    
+    filteredKaryawans = baseData;
+    renderKaryawans(baseData);
+    updateSearchInfo();
+    updateKaryawanCount();
+    
+    // Update jabatan info
+    const jabatanInfo = document.getElementById('jabatan_info');
+    if (jabatanId) {
+        const selectedJabatan = projectJabatans.find(j => j.id == jabatanId);
+        if (selectedJabatan) {
+            jabatanInfo.textContent = `Filter: ${selectedJabatan.nama} (${baseData.length} karyawan)`;
+        }
+    } else {
+        jabatanInfo.textContent = `Ditemukan ${allKaryawans.length} karyawan, ${projectJabatans.length} jabatan`;
+    }
 }
 
 function toggleSelectAll() {
     const checkboxes = document.querySelectorAll('.karyawan-checkbox');
     const allChecked = Array.from(checkboxes).every(cb => cb.checked);
     
+    // Store current selections
+    selectedKaryawans = [];
+    
     checkboxes.forEach(cb => {
         cb.checked = !allChecked;
+        if (cb.checked) {
+            selectedKaryawans.push(parseInt(cb.value));
+        }
     });
     
     updateKaryawanCount();
@@ -357,6 +564,9 @@ function updateKaryawanCount() {
     const countEl = document.getElementById('karyawan_count');
     const selectAllText = document.getElementById('select_all_text');
     
+    // Update selected karyawans array
+    selectedKaryawans = Array.from(checkboxes).map(cb => parseInt(cb.value));
+    
     if (count === 0) {
         countEl.textContent = 'Semua karyawan di project';
     } else {
@@ -366,6 +576,14 @@ function updateKaryawanCount() {
     const allCheckboxes = document.querySelectorAll('.karyawan-checkbox');
     const allChecked = allCheckboxes.length > 0 && Array.from(allCheckboxes).every(cb => cb.checked);
     selectAllText.textContent = allChecked ? 'Batal Pilih Semua' : 'Pilih Semua';
+    
+    // Update select all button text based on current view
+    const visibleCount = filteredKaryawans.length;
+    if (currentSearchTerm || document.getElementById('jabatan_id').value) {
+        selectAllText.textContent = allChecked ? 
+            `Batal Pilih (${visibleCount})` : 
+            `Pilih Semua (${visibleCount})`;
+    }
 }
 
 // Form submit confirmation
@@ -480,5 +698,29 @@ Swal.fire({
     text: '{{ session('error') }}'
 });
 @endif
+
+// Debounced search
+let searchTimeout;
+document.getElementById('karyawan_search').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        searchKaryawan();
+    }, 300);
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + F to focus search (when karyawan list is visible)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        const searchContainer = document.getElementById('karyawan_search_container');
+        if (searchContainer.style.display !== 'none') {
+            e.preventDefault();
+            document.getElementById('karyawan_search').focus();
+        }
+    }
+});
+
+// Focus search hint
+document.getElementById('karyawan_search').setAttribute('title', 'Tekan Ctrl+F untuk fokus pencarian');
 </script>
 @endpush

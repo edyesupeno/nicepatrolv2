@@ -58,6 +58,9 @@
         </div>
     </div>
     <div class="flex gap-3">
+        <a href="{{ route('perusahaan.karyawans.export-page') }}" class="px-6 py-3 rounded-xl font-medium transition inline-flex items-center justify-center shadow-sm text-white hover:shadow-lg" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+            <i class="fas fa-file-export mr-2"></i>Export Data
+        </a>
         <button onclick="openImportModal()" class="px-6 py-3 rounded-xl font-medium transition inline-flex items-center justify-center shadow-sm text-white hover:shadow-lg" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
             <i class="fas fa-file-excel mr-2"></i>Import Excel
         </button>
@@ -199,7 +202,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="px-6 py-16 text-center">
+                    <td colspan="7" class="px-6 py-16 text-center">
                         <div class="flex flex-col items-center justify-center">
                             <div class="w-24 h-24 rounded-full flex items-center justify-center mb-4" style="background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%);">
                                 <i class="fas fa-users text-5xl" style="color: #3B82C8;"></i>

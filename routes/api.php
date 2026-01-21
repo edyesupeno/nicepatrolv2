@@ -74,6 +74,18 @@ $apiRoutes = function () {
         Route::get('penerimaan-barang-projects', [\App\Http\Controllers\Api\PenerimaanBarangController::class, 'getProjects']);
         Route::get('penerimaan-barang-areas/{project}', [\App\Http\Controllers\Api\PenerimaanBarangController::class, 'getAreasByProject']);
         Route::get('penerimaan-barang-my-areas', [\App\Http\Controllers\Api\PenerimaanBarangController::class, 'getMyAreas']);
+
+        // Buku Tamu (Guest Book)
+        Route::apiResource('buku-tamu', \App\Http\Controllers\Api\BukuTamuController::class);
+        Route::post('buku-tamu/{bukuTamu}/check-out', [\App\Http\Controllers\Api\BukuTamuController::class, 'checkOut']);
+        Route::get('buku-tamu/qr/{qr_code}', [\App\Http\Controllers\Api\BukuTamuController::class, 'getByQrCode']);
+        Route::get('buku-tamu-project-settings', [\App\Http\Controllers\Api\BukuTamuController::class, 'getProjectSettings']);
+        Route::get('buku-tamu-kuesioner-by-area', [\App\Http\Controllers\Api\BukuTamuController::class, 'getKuesionerByArea']);
+        Route::post('buku-tamu/{bukuTamu}/questionnaire', [\App\Http\Controllers\Api\BukuTamuController::class, 'saveGuestQuestionnaire']);
+        Route::get('buku-tamu-statistics', [\App\Http\Controllers\Api\BukuTamuController::class, 'getStatistics']);
+        Route::get('buku-tamu-available-cards', [\App\Http\Controllers\Api\BukuTamuController::class, 'getAvailableCards']);
+        Route::post('buku-tamu/{bukuTamu}/assign-card', [\App\Http\Controllers\Api\BukuTamuController::class, 'assignCard']);
+        Route::post('buku-tamu/{bukuTamu}/return-card', [\App\Http\Controllers\Api\BukuTamuController::class, 'returnCard']);
     });
 };
 

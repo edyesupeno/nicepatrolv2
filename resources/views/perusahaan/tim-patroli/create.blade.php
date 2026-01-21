@@ -70,6 +70,27 @@
                             @enderror
                         </div>
 
+                        <!-- Jenis Regu -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Jenis Regu <span class="text-red-500">*</span>
+                            </label>
+                            <select 
+                                name="jenis_regu" 
+                                id="jenis_regu"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                required
+                            >
+                                <option value="">Pilih Jenis Regu</option>
+                                <option value="POS JAGA" {{ old('jenis_regu') == 'POS JAGA' ? 'selected' : '' }}>🏢 POS JAGA</option>
+                                <option value="PATROLI MOBIL" {{ old('jenis_regu') == 'PATROLI MOBIL' ? 'selected' : '' }}>🚗 PATROLI MOBIL</option>
+                                <option value="PATROLI MOTOR" {{ old('jenis_regu') == 'PATROLI MOTOR' ? 'selected' : '' }}>🏍️ PATROLI MOTOR</option>
+                            </select>
+                            @error('jenis_regu')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <!-- Shift -->
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">

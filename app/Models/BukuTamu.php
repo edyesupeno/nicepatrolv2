@@ -110,6 +110,11 @@ class BukuTamu extends Model
         return $this->hasMany(JawabanKuesionerTamu::class);
     }
 
+    public function kartuTamu(): BelongsTo
+    {
+        return $this->belongsTo(KartuTamu::class, 'no_kartu_pinjam', 'no_kartu');
+    }
+
     /**
      * Get status label
      */

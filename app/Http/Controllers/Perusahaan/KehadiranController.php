@@ -570,7 +570,8 @@ class KehadiranController extends Controller
     
     public function getKaryawanByProject($projectId)
     {
-        $karyawans = \App\Models\Karyawan::select('id', 'nama_lengkap', 'nik_karyawan')
+        $karyawans = \App\Models\Karyawan::select('id', 'nama_lengkap', 'nik_karyawan', 'jabatan_id', 'gaji_pokok')
+            ->with('jabatan:id,nama')
             ->where('project_id', $projectId)
             ->where('is_active', true)
             ->orderBy('nama_lengkap')

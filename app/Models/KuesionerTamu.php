@@ -15,7 +15,7 @@ class KuesionerTamu extends Model
     protected $fillable = [
         'perusahaan_id',
         'project_id',
-        'area_patrol_id',
+        'area_id',
         'judul',
         'deskripsi',
         'is_active',
@@ -46,9 +46,9 @@ class KuesionerTamu extends Model
         return $this->belongsTo(Project::class);
     }
 
-    public function areaPatrol(): BelongsTo
+    public function area(): BelongsTo
     {
-        return $this->belongsTo(AreaPatrol::class);
+        return $this->belongsTo(Area::class);
     }
 
     public function pertanyaans(): HasMany

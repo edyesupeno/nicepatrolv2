@@ -83,6 +83,12 @@
       "value": "",
       "type": "string",
       "description": "Sample penerimaan barang hash ID for testing"
+    },
+    {
+      "key": "guest_hash_id",
+      "value": "",
+      "type": "string",
+      "description": "Sample guest book hash ID for testing"
     }
   ],
   "auth": {
@@ -188,8 +194,12 @@
             },
             "url": {
               "raw": "{{base_url}}/login",
-              "host": ["{{base_url}}"],
-              "path": ["login"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
             },
             "description": "Login with email and password to get access token.\n\n**Multi-Tenancy Response:**\nThe response now includes:\n- `project_id`: ID of the project assigned to user's jabatan\n- `project`: Object with project details (id, nama)\n- `perusahaan_id`: Company ID for data isolation\n\n**Example Response:**\n```json\n{\n  \"success\": true,\n  \"message\": \"Login berhasil\",\n  \"data\": {\n    \"user\": {\n      \"id\": 7,\n      \"name\": \"Muhammad Edi Suarno\",\n      \"email\": \"edy@gmail.com\",\n      \"role\": \"security_officer\",\n      \"perusahaan_id\": 1,\n      \"project_id\": 1,\n      \"project\": {\n        \"id\": 1,\n        \"nama\": \"Kantor Jakarta\"\n      }\n    },\n    \"token\": \"1|abc123...\"\n  }\n}\n```"
           }
@@ -206,8 +216,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/me",
-              "host": ["{{base_url}}"],
-              "path": ["me"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "me"
+              ]
             },
             "description": "Get current authenticated user information including project details.\n\n**Multi-Tenancy Response:**\nReturns user info with project assignment:\n- `project_id`: ID of assigned project\n- `project`: Project details (id, nama)\n- `perusahaan_id`: Company ID\n\n**Example Response:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"id\": 7,\n    \"name\": \"Muhammad Edi Suarno\",\n    \"email\": \"edy@gmail.com\",\n    \"role\": \"security_officer\",\n    \"perusahaan_id\": 1,\n    \"project_id\": 1,\n    \"project\": {\n      \"id\": 1,\n      \"nama\": \"Kantor Jakarta\"\n    },\n    \"perusahaan\": {\n      \"id\": 1,\n      \"nama\": \"PT. Nice Patrol\"\n    }\n  }\n}\n```"
           }
@@ -234,8 +248,13 @@
             },
             "url": {
               "raw": "{{base_url}}/user/upload-photo",
-              "host": ["{{base_url}}"],
-              "path": ["user", "upload-photo"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "upload-photo"
+              ]
             },
             "description": "Upload and compress user profile photo"
           }
@@ -252,8 +271,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/logout",
-              "host": ["{{base_url}}"],
-              "path": ["logout"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "logout"
+              ]
             },
             "description": "Logout and invalidate current token"
           }
@@ -275,8 +298,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/shift/my-schedule?month=2024-01",
-              "host": ["{{base_url}}"],
-              "path": ["shift", "my-schedule"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shift",
+                "my-schedule"
+              ],
               "query": [
                 {
                   "key": "month",
@@ -299,8 +327,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/shift/today",
-              "host": ["{{base_url}}"],
-              "path": ["shift", "today"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shift",
+                "today"
+              ]
             },
             "description": "Get current user's shift for today"
           }
@@ -322,8 +355,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/absensi/summary?month=2024-01",
-              "host": ["{{base_url}}"],
-              "path": ["absensi", "summary"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "absensi",
+                "summary"
+              ],
               "query": [
                 {
                   "key": "month",
@@ -346,8 +384,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/absensi/today-status",
-              "host": ["{{base_url}}"],
-              "path": ["absensi", "today-status"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "absensi",
+                "today-status"
+              ]
             },
             "description": "Check current user's attendance status for today"
           }
@@ -364,8 +407,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/absensi/lokasi",
-              "host": ["{{base_url}}"],
-              "path": ["absensi", "lokasi"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "absensi",
+                "lokasi"
+              ]
             },
             "description": "Get available attendance locations"
           }
@@ -390,8 +438,13 @@
             },
             "url": {
               "raw": "{{base_url}}/absensi/check-in",
-              "host": ["{{base_url}}"],
-              "path": ["absensi", "check-in"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "absensi",
+                "check-in"
+              ]
             },
             "description": "Record attendance check-in"
           }
@@ -416,8 +469,13 @@
             },
             "url": {
               "raw": "{{base_url}}/absensi/check-out",
-              "host": ["{{base_url}}"],
-              "path": ["absensi", "check-out"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "absensi",
+                "check-out"
+              ]
             },
             "description": "Record attendance check-out"
           }
@@ -442,8 +500,13 @@
             },
             "url": {
               "raw": "{{base_url}}/absensi/take-break",
-              "host": ["{{base_url}}"],
-              "path": ["absensi", "take-break"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "absensi",
+                "take-break"
+              ]
             },
             "description": "Record break start time"
           }
@@ -468,8 +531,13 @@
             },
             "url": {
               "raw": "{{base_url}}/absensi/return-from-break",
-              "host": ["{{base_url}}"],
-              "path": ["absensi", "return-from-break"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "absensi",
+                "return-from-break"
+              ]
             },
             "description": "Record break end time"
           }
@@ -491,8 +559,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/lokasis?page=1&per_page=20",
-              "host": ["{{base_url}}"],
-              "path": ["lokasis"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "lokasis"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -527,8 +599,12 @@
             },
             "url": {
               "raw": "{{base_url}}/lokasis",
-              "host": ["{{base_url}}"],
-              "path": ["lokasis"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "lokasis"
+              ]
             },
             "description": "Create new location (admin only)"
           }
@@ -545,8 +621,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/lokasis/{{location_hash_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["lokasis", "{{location_hash_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "lokasis",
+                "{{location_hash_id}}"
+              ]
             },
             "description": "Get specific location details"
           }
@@ -568,8 +649,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/checkpoints?page=1&per_page=20",
-              "host": ["{{base_url}}"],
-              "path": ["checkpoints"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "checkpoints"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -604,8 +689,12 @@
             },
             "url": {
               "raw": "{{base_url}}/checkpoints",
-              "host": ["{{base_url}}"],
-              "path": ["checkpoints"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "checkpoints"
+              ]
             },
             "description": "Create new checkpoint (admin only)"
           }
@@ -622,8 +711,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/checkpoints/{{checkpoint_hash_id}}/asets",
-              "host": ["{{base_url}}"],
-              "path": ["checkpoints", "{{checkpoint_hash_id}}", "asets"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "checkpoints",
+                "{{checkpoint_hash_id}}",
+                "asets"
+              ]
             },
             "description": "Get all assets for a specific checkpoint"
           }
@@ -645,8 +740,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/patrolis?page=1&status=aktif",
-              "host": ["{{base_url}}"],
-              "path": ["patrolis"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patrolis"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -703,8 +802,12 @@
             },
             "url": {
               "raw": "{{base_url}}/patrolis",
-              "host": ["{{base_url}}"],
-              "path": ["patrolis"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patrolis"
+              ]
             },
             "description": "Start a new patrol session"
           }
@@ -729,8 +832,14 @@
             },
             "url": {
               "raw": "{{base_url}}/patrolis/{{patrol_hash_id}}/scan",
-              "host": ["{{base_url}}"],
-              "path": ["patrolis", "{{patrol_hash_id}}", "scan"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patrolis",
+                "{{patrol_hash_id}}",
+                "scan"
+              ]
             },
             "description": "Scan checkpoint during active patrol"
           }
@@ -755,8 +864,12 @@
             },
             "url": {
               "raw": "{{base_url}}/scan-qr",
-              "host": ["{{base_url}}"],
-              "path": ["scan-qr"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "scan-qr"
+              ]
             },
             "description": "Scan QR code to identify checkpoint or asset"
           }
@@ -781,8 +894,13 @@
             },
             "url": {
               "raw": "{{base_url}}/patrolis/{{patrol_hash_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["patrolis", "{{patrol_hash_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patrolis",
+                "{{patrol_hash_id}}"
+              ]
             },
             "description": "End active patrol"
           }
@@ -804,8 +922,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/projects/{{project_hash_id}}/contacts",
-              "host": ["{{base_url}}"],
-              "path": ["projects", "{{project_hash_id}}", "contacts"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "projects",
+                "{{project_hash_id}}",
+                "contacts"
+              ]
             },
             "description": "Get all contacts for a specific project"
           }
@@ -822,8 +946,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/projects/{{project_hash_id}}/contacts/emergency",
-              "host": ["{{base_url}}"],
-              "path": ["projects", "{{project_hash_id}}", "contacts", "emergency"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "projects",
+                "{{project_hash_id}}",
+                "contacts",
+                "emergency"
+              ]
             },
             "description": "Get emergency contacts for a specific project"
           }
@@ -848,8 +979,14 @@
             },
             "url": {
               "raw": "{{base_url}}/projects/{{project_hash_id}}/contacts",
-              "host": ["{{base_url}}"],
-              "path": ["projects", "{{project_hash_id}}", "contacts"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "projects",
+                "{{project_hash_id}}",
+                "contacts"
+              ]
             },
             "description": "Create new project contact (admin only)"
           }
@@ -917,8 +1054,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/penerimaan-barang-my-areas",
-              "host": ["{{base_url}}"],
-              "path": ["penerimaan-barang-my-areas"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "penerimaan-barang-my-areas"
+              ]
             },
             "description": "Get areas assigned to current karyawan via karyawan_areas pivot table.\n\n**🎯 KARYAWAN-AREAS BASED APPROACH:**\n- **Data Source**: Uses `karyawan_areas` pivot table for area assignments\n- **Consistent Logic**: Same logic used in penerimaan barang area validation\n- **Primary Area**: Shows which area is marked as primary for the karyawan\n- **Multi-Project**: Can show areas from multiple projects if karyawan is assigned\n\n**🔒 ACCESS CONTROL:**\n- **Karyawan Only**: Only users with karyawan data can access this endpoint\n- **Personal Areas**: Shows only areas assigned to authenticated karyawan\n- **No Admin Override**: Even admin users see their own karyawan areas (if they have karyawan data)\n- **404 Response**: Returns error if user has no karyawan data\n\n**📊 RESPONSE FORMAT:**\n```json\n{\n  \"success\": true,\n  \"message\": \"Data berhasil diambil\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"nama\": \"Gudang A\",\n      \"alamat\": \"Lantai 1\",\n      \"is_primary\": true,\n      \"project_id\": 1,\n      \"project_name\": \"Kantor Jakarta\"\n    }\n  ],\n  \"meta\": {\n    \"total_areas\": 3,\n    \"primary_area_id\": 1,\n    \"karyawan_id\": 7,\n    \"karyawan_name\": \"Muhammad Edi Suarno\"\n  }\n}\n```\n\n**🎯 USE CASES:**\n- **Area Dropdown**: Populate area dropdown in penerimaan barang form\n- **Validation**: Ensure users can only select their assigned areas\n- **Primary Area**: Auto-select primary area as default\n- **Multi-Project**: Handle karyawan assigned to multiple projects\n\n**🔐 SECURITY FEATURES:**\n- **Karyawan-Level Filtering**: Only shows areas assigned to current karyawan\n- **Consistent with Validation**: Same areas shown here are allowed in penerimaan barang\n- **Project Context**: Shows which project each area belongs to\n- **Primary Area Identification**: Clearly marks primary area for UX\n\n**🧪 TESTING:**\n- Login with karyawan user → should see assigned areas\n- Login with non-karyawan user → should get 404\n- Check primary area is marked correctly\n- Verify areas match those allowed in penerimaan barang creation"
           }
@@ -984,8 +1125,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/penerimaan-barang?page=1&per_page=20&kategori=Elektronik&search=laptop",
-              "host": ["{{base_url}}"],
-              "path": ["penerimaan-barang"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "penerimaan-barang"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -1067,8 +1212,12 @@
             },
             "url": {
               "raw": "{{base_url}}/penerimaan-barang",
-              "host": ["{{base_url}}"],
-              "path": ["penerimaan-barang"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "penerimaan-barang"
+              ]
             },
             "description": "Create new penerimaan barang record with automatic user ownership assignment.\n\n**🔒 AUTO-ASSIGNMENT (SECURITY):**\n- `perusahaan_id`: Auto-assigned from authenticated user's company\n- `created_by`: Auto-assigned to authenticated user ID (ownership tracking)\n- `project_id`: Auto-assigned to user's accessible project if not specified\n- `nomor_penerimaan`: Auto-generated (format: PB + YYYYMMDD + sequence)\n- `petugas_penerima`: **ALWAYS** auto-assigned from authenticated user name (cannot be overridden)\n\n**📝 REQUIRED FIELDS:**\n- `nama_barang`: Name of the item\n- `kategori_barang`: Dokumen, Material, Elektronik, Logistik\n- `jumlah_barang`: Quantity (integer, min: 1)\n- `satuan`: Unit of measurement\n- `kondisi_barang`: Baik, Rusak, Segel Terbuka\n- `pengirim`: Sender name\n- `tujuan_departemen`: Target department\n- `tanggal_terima`: Receive date and time (YYYY-MM-DD HH:MM:SS or YYYY-MM-DD)\n\n**📋 OPTIONAL FIELDS:**\n- `project_id`: Will auto-assign if not provided\n- `area_id`: Storage area ID\n- `pos`: Pos jaga security (e.g., \"Pos Jaga Utama\")\n- `keterangan`: Additional notes\n- `foto_barang`: Image file (max 10MB, formats: jpeg,png,jpg,gif,webp)\n\n**⚠️ REMOVED FIELDS:**\n- `petugas_penerima`: No longer accepted in request - automatically set to authenticated user's name\n\n**🎯 USER OWNERSHIP:**\n- Record is automatically owned by the creator\n- Only the creator (or admin) can edit/delete this record later\n- Perfect audit trail through created_by field\n- Petugas penerima always matches the authenticated user\n\n**🔐 SECURITY VALIDATION:**\n- User can only assign to projects they have access to\n- All records are automatically linked to creator for ownership tracking\n- No way to create records for other users\n- No way to fake petugas_penerima identity"
           }
@@ -1085,8 +1234,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/penerimaan-barang/{{penerimaan_barang_hash_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["penerimaan-barang", "{{penerimaan_barang_hash_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "penerimaan-barang",
+                "{{penerimaan_barang_hash_id}}"
+              ]
             },
             "description": "Get specific penerimaan barang details by hash ID.\n\n**Multi-Tenancy & User-Level Security:**\n- **Company Level**: User can only access records from their company\n- **Project Level**: User can only access records from their assigned projects\n- **User Level**: Non-admin users can only access records they created themselves\n- **Admin Users**: Can access all records within their company\n- Returns 404 if trying to access unauthorized record\n- Includes project, area, and createdBy details in response\n\n**Response includes:**\n- Complete item details with relationships\n- `createdBy`: Information about who created the record\n- `project`: Project details (id, nama)\n- `area`: Storage area details (id, nama, alamat)\n- `foto_url`: Full URL to item photo if exists"
           }
@@ -1116,8 +1270,13 @@
             },
             "url": {
               "raw": "{{base_url}}/penerimaan-barang/{{penerimaan_barang_hash_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["penerimaan-barang", "{{penerimaan_barang_hash_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "penerimaan-barang",
+                "{{penerimaan_barang_hash_id}}"
+              ]
             },
             "description": "Update existing penerimaan barang record with strict ownership validation.\n\n**🔒 USER OWNERSHIP SECURITY:**\n- **Regular Users**: Can ONLY update records they created themselves\n- **Admin Users**: Can update all records within their company\n- **Superadmin**: Can update all records across companies\n- **403 Forbidden**: Clear error if trying to update others' data\n- **Double Validation**: Global scope + explicit ownership check\n\n**🎯 OWNERSHIP VALIDATION:**\n- System checks if `created_by` equals authenticated user ID\n- Returns 403 error with message: \"Anda tidak memiliki akses untuk mengupdate data ini\"\n- Admin and superadmin bypass this check\n- Perfect data isolation between users\n\n**📝 UPDATABLE FIELDS:**\n- All item details (nama_barang, kategori_barang, etc.)\n- Project and area assignment (within user's access)\n- Photo upload (replaces existing photo)\n- Cannot change `perusahaan_id` or `created_by` (auto-maintained)\n\n**🔐 SECURITY FEATURES:**\n- Ownership validation through global scopes\n- Audit trail maintained through created_by field\n- Photo management (old photo deleted when new one uploaded)\n- Hash ID routing prevents ID guessing attacks\n\n**🧪 TESTING:**\n- Try updating record created by another user → should get 403\n- Admin should be able to update any record in company\n- Regular user should only update own records"
           }
@@ -1184,8 +1343,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/penerimaan-barang-my-areas",
-              "host": ["{{base_url}}"],
-              "path": ["penerimaan-barang-my-areas"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "penerimaan-barang-my-areas"
+              ]
             },
             "description": "🧪 **KARYAWAN AREAS INTEGRATION TEST**\n\nThis endpoint tests the new karyawan-areas-based approach for area management in penerimaan barang.\n\n**🎯 TESTING OBJECTIVES:**\n\n**1. Karyawan Areas Assignment:**\n- Verify user has karyawan data and area assignments\n- Check that areas are properly assigned via karyawan_areas pivot table\n- Validate primary area identification\n\n**2. Data Consistency:**\n- Ensure areas returned here match those allowed in penerimaan barang validation\n- Verify same logic is used for area access control\n- Test multi-project area assignments\n\n**3. User Experience:**\n- Check primary area is clearly marked for auto-selection\n- Verify area names and addresses are complete\n- Test project context information\n\n**🔧 TESTING SCENARIOS:**\n\n**👤 Regular Karyawan User:**\n- Should see only areas assigned via karyawan_areas\n- Should have at least one primary area marked\n- Areas should span across assigned projects\n\n**👑 Admin with Karyawan Data:**\n- Should see their personal karyawan areas (not all company areas)\n- Demonstrates that even admin users follow karyawan area rules\n- Shows consistency in area assignment logic\n\n**❌ Non-Karyawan User:**\n- Should receive 404 error\n- Clear message about karyawan data requirement\n- Prevents access for users without area assignments\n\n**✅ VALIDATION CHECKLIST:**\n- [ ] Areas match karyawan_areas assignments\n- [ ] Primary area is properly identified\n- [ ] Project information is included\n- [ ] Response format is consistent\n- [ ] Error handling for non-karyawan users\n- [ ] Integration with penerimaan barang validation\n\n**📊 EXPECTED RESULTS:**\n- **Karyawan Users**: List of assigned areas with primary flag\n- **Non-Karyawan**: 404 error with clear message\n- **Consistency**: Same areas allowed in penerimaan barang creation\n\n**🔍 DEBUGGING:**\n- Check console logs for detailed area information\n- Verify primary area identification\n- Test with different karyawan users\n- Confirm project assignments are correct"
           }
@@ -1202,10 +1365,712 @@
             ],
             "url": {
               "raw": "{{base_url}}/penerimaan-barang/{{penerimaan_barang_hash_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["penerimaan-barang", "{{penerimaan_barang_hash_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "penerimaan-barang",
+                "{{penerimaan_barang_hash_id}}"
+              ]
             },
             "description": "Delete penerimaan barang record with strict ownership validation (soft delete).\n\n**🔒 USER OWNERSHIP SECURITY:**\n- **Regular Users**: Can ONLY delete records they created themselves\n- **Admin Users**: Can delete all records within their company\n- **Superadmin**: Can delete all records across companies\n- **403 Forbidden**: Clear error if trying to delete others' data\n- **Double Validation**: Global scope + explicit ownership check\n\n**🎯 OWNERSHIP VALIDATION:**\n- System checks if `created_by` equals authenticated user ID\n- Returns 403 error with message: \"Anda tidak memiliki akses untuk menghapus data ini\"\n- Admin and superadmin bypass this check\n- Perfect data isolation between users\n\n**🗑️ DELETION BEHAVIOR:**\n- **Soft Delete**: Record marked as deleted, not permanently removed\n- **Photo Cleanup**: Associated photo file is permanently deleted from storage\n- **Audit Trail**: Deletion info preserved for audit purposes\n- **Reversible**: Admin can potentially restore soft-deleted records\n\n**🔐 SECURITY FEATURES:**\n- Ownership validation through global scopes\n- Audit trail preserved (soft delete maintains created_by info)\n- File cleanup (photos are permanently deleted from storage)\n- Hash ID routing prevents ID guessing attacks\n\n**🧪 TESTING:**\n- Try deleting record created by another user → should get 403\n- Admin should be able to delete any record in company\n- Regular user should only delete own records\n- Verify photo files are cleaned up after deletion"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buku Tamu (Guest Book)",
+      "item": [
+        {
+          "name": "Get All Guest Book Entries",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct structure', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.exist;",
+                  "    pm.expect(jsonData.data.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Guest book entries validation', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const userPerusahaanId = pm.collectionVariables.get('perusahaan_id');",
+                  "    ",
+                  "    if (jsonData.data.data.length > 0) {",
+                  "        jsonData.data.data.forEach(function(entry) {",
+                  "            pm.expect(entry.perusahaan_id).to.equal(parseInt(userPerusahaanId));",
+                  "            pm.expect(entry.nama_tamu).to.exist;",
+                  "            pm.expect(entry.qr_code).to.exist;",
+                  "            pm.expect(entry.status).to.be.oneOf(['sedang_berkunjung', 'sudah_keluar']);",
+                  "        });",
+                  "        console.log('✅ Total guest entries: ' + jsonData.data.data.length);",
+                  "    } else {",
+                  "        console.log('📭 No guest entries found');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buku-tamu?page=1&per_page=20&status=sedang_berkunjung&search=john",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "sedang_berkunjung"
+                },
+                {
+                  "key": "search",
+                  "value": "john"
+                }
+              ]
+            },
+            "description": "Get paginated list of guest book entries with filtering options"
+          }
+        },
+        {
+          "name": "Create Guest Book Entry (Simple Mode)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Guest created successfully', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data.qr_code).to.exist;",
+                  "    pm.expect(jsonData.data.status).to.equal('sedang_berkunjung');",
+                  "    ",
+                  "    // Store hash_id for other tests",
+                  "    pm.collectionVariables.set('guest_hash_id', jsonData.data.hash_id);",
+                  "    console.log('✅ Guest created with QR: ' + jsonData.data.qr_code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "project_id",
+                  "value": "{{project_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "nama_tamu",
+                  "value": "John Doe",
+                  "type": "text"
+                },
+                {
+                  "key": "perusahaan_tamu",
+                  "value": "PT. ABC Corporation",
+                  "type": "text"
+                },
+                {
+                  "key": "keperluan",
+                  "value": "Meeting with IT Department",
+                  "type": "text"
+                },
+                {
+                  "key": "area_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "mulai_kunjungan",
+                  "value": "2026-01-21T09:00:00",
+                  "type": "text"
+                },
+                {
+                  "key": "selesai_kunjungan",
+                  "value": "2026-01-21T17:00:00",
+                  "type": "text"
+                },
+                {
+                  "key": "guest_book_mode",
+                  "value": "simple",
+                  "type": "text"
+                },
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/buku-tamu",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu"
+              ]
+            },
+            "description": "Create new guest book entry in simple mode"
+          }
+        },
+        {
+          "name": "Create Guest Book Entry (MIGAS Mode)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "project_id",
+                  "value": "{{project_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "nama_tamu",
+                  "value": "Jane Smith",
+                  "type": "text"
+                },
+                {
+                  "key": "nik",
+                  "value": "1234567890123456",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_lahir",
+                  "value": "1990-01-15",
+                  "type": "text"
+                },
+                {
+                  "key": "domisili",
+                  "value": "Jakarta Selatan",
+                  "type": "text"
+                },
+                {
+                  "key": "perusahaan_tamu",
+                  "value": "PT. XYZ Industries",
+                  "type": "text"
+                },
+                {
+                  "key": "jabatan",
+                  "value": "Safety Engineer",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "jane.smith@xyz.com",
+                  "type": "text"
+                },
+                {
+                  "key": "no_whatsapp",
+                  "value": "+6281234567890",
+                  "type": "text"
+                },
+                {
+                  "key": "kontak_darurat_telepon",
+                  "value": "+6281234567891",
+                  "type": "text"
+                },
+                {
+                  "key": "kontak_darurat_nama",
+                  "value": "John Smith",
+                  "type": "text"
+                },
+                {
+                  "key": "kontak_darurat_hubungan",
+                  "value": "Spouse",
+                  "type": "text"
+                },
+                {
+                  "key": "keperluan",
+                  "value": "Safety Inspection",
+                  "type": "text"
+                },
+                {
+                  "key": "lokasi_dituju",
+                  "value": "Production Floor - Area B",
+                  "type": "text"
+                },
+                {
+                  "key": "area_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "mulai_kunjungan",
+                  "value": "2026-01-21T08:00:00",
+                  "type": "text"
+                },
+                {
+                  "key": "guest_book_mode",
+                  "value": "migas",
+                  "type": "text"
+                },
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "foto_identitas",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/buku-tamu",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu"
+              ]
+            },
+            "description": "Create new guest book entry in MIGAS mode with complete information"
+          }
+        },
+        {
+          "name": "Get Guest Book Entry by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buku-tamu/{{guest_hash_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu",
+                "{{guest_hash_id}}"
+              ]
+            },
+            "description": "Get specific guest book entry details"
+          }
+        },
+        {
+          "name": "Update Guest Book Entry",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "nama_tamu",
+                  "value": "John Doe Updated",
+                  "type": "text"
+                },
+                {
+                  "key": "perusahaan_tamu",
+                  "value": "PT. ABC Corporation Updated",
+                  "type": "text"
+                },
+                {
+                  "key": "keperluan",
+                  "value": "Updated meeting purpose",
+                  "type": "text"
+                },
+                {
+                  "key": "area_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "mulai_kunjungan",
+                  "value": "2026-01-21T09:30:00",
+                  "type": "text"
+                },
+                {
+                  "key": "selesai_kunjungan",
+                  "value": "2026-01-21T17:30:00",
+                  "type": "text"
+                },
+                {
+                  "key": "status",
+                  "value": "sedang_berkunjung",
+                  "type": "text"
+                },
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/buku-tamu/{{guest_hash_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu",
+                "{{guest_hash_id}}"
+              ]
+            },
+            "description": "Update existing guest book entry"
+          }
+        },
+        {
+          "name": "Delete Guest Book Entry",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buku-tamu/{{guest_hash_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu",
+                "{{guest_hash_id}}"
+              ]
+            },
+            "description": "Delete guest book entry"
+          }
+        },
+        {
+          "name": "Check Out Guest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"catatan\": \"Visit completed successfully\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/buku-tamu/{{guest_hash_id}}/check-out",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu",
+                "{{guest_hash_id}}",
+                "check-out"
+              ]
+            },
+            "description": "Mark guest as checked out"
+          }
+        },
+        {
+          "name": "Get Guest by QR Code",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buku-tamu/qr/GT202601210001",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu",
+                "qr",
+                "GT202601210001"
+              ]
+            },
+            "description": "Find guest by QR code"
+          }
+        },
+        {
+          "name": "Get Project Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buku-tamu-project-settings?project_id={{project_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu-project-settings"
+              ],
+              "query": [
+                {
+                  "key": "project_id",
+                  "value": "{{project_id}}"
+                }
+              ]
+            },
+            "description": "Get project-specific guest book configuration"
+          }
+        },
+        {
+          "name": "Get Questionnaire by Area",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buku-tamu-kuesioner-by-area?project_id={{project_id}}&area_id=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu-kuesioner-by-area"
+              ],
+              "query": [
+                {
+                  "key": "project_id",
+                  "value": "{{project_id}}"
+                },
+                {
+                  "key": "area_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get questionnaire for specific project and area"
+          }
+        },
+        {
+          "name": "Save Questionnaire Answers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kuesioner_answers\": {\n    \"1\": \"Tidak\",\n    \"2\": \"Laptop, Handphone\",\n    \"3\": \"Ya\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/buku-tamu/{{guest_hash_id}}/questionnaire",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu",
+                "{{guest_hash_id}}",
+                "questionnaire"
+              ]
+            },
+            "description": "Save questionnaire answers for guest"
+          }
+        },
+        {
+          "name": "Get Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buku-tamu-statistics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu-statistics"
+              ]
+            },
+            "description": "Get guest book statistics"
+          }
+        },
+        {
+          "name": "Get Available Cards",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buku-tamu-available-cards?project_id={{project_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu-available-cards"
+              ],
+              "query": [
+                {
+                  "key": "project_id",
+                  "value": "{{project_id}}"
+                }
+              ]
+            },
+            "description": "Get list of available guest cards for assignment"
+          }
+        },
+        {
+          "name": "Assign Guest Card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"no_kartu\": \"GT001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/buku-tamu/{{guest_hash_id}}/assign-card",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu",
+                "{{guest_hash_id}}",
+                "assign-card"
+              ]
+            },
+            "description": "Assign guest card to visitor"
+          }
+        },
+        {
+          "name": "Return Guest Card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/buku-tamu/{{guest_hash_id}}/return-card",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buku-tamu",
+                "{{guest_hash_id}}",
+                "return-card"
+              ]
+            },
+            "description": "Return guest card to inventory"
           }
         }
       ]

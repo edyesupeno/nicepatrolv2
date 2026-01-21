@@ -96,18 +96,79 @@
         </div>
     </div>
 
+    <!-- Search & Filter Section -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-4">
+        <form method="GET" action="{{ route('perusahaan.komponen-payroll.index') }}" class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <!-- Search Box -->
+            <div class="flex-1 max-w-md">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" name="search" id="searchInput" 
+                           value="{{ request('search') }}"
+                           placeholder="Cari nama komponen, kode, atau deskripsi..." 
+                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           onkeyup="searchKomponen()">
+                </div>
+            </div>
+            
+            <!-- Filter Buttons -->
+            <div class="flex gap-2">
+                <select name="status" id="statusFilter" onchange="applyFilters()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">Semua Status</option>
+                    <option value="aktif" {{ request('status') === 'aktif' ? 'selected' : '' }}>Aktif</option>
+                    <option value="nonaktif" {{ request('status') === 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+                </select>
+                
+                <select name="kategori" id="kategoriFilter" onchange="applyFilters()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">Semua Kategori</option>
+                    <option value="Fixed" {{ request('kategori') === 'Fixed' ? 'selected' : '' }}>Fixed</option>
+                    <option value="Variable" {{ request('kategori') === 'Variable' ? 'selected' : '' }}>Variable</option>
+                </select>
+                
+                <button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                    <i class="fas fa-search mr-1"></i>Cari
+                </button>
+                
+                <a href="{{ route('perusahaan.komponen-payroll.index') }}" class="px-3 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium">
+                    <i class="fas fa-times mr-1"></i>Reset
+                </a>
+            </div>
+        </form>
+        
+        <!-- Search Results Info -->
+        <div id="searchInfo" class="mt-3 text-sm text-gray-600 {{ request()->hasAny(['search', 'status', 'kategori']) ? '' : 'hidden' }}">
+            <i class="fas fa-info-circle mr-1"></i>
+            <span id="searchResultText">
+                @if(request()->hasAny(['search', 'status', 'kategori']))
+                    Menampilkan {{ $komponens->count() }} komponen dari pencarian
+                    @if(request('search'))
+                        : "{{ request('search') }}"
+                    @endif
+                    @if(request('status'))
+                        , Status: {{ request('status') }}
+                    @endif
+                    @if(request('kategori'))
+                        , Kategori: {{ request('kategori') }}
+                    @endif
+                @endif
+            </span>
+        </div>
+    </div>
+
     <!-- Tabs -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div class="border-b border-gray-200">
                 <nav class="flex">
                     <button type="button" onclick="filterJenis('Semua')" id="tab-semua" class="tab-filter px-6 py-3 text-sm font-medium border-b-2 border-blue-500 text-blue-600">
-                        Semua ({{ $komponens->count() }})
+                        Semua (<span id="count-semua">{{ $komponens->count() }}</span>)
                     </button>
                     <button type="button" onclick="filterJenis('Tunjangan')" id="tab-tunjangan" class="tab-filter px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
-                        Tunjangan ({{ $komponens->where('jenis', 'Tunjangan')->count() }})
+                        Tunjangan (<span id="count-tunjangan">{{ $komponens->where('jenis', 'Tunjangan')->count() }}</span>)
                     </button>
                     <button type="button" onclick="filterJenis('Potongan')" id="tab-potongan" class="tab-filter px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
-                        Potongan ({{ $komponens->where('jenis', 'Potongan')->count() }})
+                        Potongan (<span id="count-potongan">{{ $komponens->where('jenis', 'Potongan')->count() }}</span>)
                     </button>
                 </nav>
             </div>
@@ -130,7 +191,13 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         @forelse($komponens as $komponen)
-                        <tr class="hover:bg-gray-50 komponen-row" data-jenis="{{ $komponen->jenis }}">
+                        <tr class="hover:bg-gray-50 komponen-row" 
+                            data-jenis="{{ $komponen->jenis }}"
+                            data-nama="{{ strtolower($komponen->nama_komponen) }}"
+                            data-kode="{{ strtolower($komponen->kode) }}"
+                            data-deskripsi="{{ strtolower($komponen->deskripsi ?? '') }}"
+                            data-kategori="{{ $komponen->kategori }}"
+                            data-status="{{ $komponen->aktif ? 'aktif' : 'nonaktif' }}">
                             <td class="px-4 py-3">
                                 <div class="font-semibold text-sm text-gray-800">{{ $komponen->nama_komponen }}</div>
                                 @if($komponen->deskripsi)
@@ -197,7 +264,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr>
+                        <tr id="emptyState">
                             <td colspan="9" class="px-4 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <i class="fas fa-puzzle-piece text-gray-300 text-5xl mb-4"></i>
@@ -207,6 +274,20 @@
                             </td>
                         </tr>
                         @endforelse
+                        
+                        <!-- No Search Results State -->
+                        <tr id="noSearchResults" class="hidden">
+                            <td colspan="9" class="px-4 py-12 text-center">
+                                <div class="flex flex-col items-center justify-center">
+                                    <i class="fas fa-search text-gray-300 text-5xl mb-4"></i>
+                                    <p class="text-gray-500 font-semibold">Tidak ada komponen yang ditemukan</p>
+                                    <p class="text-gray-400 text-sm mt-1">Coba ubah kata kunci pencarian atau filter</p>
+                                    <button onclick="clearFilters()" class="mt-3 px-4 py-2 text-blue-600 hover:text-blue-800 text-sm font-semibold">
+                                        <i class="fas fa-times mr-1"></i>Reset Filter
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -424,15 +505,126 @@ function filterJenis(jenis) {
     activeTab.classList.remove('border-transparent', 'text-gray-500');
     activeTab.classList.add('border-blue-500', 'text-blue-600');
     
-    // Filter rows
+    // Store current jenis filter
+    window.currentJenisFilter = jenis;
+    
+    // Apply all filters
+    applyFilters();
+}
+
+function searchKomponen() {
+    applyFilters();
+}
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const kategoriFilter = document.getElementById('kategoriFilter').value;
+    const jenisFilter = window.currentJenisFilter || 'Semua';
+    
+    let visibleCount = 0;
+    let jenisCount = { 'Semua': 0, 'Tunjangan': 0, 'Potongan': 0 };
+    let totalRows = 0;
+    
     document.querySelectorAll('.komponen-row').forEach(row => {
-        if (jenis === 'Semua' || row.dataset.jenis === jenis) {
+        totalRows++;
+        const nama = row.dataset.nama || '';
+        const kode = row.dataset.kode || '';
+        const deskripsi = row.dataset.deskripsi || '';
+        const jenis = row.dataset.jenis || '';
+        const kategori = row.dataset.kategori || '';
+        const status = row.dataset.status || '';
+        
+        // Check search term
+        const matchesSearch = !searchTerm || 
+            nama.includes(searchTerm) || 
+            kode.includes(searchTerm) || 
+            deskripsi.includes(searchTerm);
+        
+        // Check jenis filter
+        const matchesJenis = jenisFilter === 'Semua' || jenis === jenisFilter;
+        
+        // Check status filter
+        const matchesStatus = !statusFilter || status === statusFilter;
+        
+        // Check kategori filter
+        const matchesKategori = !kategoriFilter || kategori === kategoriFilter;
+        
+        // Show/hide row
+        if (matchesSearch && matchesJenis && matchesStatus && matchesKategori) {
             row.style.display = '';
+            visibleCount++;
+            jenisCount['Semua']++;
+            jenisCount[jenis]++;
         } else {
             row.style.display = 'none';
         }
     });
+    
+    // Handle empty states
+    const emptyState = document.getElementById('emptyState');
+    const noSearchResults = document.getElementById('noSearchResults');
+    
+    if (totalRows === 0) {
+        // No data at all
+        if (emptyState) emptyState.style.display = '';
+        if (noSearchResults) noSearchResults.style.display = 'none';
+    } else if (visibleCount === 0) {
+        // No search results
+        if (emptyState) emptyState.style.display = 'none';
+        if (noSearchResults) noSearchResults.style.display = '';
+    } else {
+        // Has results
+        if (emptyState) emptyState.style.display = 'none';
+        if (noSearchResults) noSearchResults.style.display = 'none';
+    }
+    
+    // Update counts in tabs
+    document.getElementById('count-semua').textContent = jenisCount['Semua'];
+    document.getElementById('count-tunjangan').textContent = jenisCount['Tunjangan'];
+    document.getElementById('count-potongan').textContent = jenisCount['Potongan'];
+    
+    // Show search info
+    updateSearchInfo(visibleCount, searchTerm, statusFilter, kategoriFilter);
 }
+
+function updateSearchInfo(visibleCount, searchTerm, statusFilter, kategoriFilter) {
+    const searchInfo = document.getElementById('searchInfo');
+    const searchResultText = document.getElementById('searchResultText');
+    
+    if (searchTerm || statusFilter || kategoriFilter) {
+        let filterText = [];
+        if (searchTerm) filterText.push(`"${searchTerm}"`);
+        if (statusFilter) filterText.push(`Status: ${statusFilter}`);
+        if (kategoriFilter) filterText.push(`Kategori: ${kategoriFilter}`);
+        
+        searchResultText.textContent = `Menampilkan ${visibleCount} komponen dari pencarian: ${filterText.join(', ')}`;
+        searchInfo.classList.remove('hidden');
+    } else {
+        searchInfo.classList.add('hidden');
+    }
+}
+
+function clearFilters() {
+    // Redirect to clean URL without parameters
+    window.location.href = '{{ route("perusahaan.komponen-payroll.index") }}';
+}
+
+// Auto-submit form when filters change
+function autoSubmitForm() {
+    const form = document.querySelector('form[method="GET"]');
+    if (form) {
+        form.submit();
+    }
+}
+
+// Update filter functions to work with server-side
+function applyFiltersServerSide() {
+    autoSubmitForm();
+}
+
+// Initialize filters
+window.currentJenisFilter = 'Semua';
 
 function deleteKomponen(hashId) {
     Swal.fire({
@@ -498,6 +690,74 @@ document.addEventListener('keydown', function(e) {
 // Auto uppercase kode
 document.getElementById('kode').addEventListener('input', function(e) {
     e.target.value = e.target.value.toUpperCase();
+});
+
+// Real-time search with debounce (client-side for better UX)
+let searchTimeout;
+document.getElementById('searchInput').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        // Use client-side search for immediate feedback
+        applyFilters();
+    }, 300);
+});
+
+// Server-side search on Enter key
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        autoSubmitForm();
+    }
+});
+
+// Auto-submit when filters change
+document.getElementById('statusFilter').addEventListener('change', function() {
+    // Use both client-side for immediate feedback and server-side for persistence
+    applyFilters();
+    setTimeout(() => {
+        autoSubmitForm();
+    }, 100);
+});
+
+document.getElementById('kategoriFilter').addEventListener('change', function() {
+    // Use both client-side for immediate feedback and server-side for persistence
+    applyFilters();
+    setTimeout(() => {
+        autoSubmitForm();
+    }, 100);
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // ESC to close modal
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+    
+    // Ctrl/Cmd + K to focus search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+    }
+    
+    // Ctrl/Cmd + N to add new komponen
+    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        openModal('create');
+    }
+});
+
+// Focus search on page load if no komponen exists
+document.addEventListener('DOMContentLoaded', function() {
+    const komponenRows = document.querySelectorAll('.komponen-row');
+    if (komponenRows.length === 0) {
+        // No komponen exists, focus on add button instead
+        return;
+    }
+    
+    // Add search hint
+    const searchInput = document.getElementById('searchInput');
+    searchInput.setAttribute('title', 'Tekan Ctrl+K untuk fokus pencarian');
 });
 </script>
 @endpush

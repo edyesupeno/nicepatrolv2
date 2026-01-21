@@ -14,6 +14,7 @@ class AreaPatrolController extends Controller
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
             'project_id' => 'required|exists:projects,id',
+            'area_id' => 'nullable|exists:areas,id',
             'deskripsi' => 'nullable|string',
             'alamat' => 'nullable|string',
             'koordinat' => 'nullable|string',
@@ -22,14 +23,15 @@ class AreaPatrolController extends Controller
             'nama.required' => 'Nama POS Jaga wajib diisi',
             'project_id.required' => 'Project wajib dipilih',
             'project_id.exists' => 'Project tidak valid',
+            'area_id.exists' => 'Area tidak valid',
         ]);
 
         $validated['perusahaan_id'] = auth()->user()->perusahaan_id;
 
         $areaPatrol = AreaPatrol::create($validated);
         
-        // Load the project relationship
-        $areaPatrol->load('project');
+        // Load the project and area relationships
+        $areaPatrol->load(['project', 'area']);
 
         return response()->json([
             'success' => true,

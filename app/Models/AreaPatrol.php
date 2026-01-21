@@ -14,6 +14,7 @@ class AreaPatrol extends Model
     protected $fillable = [
         'perusahaan_id',
         'project_id',
+        'area_id',
         'nama',
         'deskripsi',
         'alamat',
@@ -61,13 +62,15 @@ class AreaPatrol extends Model
         return $this->belongsTo(Project::class);
     }
 
+    public function area(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Area::class);
+    }
+
     public function rutePatrols()
     {
         return $this->hasMany(RutePatrol::class);
     }
 
-    public function kuesionerTamus()
-    {
-        return $this->hasMany(KuesionerTamu::class);
-    }
+    // Relasi kuesionerTamus dihapus karena sekarang kuesioner terkait dengan Area, bukan AreaPatrol
 }

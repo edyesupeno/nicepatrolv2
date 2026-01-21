@@ -2983,6 +2983,1066 @@ components:
               nullable: true
               example: Lantai 1
 
+    BukuTamu:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        hash_id:
+          type: string
+          example: abc123def456
+        perusahaan_id:
+          type: integer
+          example: 1
+        project_id:
+          type: integer
+          nullable: true
+          example: 1
+        area_id:
+          type: integer
+          nullable: true
+          example: 1
+        area_patrol_id:
+          type: integer
+          nullable: true
+          example: 1
+        input_by:
+          type: integer
+          example: 1
+        qr_code:
+          type: string
+          example: GT202601210001
+        nama_tamu:
+          type: string
+          example: John Doe
+        nik:
+          type: string
+          nullable: true
+          example: "1234567890123456"
+        tanggal_lahir:
+          type: string
+          format: date
+          nullable: true
+          example: "1990-01-15"
+        domisili:
+          type: string
+          nullable: true
+          example: Jakarta Selatan
+        perusahaan_tamu:
+          type: string
+          example: PT. ABC Corporation
+        jabatan:
+          type: string
+          nullable: true
+          example: Software Engineer
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: john.doe@abc.com
+        no_whatsapp:
+          type: string
+          nullable: true
+          example: "+6281234567890"
+        kontak_darurat_telepon:
+          type: string
+          nullable: true
+          example: "+6281234567891"
+        kontak_darurat_nama:
+          type: string
+          nullable: true
+          example: Jane Doe
+        kontak_darurat_hubungan:
+          type: string
+          nullable: true
+          example: Spouse
+        keperluan:
+          type: string
+          example: Meeting with IT Department
+        lokasi_dituju:
+          type: string
+          nullable: true
+          example: IT Office - Floor 3
+        bertemu:
+          type: string
+          nullable: true
+          example: Manager IT
+        mulai_kunjungan:
+          type: string
+          format: datetime
+          example: "2026-01-21T09:00:00.000000Z"
+        selesai_kunjungan:
+          type: string
+          format: datetime
+          nullable: true
+          example: "2026-01-21T17:00:00.000000Z"
+        lama_kunjungan:
+          type: string
+          nullable: true
+          example: "8 jam 0 menit"
+        check_in:
+          type: string
+          format: datetime
+          example: "2026-01-21T09:00:00.000000Z"
+        check_out:
+          type: string
+          format: datetime
+          nullable: true
+          example: "2026-01-21T17:00:00.000000Z"
+        status:
+          type: string
+          enum: [sedang_berkunjung, sudah_keluar]
+          example: sedang_berkunjung
+        no_kartu_pinjam:
+          type: string
+          nullable: true
+          example: CARD001
+        foto:
+          type: string
+          nullable: true
+          example: buku-tamu/foto_1737456789_abc123.jpg
+        foto_url:
+          type: string
+          nullable: true
+          example: https://devapi.nicepatrol.id/storage/buku-tamu/foto_1737456789_abc123.jpg
+        foto_identitas:
+          type: string
+          nullable: true
+          example: buku-tamu/identitas/identitas_1737456789_def456.jpg
+        foto_identitas_url:
+          type: string
+          nullable: true
+          example: https://devapi.nicepatrol.id/storage/buku-tamu/identitas/identitas_1737456789_def456.jpg
+        keterangan_tambahan:
+          type: string
+          nullable: true
+          example: VIP guest
+        catatan:
+          type: string
+          nullable: true
+          example: Visit completed successfully
+        created_at:
+          type: string
+          format: datetime
+          example: "2026-01-21T09:00:00.000000Z"
+        updated_at:
+          type: string
+          format: datetime
+          example: "2026-01-21T09:00:00.000000Z"
+        project:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 1
+            nama:
+              type: string
+              example: Kantor Jakarta
+        area:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 1
+            nama:
+              type: string
+              example: Lobby Utama
+            alamat:
+              type: string
+              nullable: true
+              example: Lantai 1
+        inputBy:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: Security Officer
+
+  # Buku Tamu (Guest Book) Endpoints
+  /buku-tamu:
+    get:
+      tags:
+        - Buku Tamu
+      summary: Get all guest book entries
+      description: Get paginated list of guest book entries with filtering options
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            example: 1
+        - name: per_page
+          in: query
+          description: Items per page (default 20)
+          schema:
+            type: integer
+            example: 20
+        - name: search
+          in: query
+          description: Search in guest name, NIK, email, company, etc.
+          schema:
+            type: string
+            example: "John Doe"
+        - name: project_id
+          in: query
+          description: Filter by project ID
+          schema:
+            type: integer
+            example: 1
+        - name: area_id
+          in: query
+          description: Filter by area ID
+          schema:
+            type: integer
+            example: 1
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum: [sedang_berkunjung, sudah_keluar]
+            example: sedang_berkunjung
+        - name: date_from
+          in: query
+          description: Filter from date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2026-01-20"
+        - name: date_to
+          in: query
+          description: Filter to date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2026-01-21"
+        - name: period
+          in: query
+          description: Filter by time period
+          schema:
+            type: string
+            enum: [today, week, visiting]
+            example: today
+      responses:
+        '200':
+          description: Guest book entries retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        example: 1
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/BukuTamu'
+                      per_page:
+                        type: integer
+                        example: 20
+                      total:
+                        type: integer
+                        example: 100
+
+    post:
+      tags:
+        - Buku Tamu
+      summary: Create new guest book entry
+      description: Register a new guest with photo and optional questionnaire
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - project_id
+                - nama_tamu
+                - perusahaan_tamu
+                - keperluan
+                - foto
+                - area_id
+                - mulai_kunjungan
+              properties:
+                # Required fields
+                project_id:
+                  type: integer
+                  description: Project ID
+                  example: 1
+                nama_tamu:
+                  type: string
+                  description: Guest name
+                  example: "John Doe"
+                perusahaan_tamu:
+                  type: string
+                  description: Guest company/institution
+                  example: "PT. ABC Corporation"
+                keperluan:
+                  type: string
+                  description: Purpose of visit
+                  example: "Meeting with IT Department"
+                foto:
+                  type: string
+                  format: binary
+                  description: Guest photo (JPEG, PNG, JPG, max 2MB)
+                area_id:
+                  type: integer
+                  description: Area/location ID
+                  example: 1
+                mulai_kunjungan:
+                  type: string
+                  format: datetime
+                  description: Visit start time
+                  example: "2026-01-21T09:00:00"
+                
+                # Optional fields for Simple mode
+                selesai_kunjungan:
+                  type: string
+                  format: datetime
+                  description: Visit end time (required for simple mode)
+                  example: "2026-01-21T17:00:00"
+                lama_kunjungan:
+                  type: string
+                  description: Visit duration
+                  example: "8 jam 0 menit"
+                
+                # MIGAS mode fields (required when guest_book_mode = 'migas')
+                nik:
+                  type: string
+                  description: National ID number (16 digits, required for MIGAS mode)
+                  example: "1234567890123456"
+                tanggal_lahir:
+                  type: string
+                  format: date
+                  description: Date of birth (required for MIGAS mode)
+                  example: "1990-01-15"
+                domisili:
+                  type: string
+                  description: Domicile address (required for MIGAS mode)
+                  example: "Jakarta Selatan"
+                jabatan:
+                  type: string
+                  description: Job position (required for MIGAS mode)
+                  example: "Software Engineer"
+                foto_identitas:
+                  type: string
+                  format: binary
+                  description: ID card photo (required for MIGAS mode)
+                email:
+                  type: string
+                  format: email
+                  description: Email address (required for MIGAS mode)
+                  example: "john.doe@abc.com"
+                no_whatsapp:
+                  type: string
+                  description: WhatsApp number (required for MIGAS mode)
+                  example: "+6281234567890"
+                kontak_darurat_telepon:
+                  type: string
+                  description: Emergency contact phone (required for MIGAS mode)
+                  example: "+6281234567891"
+                kontak_darurat_nama:
+                  type: string
+                  description: Emergency contact name (required for MIGAS mode)
+                  example: "Jane Doe"
+                kontak_darurat_hubungan:
+                  type: string
+                  description: Emergency contact relationship (required for MIGAS mode)
+                  example: "Spouse"
+                lokasi_dituju:
+                  type: string
+                  description: Destination location (required for MIGAS mode)
+                  example: "IT Office - Floor 3"
+                
+                # Optional fields
+                area_patrol_id:
+                  type: integer
+                  description: Area patrol ID
+                  example: 1
+                bertemu:
+                  type: string
+                  description: Person to meet
+                  example: "Manager IT"
+                no_kartu_pinjam:
+                  type: string
+                  description: Borrowed card number
+                  example: "CARD001"
+                keterangan_tambahan:
+                  type: string
+                  description: Additional notes
+                  example: "VIP guest"
+                catatan:
+                  type: string
+                  description: Internal notes
+                  example: "Requires escort"
+                
+                # Mode settings
+                guest_book_mode:
+                  type: string
+                  enum: [simple, migas, standard_migas]
+                  description: Guest book mode
+                  example: "simple"
+                enable_questionnaire:
+                  type: boolean
+                  description: Enable questionnaire
+                  example: true
+                kuesioner_answers:
+                  type: string
+                  description: Questionnaire answers as JSON string
+                  example: '{"1":"Ya","2":"Tidak ada"}'
+      responses:
+        '201':
+          description: Guest registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Data tamu berhasil dicatat. QR Code: GT202601210001"
+                  data:
+                    $ref: '#/components/schemas/BukuTamu'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /buku-tamu/{id}:
+    get:
+      tags:
+        - Buku Tamu
+      summary: Get guest book entry by ID
+      description: Get specific guest book entry details with relationships
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Guest book entry hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Guest book entry retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/BukuTamu'
+
+    put:
+      tags:
+        - Buku Tamu
+      summary: Update guest book entry
+      description: Update existing guest book entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Guest book entry hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - nama_tamu
+                - perusahaan_tamu
+                - keperluan
+                - area_id
+                - mulai_kunjungan
+                - status
+              properties:
+                nama_tamu:
+                  type: string
+                  example: "John Doe"
+                perusahaan_tamu:
+                  type: string
+                  example: "PT. ABC Corporation"
+                keperluan:
+                  type: string
+                  example: "Meeting with IT Department"
+                area_id:
+                  type: integer
+                  example: 1
+                mulai_kunjungan:
+                  type: string
+                  format: datetime
+                  example: "2026-01-21T09:00:00"
+                status:
+                  type: string
+                  enum: [sedang_berkunjung, sudah_keluar]
+                  example: "sedang_berkunjung"
+                foto:
+                  type: string
+                  format: binary
+                  description: New guest photo (optional)
+                foto_identitas:
+                  type: string
+                  format: binary
+                  description: New ID card photo (optional)
+      responses:
+        '200':
+          description: Guest book entry updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Data tamu berhasil diupdate"
+                  data:
+                    $ref: '#/components/schemas/BukuTamu'
+
+    delete:
+      tags:
+        - Buku Tamu
+      summary: Delete guest book entry
+      description: Delete existing guest book entry and associated photos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Guest book entry hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Guest book entry deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Data tamu berhasil dihapus"
+
+  /buku-tamu/{id}/check-out:
+    post:
+      tags:
+        - Buku Tamu
+      summary: Check out guest
+      description: Mark guest as checked out with optional notes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Guest book entry hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                catatan:
+                  type: string
+                  description: Check-out notes
+                  example: "Visit completed successfully"
+      responses:
+        '200':
+          description: Guest checked out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Tamu berhasil check out"
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: "sudah_keluar"
+                      check_out:
+                        type: string
+                        example: "21 Jan 2026 17:00"
+                      duration:
+                        type: string
+                        example: "8 jam 0 menit"
+
+  /buku-tamu/qr/{qr_code}:
+    get:
+      tags:
+        - Buku Tamu
+      summary: Get guest by QR code
+      description: Find guest book entry by QR code for quick access
+      parameters:
+        - name: qr_code
+          in: path
+          required: true
+          description: QR code value
+          schema:
+            type: string
+            example: "GT202601210001"
+      responses:
+        '200':
+          description: Guest found by QR code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/BukuTamu'
+        '404':
+          description: QR code not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "QR Code tidak ditemukan"
+
+  /buku-tamu-project-settings:
+    get:
+      tags:
+        - Buku Tamu
+      summary: Get project settings for guest book
+      description: Get project-specific guest book configuration
+      parameters:
+        - name: project_id
+          in: query
+          required: true
+          description: Project ID
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Project settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      nama:
+                        type: string
+                        example: "Kantor Jakarta"
+                      guest_book_mode:
+                        type: string
+                        enum: [simple, migas, standard_migas]
+                        example: "simple"
+                      enable_questionnaire:
+                        type: boolean
+                        example: true
+
+  /buku-tamu-kuesioner-by-area:
+    get:
+      tags:
+        - Buku Tamu
+      summary: Get questionnaire by project and area
+      description: Get active questionnaire for specific project and area
+      parameters:
+        - name: project_id
+          in: query
+          required: true
+          description: Project ID
+          schema:
+            type: integer
+            example: 1
+        - name: area_id
+          in: query
+          required: true
+          description: Area ID
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Questionnaire retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      judul:
+                        type: string
+                        example: "Kuesioner Keamanan"
+                      deskripsi:
+                        type: string
+                        example: "Pertanyaan keamanan untuk tamu"
+                      pertanyaans:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              example: 1
+                            pertanyaan:
+                              type: string
+                              example: "Apakah Anda membawa barang berbahaya?"
+                            tipe_jawaban:
+                              type: string
+                              enum: [text, radio, checkbox, select]
+                              example: "radio"
+                            opsi_jawaban:
+                              type: array
+                              items:
+                                type: string
+                              example: ["Ya", "Tidak"]
+                            is_required:
+                              type: boolean
+                              example: true
+                            urutan:
+                              type: integer
+                              example: 1
+        '404':
+          description: Questionnaire not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Kuesioner tidak ditemukan untuk project dan area ini"
+
+  /buku-tamu/{id}/questionnaire:
+    post:
+      tags:
+        - Buku Tamu
+      summary: Save questionnaire answers
+      description: Save or update questionnaire answers for existing guest
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Guest book entry hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - kuesioner_answers
+              properties:
+                kuesioner_answers:
+                  type: object
+                  description: Questionnaire answers (question_id -> answer)
+                  example:
+                    "1": "Tidak"
+                    "2": "Laptop, Handphone"
+                    "3": "Ya"
+      responses:
+        '200':
+          description: Questionnaire answers saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Jawaban kuesioner berhasil disimpan"
+
+  /buku-tamu-statistics:
+    get:
+      tags:
+        - Buku Tamu
+      summary: Get guest book statistics
+      description: Get summary statistics for guest book entries
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      total_today:
+                        type: integer
+                        description: Total guests today
+                        example: 15
+                      visiting_now:
+                        type: integer
+                        description: Currently visiting guests
+                        example: 8
+                      total_week:
+                        type: integer
+                        description: Total guests this week
+                        example: 75
+                      total_all:
+                        type: integer
+                        description: Total guests all time
+                        example: 1250
+
+  /buku-tamu-available-cards:
+    get:
+      tags:
+        - Buku Tamu
+      summary: Get available guest cards
+      description: Get list of available guest cards for assignment
+      parameters:
+        - name: project_id
+          in: query
+          required: true
+          description: Project ID to filter cards
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Available cards retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        no_kartu:
+                          type: string
+                          example: "GT001"
+                        jenis_kartu:
+                          type: string
+                          example: "Visitor"
+                        warna:
+                          type: string
+                          example: "Biru"
+                        keterangan:
+                          type: string
+                          example: "Kartu tamu standar"
+                  meta:
+                    type: object
+                    properties:
+                      total_available:
+                        type: integer
+                        example: 5
+                      project_id:
+                        type: integer
+                        example: 1
+        '400':
+          description: Project ID required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Project ID required"
+
+  /buku-tamu/{id}/assign-card:
+    post:
+      tags:
+        - Buku Tamu
+      summary: Assign guest card
+      description: Assign available guest card to visitor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Guest book entry hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - no_kartu
+              properties:
+                no_kartu:
+                  type: string
+                  description: Card number to assign
+                  example: "GT001"
+      responses:
+        '200':
+          description: Card assigned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Kartu berhasil diberikan kepada tamu"
+                  data:
+                    type: object
+                    properties:
+                      no_kartu:
+                        type: string
+                        example: "GT001"
+                      nama_tamu:
+                        type: string
+                        example: "John Doe"
+                      status_kartu:
+                        type: string
+                        example: "dipinjam"
+        '400':
+          description: Card assignment failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Tamu sudah memiliki kartu: GT002"
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Kartu tidak ditemukan"
+
+  /buku-tamu/{id}/return-card:
+    post:
+      tags:
+        - Buku Tamu
+      summary: Return guest card
+      description: Mark guest card as returned and update availability
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Guest book entry hash ID
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Card returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Kartu berhasil dikembalikan"
+        '400':
+          description: No card to return
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Tamu tidak memiliki kartu yang dipinjam"
+
 tags:
   - name: Authentication
     description: User authentication and profile management
@@ -3000,3 +4060,5 @@ tags:
     description: Project contact management
   - name: Penerimaan Barang
     description: Goods receipt management
+  - name: Buku Tamu
+    description: Guest book and visitor management

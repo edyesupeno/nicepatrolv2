@@ -16,6 +16,7 @@ class TimPatroli extends Model
         'perusahaan_id',
         'project_id',
         'nama_tim',
+        'jenis_regu',
         'shift_id',
         'leader_id',
         'is_active',

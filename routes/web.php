@@ -72,6 +72,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('kantors', \App\Http\Controllers\Perusahaan\KantorController::class);
         Route::resource('projects', \App\Http\Controllers\Perusahaan\ProjectController::class);
         Route::get('projects/{project}/jabatans', [\App\Http\Controllers\Perusahaan\ProjectController::class, 'getJabatans'])->name('projects.jabatans');
+        Route::get('projects/{project}/guest-card-areas', [\App\Http\Controllers\Perusahaan\ProjectController::class, 'getAreas'])->name('projects.guest-card-areas');
         Route::put('projects/{project}/guest-book-settings', [\App\Http\Controllers\Perusahaan\ProjectController::class, 'updateGuestBookSettings'])->name('projects.guest-book-settings');
         
         // Project Contacts Routes
@@ -85,9 +86,73 @@ Route::middleware('auth')->group(function () {
         // Buku Tamu Routes - specific routes MUST come before resource routes
         Route::get('buku-tamu/project-settings', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getProjectSettings'])->name('buku-tamu.project-settings');
         Route::get('buku-tamu/kuesioner', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getKuesionerByProject'])->name('buku-tamu.kuesioner');
+        Route::get('buku-tamu/kuesioner-by-area', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getKuesionerByArea'])->name('buku-tamu.kuesioner-by-area');
+        Route::get('buku-tamu/questionnaire', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'showQuestionnaire'])->name('buku-tamu.questionnaire');
+        Route::get('buku-tamu/guest-info', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getGuestInfo'])->name('buku-tamu.guest-info');
         Route::get('buku-tamu-qr/{bukuTamu}', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'generateQrCode'])->name('buku-tamu.qr-code');
         Route::post('buku-tamu-scan', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getByQrCode'])->name('buku-tamu.scan');
         Route::post('buku-tamu/{bukuTamu}/check-out', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'checkOut'])->name('buku-tamu.check-out');
+        Route::post('buku-tamu/{bukuTamu}/return-card', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'returnCard'])->name('buku-tamu.return-card');
+        Route::post('buku-tamu/{bukuTamu}/questionnaire', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'saveGuestQuestionnaire'])->name('buku-tamu.save-questionnaire');
+        
+        // Project API Routes for Buku Tamu
+        Route::get('projects/{project}/security-officers', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getSecurityOfficersByProject'])->name('projects.security-officers');
+        Route::get('security-officer/areas', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getAreasBySecurityOfficer'])->name('security-officer.areas');
+        Route::get('area-patrols/by-area', [\App\Http\Controllers\Perusahaan\BukuTamuController::class, 'getPosJagaByArea'])->name('area-patrols.by-area');
+        
+        // Debug route for security officers
+        Route::get('debug/security-officers/{project}', function($projectId) {
+            $karyawans = \App\Models\Karyawan::with(['jabatan:id,nama', 'user:id,role,email'])
+                ->where('project_id', $projectId)
+                ->where('is_active', true)
+                ->whereHas('user', function($query) {
+                    $query->where('role', 'security_officer');
+                })
+                ->select('id', 'nama_lengkap', 'jabatan_id', 'user_id')
+                ->orderBy('nama_lengkap')
+                ->get();
+                
+            return response()->json([
+                'success' => true,
+                'project_id' => $projectId,
+                'count' => $karyawans->count(),
+                'data' => $karyawans
+            ]);
+        });
+        
+        // Debug route for areas by security officer
+        Route::get('debug/security-officer-areas', function(Request $request) {
+            $securityOfficerName = $request->get('security_officer');
+            $projectId = $request->get('project_id');
+            
+            $karyawan = \App\Models\Karyawan::where('nama_lengkap', $securityOfficerName)
+                ->where('project_id', $projectId)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$karyawan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Security officer tidak ditemukan'
+                ]);
+            }
+
+            $areas = $karyawan->areas()
+                ->select('areas.id', 'areas.nama', 'areas.alamat', 'karyawan_areas.is_primary')
+                ->orderBy('karyawan_areas.is_primary', 'desc')
+                ->orderBy('areas.nama')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'security_officer' => $securityOfficerName,
+                'project_id' => $projectId,
+                'karyawan_id' => $karyawan->id,
+                'areas_count' => $areas->count(),
+                'data' => $areas
+            ]);
+        });
+        
         Route::resource('buku-tamu', \App\Http\Controllers\Perusahaan\BukuTamuController::class);
 
         // Area Routes
@@ -107,6 +172,18 @@ Route::middleware('auth')->group(function () {
         Route::resource('penerimaan-barang', \App\Http\Controllers\Perusahaan\PenerimaanBarangController::class);
         Route::get('penerimaan-barang-areas/{project}', [\App\Http\Controllers\Perusahaan\PenerimaanBarangController::class, 'getAreasByProject'])->name('penerimaan-barang.areas-by-project');
         Route::get('penerimaan-barang-search-pos', [\App\Http\Controllers\Perusahaan\PenerimaanBarangController::class, 'searchPos'])->name('penerimaan-barang.search-pos');
+
+        // Kartu Tamu Routes
+        Route::get('kartu-tamu', [\App\Http\Controllers\Perusahaan\KartuTamuController::class, 'index'])->name('kartu-tamu.index');
+        Route::get('kartu-tamu/detail', [\App\Http\Controllers\Perusahaan\KartuTamuController::class, 'show'])->name('kartu-tamu.detail');
+        Route::get('kartu-tamu/create', [\App\Http\Controllers\Perusahaan\KartuTamuController::class, 'create'])->name('kartu-tamu.create');
+        Route::post('kartu-tamu', [\App\Http\Controllers\Perusahaan\KartuTamuController::class, 'store'])->name('kartu-tamu.store');
+        Route::get('kartu-tamu/{kartuTamu}/edit', [\App\Http\Controllers\Perusahaan\KartuTamuController::class, 'edit'])->name('kartu-tamu.edit');
+        Route::put('kartu-tamu/{kartuTamu}', [\App\Http\Controllers\Perusahaan\KartuTamuController::class, 'update'])->name('kartu-tamu.update');
+        Route::delete('kartu-tamu/{kartuTamu}', [\App\Http\Controllers\Perusahaan\KartuTamuController::class, 'destroy'])->name('kartu-tamu.destroy');
+        Route::post('kartu-tamu/{kartuTamu}/assign', [\App\Http\Controllers\Perusahaan\KartuTamuController::class, 'assignCard'])->name('kartu-tamu.assign');
+        Route::post('kartu-tamu/{kartuTamu}/return', [\App\Http\Controllers\Perusahaan\KartuTamuController::class, 'returnCard'])->name('kartu-tamu.return');
+        Route::get('kartu-tamu-available', [\App\Http\Controllers\Perusahaan\KartuTamuController::class, 'getAvailableCards'])->name('kartu-tamu.available');
 
         // Tugas Routes
         Route::resource('tugas', \App\Http\Controllers\Perusahaan\TugasController::class);
@@ -160,6 +237,8 @@ Route::middleware('auth')->group(function () {
         Route::get('karyawans/download-template', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'downloadTemplate'])->name('karyawans.download-template');
         Route::post('karyawans/import-excel', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'importExcel'])->name('karyawans.import-excel');
         Route::get('karyawans/import-progress', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'importProgress'])->name('karyawans.import-progress');
+        Route::get('karyawans/export-page', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'exportPage'])->name('karyawans.export-page');
+        Route::post('karyawans/export-excel', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'exportExcel'])->name('karyawans.export-excel');
         Route::resource('karyawans', \App\Http\Controllers\Perusahaan\KaryawanController::class);
         Route::post('karyawans/{karyawan}/upload-foto', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'uploadFoto'])->name('karyawans.upload-foto');
         Route::put('karyawans/{karyawan}/update-nama', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'updateNama'])->name('karyawans.update-nama');
@@ -210,17 +289,25 @@ Route::middleware('auth')->group(function () {
         
         // API Routes for dropdowns
         Route::get('jabatans/by-project/{project}', function($projectId) {
-            // Get jabatan IDs yang ada di project ini (dari karyawan)
-            $jabatanIds = \App\Models\Karyawan::where('project_id', $projectId)
-                ->distinct()
-                ->pluck('jabatan_id')
-                ->toArray();
-            
-            // Return jabatan yang ada di project
-            return \App\Models\Jabatan::select('id', 'nama')
-                ->whereIn('id', $jabatanIds)
+            // Get jabatan dengan count karyawan per jabatan
+            $jabatans = \App\Models\Jabatan::select('id', 'nama')
+                ->withCount(['karyawans' => function($query) use ($projectId) {
+                    $query->where('project_id', $projectId)->where('is_active', true);
+                }])
+                ->whereHas('karyawans', function($query) use ($projectId) {
+                    $query->where('project_id', $projectId)->where('is_active', true);
+                })
                 ->orderBy('nama')
-                ->get();
+                ->get()
+                ->map(function($jabatan) {
+                    return [
+                        'id' => $jabatan->id,
+                        'nama' => $jabatan->nama,
+                        'karyawan_count' => $jabatan->karyawans_count
+                    ];
+                });
+            
+            return response()->json($jabatans);
         });
         
         // Template Karyawan Routes

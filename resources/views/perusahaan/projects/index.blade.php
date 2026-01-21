@@ -123,6 +123,11 @@
                                 + Kuesioner
                             </span>
                         @endif
+                        @if($project->enable_guest_card)
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700 ml-1">
+                                + Kartu Tamu
+                            </span>
+                        @endif
                     </span>
                 </div>
             </div>
@@ -409,13 +414,15 @@
 </div>
 
 <!-- Modal Guest Book Settings -->
-<div id="modalGuestBook" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4">
-        <form id="formGuestBook" method="POST">
+<div id="modalGuestBook" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+        <form id="formGuestBook" method="POST" class="flex flex-col max-h-[90vh]">
             @csrf
             @method('PUT')
-            <div class="p-6">
-                <div class="flex items-center mb-6">
+            
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center">
                     <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
                         <i class="fas fa-book text-purple-600 text-xl"></i>
                     </div>
@@ -424,7 +431,10 @@
                         <p class="text-sm text-gray-600">Konfigurasi mode dan fitur buku tamu</p>
                     </div>
                 </div>
-                
+            </div>
+            
+            <!-- Scrollable Content -->
+            <div class="flex-1 overflow-y-auto p-6">
                 <div class="space-y-6">
                     <!-- Guest Book Mode -->
                     <div>
@@ -484,9 +494,55 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="flex space-x-3 mt-8">
+                    <!-- Enable Guest Card -->
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Aktifkan Kartu Tamu</label>
+                                <p class="text-sm text-gray-500 mt-1">Gunakan sistem kartu tamu fisik untuk project ini</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="enable_guest_card" id="enable_guest_card" class="sr-only peer" value="1">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        
+                        <!-- Area Selection for Guest Card -->
+                        <div id="guest_card_areas_section" class="mt-4 hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Pilih Area untuk Kartu Tamu</label>
+                            <div class="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" name="all_areas" id="all_areas" class="mr-3 text-blue-600 focus:ring-blue-500" onchange="toggleAllAreas()">
+                                    <span class="font-medium text-gray-900">Semua Area</span>
+                                </label>
+                                <div class="border-t border-gray-200 pt-2" id="areas_list">
+                                    <!-- Areas will be loaded dynamically -->
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Pilih area mana saja yang akan menggunakan sistem kartu tamu. Area yang dipilih akan muncul di menu Kartu Tamu.</p>
+                        </div>
+                        
+                        <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-blue-600 mt-0.5 mr-2"></i>
+                                <div class="text-sm text-blue-800">
+                                    <p class="font-medium mb-1">Catatan Kartu Tamu:</p>
+                                    <ul class="list-disc list-inside space-y-1 text-xs">
+                                        <li>Kartu tamu fisik dapat digunakan untuk identifikasi tamu</li>
+                                        <li>Hanya area yang dipilih yang akan muncul di menu Kartu Tamu</li>
+                                        <li>Jika dinonaktifkan, menu Kartu Tamu tidak akan ditampilkan</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-6 border-t border-gray-200">
+                <div class="flex space-x-3">
                     <button 
                         type="button" 
                         onclick="closeGuestBookModal()"
@@ -547,6 +603,15 @@ async function openGuestBookModal(hashId) {
         // Set questionnaire toggle
         document.getElementById('enable_questionnaire').checked = data.enable_questionnaire;
         
+        // Set guest card toggle
+        document.getElementById('enable_guest_card').checked = data.enable_guest_card;
+        
+        // Load areas for guest card selection
+        await loadProjectAreas(hashId, data.guest_card_area_ids || []);
+        
+        // Show/hide guest card areas section
+        toggleGuestCardAreas();
+        
         // Set form action
         document.getElementById('formGuestBook').action = `/perusahaan/projects/${hashId}/guest-book-settings`;
         
@@ -558,6 +623,79 @@ async function openGuestBookModal(hashId) {
             text: 'Gagal memuat pengaturan buku tamu'
         });
     }
+}
+
+async function loadProjectAreas(projectId, selectedAreaIds = []) {
+    try {
+        const response = await fetch(`/perusahaan/projects/${projectId}/guest-card-areas`);
+        const areas = await response.json();
+        
+        const areasList = document.getElementById('areas_list');
+        areasList.innerHTML = '';
+        
+        if (areas.length === 0) {
+            areasList.innerHTML = '<p class="text-sm text-gray-500 italic">Belum ada area di project ini</p>';
+            return;
+        }
+        
+        areas.forEach(area => {
+            const isChecked = selectedAreaIds.includes(area.id);
+            const areaHtml = `
+                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <input type="checkbox" name="guest_card_area_ids[]" value="${area.id}" 
+                           class="area-checkbox mr-3 text-blue-600 focus:ring-blue-500" 
+                           ${isChecked ? 'checked' : ''} onchange="updateAllAreasCheckbox()">
+                    <span class="text-gray-700">${area.nama}</span>
+                </label>
+            `;
+            areasList.insertAdjacentHTML('beforeend', areaHtml);
+        });
+        
+        // Update "Semua Area" checkbox state
+        updateAllAreasCheckbox();
+        
+    } catch (error) {
+        console.error('Error loading areas:', error);
+        document.getElementById('areas_list').innerHTML = '<p class="text-sm text-red-500">Gagal memuat area</p>';
+    }
+}
+
+function toggleGuestCardAreas() {
+    const enableGuestCard = document.getElementById('enable_guest_card').checked;
+    const areasSection = document.getElementById('guest_card_areas_section');
+    
+    if (enableGuestCard) {
+        areasSection.classList.remove('hidden');
+    } else {
+        areasSection.classList.add('hidden');
+        // Uncheck all areas when disabled
+        document.querySelectorAll('input[name="guest_card_area_ids[]"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        document.getElementById('all_areas').checked = false;
+    }
+}
+
+function toggleAllAreas() {
+    const allAreasCheckbox = document.getElementById('all_areas');
+    const areaCheckboxes = document.querySelectorAll('input[name="guest_card_area_ids[]"]');
+    
+    areaCheckboxes.forEach(checkbox => {
+        checkbox.checked = allAreasCheckbox.checked;
+    });
+}
+
+function updateAllAreasCheckbox() {
+    const areaCheckboxes = document.querySelectorAll('input[name="guest_card_area_ids[]"]');
+    const allAreasCheckbox = document.getElementById('all_areas');
+    
+    if (areaCheckboxes.length === 0) {
+        allAreasCheckbox.checked = false;
+        return;
+    }
+    
+    const checkedCount = Array.from(areaCheckboxes).filter(cb => cb.checked).length;
+    allAreasCheckbox.checked = checkedCount === areaCheckboxes.length;
 }
 
 function closeGuestBookModal() {
@@ -669,6 +807,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Handle guest card toggle
+    const guestCardToggle = document.getElementById('enable_guest_card');
+    if (guestCardToggle) {
+        guestCardToggle.addEventListener('change', toggleGuestCardAreas);
+    }
 });
 </script>
 @endpush

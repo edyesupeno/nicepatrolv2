@@ -34,7 +34,7 @@
                             </span>
                             <span class="flex items-center gap-1">
                                 <i class="fas fa-map-marker-alt text-sm"></i>
-                                {{ $kuesionerTamu->areaPatrol->nama }}
+                                {{ $kuesionerTamu->area->nama }}
                             </span>
                         </div>
                     </div>

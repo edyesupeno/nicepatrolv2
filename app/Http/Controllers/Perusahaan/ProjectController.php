@@ -53,6 +53,9 @@ class ProjectController extends Controller
 
     public function edit(Project $project)
     {
+        $project->load('guestCardAreas');
+        $project->guest_card_area_ids = $project->guestCardAreas->pluck('id')->toArray();
+        
         return response()->json($project);
     }
 
@@ -95,14 +98,27 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'guest_book_mode' => 'required|in:standard_migas,simple',
             'enable_questionnaire' => 'nullable|boolean',
+            'enable_guest_card' => 'nullable|boolean',
+            'guest_card_area_ids' => 'nullable|array',
+            'guest_card_area_ids.*' => 'exists:areas,id',
         ], [
             'guest_book_mode.required' => 'Mode buku tamu wajib dipilih',
             'guest_book_mode.in' => 'Mode buku tamu tidak valid',
+            'guest_card_area_ids.*.exists' => 'Area yang dipilih tidak valid',
         ]);
 
         $validated['enable_questionnaire'] = $request->has('enable_questionnaire');
+        $validated['enable_guest_card'] = $request->has('enable_guest_card');
 
         $project->update($validated);
+
+        // Sync guest card areas
+        if ($validated['enable_guest_card'] && !empty($validated['guest_card_area_ids'])) {
+            $project->guestCardAreas()->sync($validated['guest_card_area_ids']);
+        } else {
+            // If guest card is disabled or no areas selected, remove all associations
+            $project->guestCardAreas()->detach();
+        }
 
         return redirect()->route('perusahaan.projects.index')
             ->with('success', 'Pengaturan buku tamu berhasil diupdate');
@@ -113,5 +129,12 @@ class ProjectController extends Controller
         $project = Project::with('jabatans')->findOrFail($id);
         
         return response()->json($project->jabatans);
+    }
+
+    public function getAreas(Project $project)
+    {
+        $areas = $project->areas()->select('id', 'nama')->orderBy('nama')->get();
+        
+        return response()->json($areas);
     }
 }
