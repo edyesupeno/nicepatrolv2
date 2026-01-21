@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
 {
-    private string $baseUrl;
-    private string $token;
+    private ?string $baseUrl;
+    private ?string $token;
 
     public function __construct()
     {
@@ -21,6 +21,20 @@ class WhatsAppService
      */
     public function sendMessage(string $phone, string $message): array
     {
+        // Check if WhatsApp service is configured
+        if (empty($this->baseUrl) || empty($this->token)) {
+            Log::warning('WhatsApp service not configured', [
+                'baseUrl' => $this->baseUrl,
+                'token' => !empty($this->token) ? 'SET' : 'NOT_SET'
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'WhatsApp service not configured',
+                'status' => 503
+            ];
+        }
+
         try {
             // Format phone number (remove + and ensure it starts with country code)
             $phone = $this->formatPhoneNumber($phone);
@@ -140,6 +154,14 @@ class WhatsAppService
      */
     public function testConnection(): array
     {
+        // Check if WhatsApp service is configured
+        if (empty($this->baseUrl) || empty($this->token)) {
+            return [
+                'success' => false,
+                'error' => 'WhatsApp service not configured'
+            ];
+        }
+
         try {
             // Test with a simple message to check if API is accessible
             $response = Http::withHeaders([
