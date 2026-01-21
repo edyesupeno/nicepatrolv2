@@ -467,7 +467,7 @@ Route::domain(env('MOBILE_DOMAIN', 'app.nicepatrol.id'))->group(function () {
         })->name('home');
         Route::get('/scan', function() {
             return view('mobile.security.scan');
-        })->name('scan');
+        })->name('scan-page');
         Route::get('/checkpoint/{checkpoint}', function($checkpoint) {
             return view('mobile.security.checkpoint');
         })->name('checkpoint');
@@ -482,7 +482,7 @@ Route::domain(env('MOBILE_DOMAIN', 'app.nicepatrol.id'))->group(function () {
         })->name('absensi');
         Route::get('/patroli', [\App\Http\Controllers\Mobile\PatroliController::class, 'index'])->name('patroli.index');
         Route::get('/patroli/create', [\App\Http\Controllers\Mobile\PatroliController::class, 'create'])->name('patroli.create');
-        Route::get('/scan-qr', [\App\Http\Controllers\Mobile\ScanController::class, 'index'])->name('scan');
+        Route::get('/scan-qr', [\App\Http\Controllers\Mobile\ScanController::class, 'index'])->name('scan-qr');
         Route::get('/aktivitas', function() {
             return view('mobile.security.aktivitas');
         })->name('aktivitas');
