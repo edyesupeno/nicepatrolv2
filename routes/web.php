@@ -320,6 +320,8 @@ Route::middleware('auth')->group(function () {
         
         // Manajemen Gaji Routes
         Route::get('manajemen-gaji', [\App\Http\Controllers\Perusahaan\ManajemenGajiController::class, 'index'])->name('manajemen-gaji.index');
+        Route::get('manajemen-gaji/debug-stats', [\App\Http\Controllers\Perusahaan\ManajemenGajiController::class, 'debugStats'])->name('manajemen-gaji.debug-stats');
+        Route::post('manajemen-gaji/clear-cache', [\App\Http\Controllers\Perusahaan\ManajemenGajiController::class, 'clearCache'])->name('manajemen-gaji.clear-cache');
         Route::put('manajemen-gaji/{karyawan}/update-gaji-pokok', [\App\Http\Controllers\Perusahaan\ManajemenGajiController::class, 'updateGajiPokok'])->name('manajemen-gaji.update-gaji-pokok');
         Route::post('manajemen-gaji/update-massal', [\App\Http\Controllers\Perusahaan\ManajemenGajiController::class, 'updateMassal'])->name('manajemen-gaji.update-massal');
         

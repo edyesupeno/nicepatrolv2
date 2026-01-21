@@ -74,6 +74,9 @@
             <div>
                 <p class="text-sm text-gray-600 mb-1">Total Karyawan</p>
                 <p class="text-2xl font-bold text-gray-900">{{ $totalKaryawan }} karyawan</p>
+                @if(app()->environment('local'))
+                    <p class="text-xs text-gray-500">Paginated: {{ $karyawans->total() }}</p>
+                @endif
             </div>
             <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <i class="fas fa-users text-blue-600 text-xl"></i>
@@ -86,6 +89,9 @@
             <div>
                 <p class="text-sm text-gray-600 mb-1">Total Gaji Pokok</p>
                 <p class="text-2xl font-bold text-gray-900">Rp {{ number_format($totalGajiPokok, 0, ',', '.') }}</p>
+                @if(app()->environment('local'))
+                    <p class="text-xs text-gray-500">Current page sum: Rp {{ number_format($karyawans->sum('gaji_pokok'), 0, ',', '.') }}</p>
+                @endif
             </div>
             <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <i class="fas fa-money-bill-wave text-green-600 text-xl"></i>
@@ -98,6 +104,10 @@
             <div>
                 <p class="text-sm text-gray-600 mb-1">Rata-rata Gaji</p>
                 <p class="text-2xl font-bold text-gray-900">Rp {{ number_format($rataRataGaji, 0, ',', '.') }}</p>
+                @if(app()->environment('local'))
+                    <a href="{{ route('perusahaan.manajemen-gaji.debug-stats', request()->query()) }}" 
+                       target="_blank" class="text-xs text-blue-500 hover:underline">Debug Stats</a>
+                @endif
             </div>
             <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <i class="fas fa-chart-line text-purple-600 text-xl"></i>

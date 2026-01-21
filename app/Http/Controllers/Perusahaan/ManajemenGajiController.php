@@ -21,14 +21,20 @@ class ManajemenGajiController extends Controller
         $jabatanId = $request->get('jabatan_id');
         $search = $request->get('search');
         
-        // Query untuk statistics (tanpa pagination)
+        // Query untuk statistics (tanpa pagination) - SEMUA data yang sesuai filter
         $statsQuery = Karyawan::select([
                 'id',
+                'perusahaan_id',
                 'project_id',
-                'gaji_pokok'
+                'jabatan_id',
+                'gaji_pokok',
+                'nik_karyawan',
+                'nama_lengkap'
             ])
+            ->where('perusahaan_id', $perusahaanId) // Explicit filter untuk memastikan
             ->where('is_active', true);
         
+        // Apply same filters as main query
         if ($projectId) {
             $statsQuery->where('project_id', $projectId);
         }
@@ -39,19 +45,20 @@ class ManajemenGajiController extends Controller
         
         if ($search) {
             $statsQuery->where(function($q) use ($search) {
-                $q->where('nik_karyawan', 'ilike', "%{$search}%")
-                  ->orWhere('nama_lengkap', 'ilike', "%{$search}%");
+                $q->where('nik_karyawan', 'ILIKE', "%{$search}%")
+                  ->orWhere('nama_lengkap', 'ILIKE', "%{$search}%");
             });
         }
         
+        // Get ALL data for statistics (no pagination)
         $statsData = $statsQuery->get();
         
-        // Calculate statistics
+        // Calculate statistics from ALL matching records
         $totalKaryawan = $statsData->count();
-        $totalGajiPokok = $statsData->sum('gaji_pokok');
-        $rataRataGaji = $totalKaryawan > 0 ? $totalGajiPokok / $totalKaryawan : 0;
+        $totalGajiPokok = $statsData->sum('gaji_pokok') ?: 0; // Ensure not null
+        $rataRataGaji = $totalKaryawan > 0 ? round($totalGajiPokok / $totalKaryawan, 0) : 0;
         
-        // Query karyawan dengan pagination
+        // Query karyawan dengan pagination (same filters as stats)
         $query = Karyawan::select([
                 'id',
                 'perusahaan_id',
@@ -67,8 +74,10 @@ class ManajemenGajiController extends Controller
                 'project:id,nama',
                 'jabatan:id,nama'
             ])
+            ->where('perusahaan_id', $perusahaanId) // Explicit filter untuk memastikan
             ->where('is_active', true);
         
+        // Apply same filters as statistics query
         if ($projectId) {
             $query->where('project_id', $projectId);
         }
@@ -79,8 +88,8 @@ class ManajemenGajiController extends Controller
         
         if ($search) {
             $query->where(function($q) use ($search) {
-                $q->where('nik_karyawan', 'ilike', "%{$search}%")
-                  ->orWhere('nama_lengkap', 'ilike', "%{$search}%");
+                $q->where('nik_karyawan', 'ILIKE', "%{$search}%")
+                  ->orWhere('nama_lengkap', 'ILIKE', "%{$search}%");
             });
         }
         
@@ -90,13 +99,21 @@ class ManajemenGajiController extends Controller
         // Group by project
         $groupedKaryawans = $karyawans->groupBy('project_id');
         
-        // Get projects and jabatans for filters (dengan cache)
-        $projects = Cache::remember('projects_' . $perusahaanId, 3600, function () {
-            return Project::select('id', 'nama')->orderBy('nama')->get();
+        // Get projects and jabatans for filters (clear cache if needed)
+        $cacheKey = 'projects_' . $perusahaanId;
+        $projects = Cache::remember($cacheKey, 3600, function () use ($perusahaanId) {
+            return Project::select('id', 'nama')
+                ->where('perusahaan_id', $perusahaanId)
+                ->orderBy('nama')
+                ->get();
         });
         
-        $jabatans = Cache::remember('jabatans_' . $perusahaanId, 3600, function () {
-            return Jabatan::select('id', 'nama')->orderBy('nama')->get();
+        $cacheKey = 'jabatans_' . $perusahaanId;
+        $jabatans = Cache::remember($cacheKey, 3600, function () use ($perusahaanId) {
+            return Jabatan::select('id', 'nama')
+                ->where('perusahaan_id', $perusahaanId)
+                ->orderBy('nama')
+                ->get();
         });
         
         return view('perusahaan.manajemen-gaji.index', compact(
@@ -111,6 +128,56 @@ class ManajemenGajiController extends Controller
             'totalGajiPokok',
             'rataRataGaji'
         ));
+    }
+    
+    /**
+     * Debug method to check statistics calculation
+     */
+    public function debugStats(Request $request)
+    {
+        if (!app()->environment('local')) {
+            abort(404);
+        }
+        
+        $perusahaanId = auth()->user()->perusahaan_id;
+        $projectId = $request->get('project_id');
+        
+        // Query without pagination
+        $allQuery = Karyawan::select(['id', 'project_id', 'gaji_pokok', 'nama_lengkap'])
+            ->where('perusahaan_id', $perusahaanId)
+            ->where('is_active', true);
+            
+        if ($projectId) {
+            $allQuery->where('project_id', $projectId);
+        }
+        
+        $allData = $allQuery->get();
+        
+        // Query with pagination
+        $paginatedData = Karyawan::select(['id', 'project_id', 'gaji_pokok', 'nama_lengkap'])
+            ->where('perusahaan_id', $perusahaanId)
+            ->where('is_active', true)
+            ->when($projectId, function($q) use ($projectId) {
+                return $q->where('project_id', $projectId);
+            })
+            ->paginate(50);
+        
+        return response()->json([
+            'perusahaan_id' => $perusahaanId,
+            'project_id' => $projectId,
+            'all_count' => $allData->count(),
+            'all_total_gaji' => $allData->sum('gaji_pokok'),
+            'paginated_count' => $paginatedData->count(),
+            'paginated_total_gaji' => $paginatedData->sum('gaji_pokok'),
+            'paginated_info' => [
+                'current_page' => $paginatedData->currentPage(),
+                'per_page' => $paginatedData->perPage(),
+                'total' => $paginatedData->total(),
+                'from' => $paginatedData->firstItem(),
+                'to' => $paginatedData->lastItem(),
+            ],
+            'sample_data' => $allData->take(5)->toArray(),
+        ]);
     }
     
     public function updateGajiPokok(Request $request, Karyawan $karyawan)
@@ -203,5 +270,20 @@ class ManajemenGajiController extends Controller
                 'message' => 'Gagal update gaji pokok: ' . $e->getMessage(),
             ], 500);
         }
+    }
+    
+    /**
+     * Clear cache for projects and jabatans
+     */
+    public function clearCache()
+    {
+        $perusahaanId = auth()->user()->perusahaan_id;
+        Cache::forget('projects_' . $perusahaanId);
+        Cache::forget('jabatans_' . $perusahaanId);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Cache cleared successfully'
+        ]);
     }
 }
