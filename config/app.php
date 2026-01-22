@@ -64,7 +64,7 @@ return [
     |
     */
 
-    'api_domain' => env('API_DOMAIN', 'api.nicepatrol.id'),
+    'api_domain' => env('API_DOMAIN', 'devapi.nicepatrol.id'),
 
     /*
     |--------------------------------------------------------------------------

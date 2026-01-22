@@ -10,8 +10,8 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
-// Dashboard Auth Routes (dash.nicepatrol.test) - MUST BE FIRST
-Route::domain(env('DASHBOARD_DOMAIN', 'dash.nicepatrol.test'))->group(function () {
+// Dashboard Auth Routes (devdash.nicepatrol.id) - MUST BE FIRST
+Route::domain(env('DASHBOARD_DOMAIN', 'devdash.nicepatrol.id'))->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -35,7 +35,7 @@ Route::get('/login', function() {
         return view('mobile.auth.login');
     }
     // If accessing from mobile domain
-    if ($host === env('MOBILE_DOMAIN', 'app.nicepatrol.test')) {
+    if ($host === env('MOBILE_DOMAIN', 'devapp.nicepatrol.id')) {
         return view('mobile.auth.login');
     }
     // Otherwise 404

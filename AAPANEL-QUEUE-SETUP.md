@@ -19,24 +19,24 @@
    ```
    Name/Nama: Laravel Queue Worker - Nice Patrol
    Type: Shell Script
-   Script Path: /www/wwwroot/nicepatrol/queue-worker.sh
+   Script Path: /www/wwwroot/stagdash.nicepatrol.id/queue-worker.sh
    Execution Cycle: Every minute (*/1 * * * *)
    ```
 
 ### **Step 3: Buat Script Queue Worker**
 
-**Buat file:** `/www/wwwroot/nicepatrol/queue-worker.sh`
+**Buat file:** `/www/wwwroot/stagdash.nicepatrol.id/queue-worker.sh`
 
 ```bash
 #!/bin/bash
 
 # Laravel Queue Worker untuk aaPanel
-# File: /www/wwwroot/nicepatrol/queue-worker.sh
+# File: /www/wwwroot/stagdash.nicepatrol.id/queue-worker.sh
 
-PROJECT_PATH="/www/wwwroot/nicepatrol"
+PROJECT_PATH="/www/wwwroot/stagdash.nicepatrol.id"
 LOCK_FILE="$PROJECT_PATH/storage/queue-worker.lock"
 LOG_FILE="$PROJECT_PATH/storage/logs/queue-worker.log"
-PHP_PATH="/www/server/php/82/bin/php"  # Sesuaikan dengan versi PHP
+PHP_PATH="/www/server/php/84/bin/php"  # PHP 8.4
 
 # Function to log with timestamp
 log_message() {
@@ -106,24 +106,24 @@ fi
 
 **Via aaPanel File Manager:**
 1. Buka **"Files"** di aaPanel
-2. Navigate ke `/www/wwwroot/nicepatrol/`
+2. Navigate ke `/www/wwwroot/stagdash.nicepatrol.id/`
 3. Klik kanan pada `queue-worker.sh`
 4. Pilih **"Permissions"** atau **"Chmod"**
 5. Set permission ke **755** atau **rwxr-xr-x**
 
 **Via Terminal (jika ada akses SSH):**
 ```bash
-chmod +x /www/wwwroot/nicepatrol/queue-worker.sh
-chown www:www /www/wwwroot/nicepatrol/queue-worker.sh
+chmod +x /www/wwwroot/stagdash.nicepatrol.id/queue-worker.sh
+chown www:www /www/wwwroot/stagdash.nicepatrol.id/queue-worker.sh
 ```
 
 ### **Step 5: Setup Log Directory**
 
 **Pastikan folder log ada dan writable:**
 ```bash
-mkdir -p /www/wwwroot/nicepatrol/storage/logs
-chmod 755 /www/wwwroot/nicepatrol/storage/logs
-chown -R www:www /www/wwwroot/nicepatrol/storage
+mkdir -p /www/wwwroot/stagdash.nicepatrol.id/storage/logs
+chmod 755 /www/wwwroot/stagdash.nicepatrol.id/storage/logs
+chown -R www:www /www/wwwroot/stagdash.nicepatrol.id/storage
 ```
 
 ### **Step 6: Test Cron Job**
@@ -132,11 +132,11 @@ chown -R www:www /www/wwwroot/nicepatrol/storage
    - Di aaPanel, buka **"Cron"**
    - Cari cron job yang sudah dibuat
    - Klik **"Run Now"** atau **"Execute"**
-   - Check log: `/www/wwwroot/nicepatrol/storage/logs/queue-worker.log`
+   - Check log: `/www/wwwroot/stagdash.nicepatrol.id/storage/logs/queue-worker.log`
 
 2. **Check Log:**
    ```bash
-   tail -f /www/wwwroot/nicepatrol/storage/logs/queue-worker.log
+   tail -f /www/wwwroot/stagdash.nicepatrol.id/storage/logs/queue-worker.log
    ```
 
 ## 🔧 **Alternative: Simple Cron (Jika Script Tidak Bisa)**
@@ -147,7 +147,7 @@ Jika script di atas tidak bisa dijalankan, gunakan cron sederhana:
 ```
 Name: Laravel Queue Simple
 Type: Shell Script
-Command: cd /www/wwwroot/nicepatrol && /www/server/php/82/bin/php artisan queue:work --stop-when-empty
+Command: cd /www/wwwroot/stagdash.nicepatrol.id && /www/server/php/84/bin/php artisan queue:work --stop-when-empty
 Execution Cycle: Every minute (*/1 * * * *)
 ```
 
@@ -156,7 +156,7 @@ Execution Cycle: Every minute (*/1 * * * *)
 ### **1. Check Queue Status**
 ```bash
 # Via SSH atau Terminal aaPanel
-cd /www/wwwroot/nicepatrol
+cd /www/wwwroot/stagdash.nicepatrol.id
 php artisan queue:monitor
 php artisan queue:failed
 ```
@@ -176,7 +176,7 @@ tail -f storage/logs/queue-output.log
 ### **3. Manual Queue Processing**
 ```bash
 # Process all pending jobs once
-cd /www/wwwroot/nicepatrol
+cd /www/wwwroot/stagdash.nicepatrol.id
 php artisan queue:work --stop-when-empty
 
 # Process single job (for debugging)
@@ -197,9 +197,9 @@ php artisan queue:flush
 ### **Issue 1: Permission Denied**
 ```bash
 # Fix permissions
-chmod +x /www/wwwroot/nicepatrol/queue-worker.sh
-chown www:www /www/wwwroot/nicepatrol/queue-worker.sh
-chmod -R 755 /www/wwwroot/nicepatrol/storage
+chmod +x /www/wwwroot/stagdash.nicepatrol.id/queue-worker.sh
+chown www:www /www/wwwroot/stagdash.nicepatrol.id/queue-worker.sh
+chmod -R 755 /www/wwwroot/stagdash.nicepatrol.id/storage
 ```
 
 ### **Issue 2: PHP Path Not Found**
@@ -216,10 +216,10 @@ find /www/server -name "php" -type f 2>/dev/null
 ### **Issue 3: Database Connection Error**
 ```bash
 # Check .env file
-cat /www/wwwroot/nicepatrol/.env | grep DB_
+cat /www/wwwroot/stagdash.nicepatrol.id/.env | grep DB_
 
 # Test database connection
-cd /www/wwwroot/nicepatrol
+cd /www/wwwroot/stagdash.nicepatrol.id
 php artisan tinker --execute="DB::connection()->getPdo();"
 ```
 
@@ -251,12 +251,12 @@ Setelah setup, pastikan:
 4. **Lihat progress bar real-time**
 5. **Check log untuk memastikan job diproses:**
    ```bash
-   tail -f /www/wwwroot/nicepatrol/storage/logs/queue-worker.log
+   tail -f /www/wwwroot/stagdash.nicepatrol.id/storage/logs/queue-worker.log
    ```
 
 ## 📱 **Monitoring Dashboard**
 
-**Buat file monitoring sederhana:** `/www/wwwroot/nicepatrol/public/queue-status.php`
+**Buat file monitoring sederhana:** `/www/wwwroot/stagdash.nicepatrol.id/public/queue-status.php`
 
 ```php
 <?php
