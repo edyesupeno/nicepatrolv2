@@ -280,36 +280,44 @@ class KaryawanTemplateExport implements FromCollection, WithHeadings, WithStyles
                     $sheet->getCell('O' . $i)->setDataValidation(clone $statusValidation);
                 }
                 
-                // Add instructions
-                $sheet->setCellValue('A4', 'PETUNJUK PENGISIAN:');
-                $sheet->getStyle('A4')->getFont()->setBold(true)->setSize(11);
+                // Add instructions with clear separator
+                $sheet->setCellValue('A4', '');
+                $sheet->setCellValue('A5', 'PETUNJUK PENGISIAN:');
+                $sheet->getStyle('A5')->getFont()->setBold(true)->setSize(11)->getColor()->setRGB('FF0000');
+                $sheet->setCellValue('A6', '⚠️ KOLOM A, B, C HARUS DIISI SEMUA! Jika kosong akan di-skip otomatis.');
+                $sheet->getStyle('A6')->getFont()->setBold(true)->setSize(10)->getColor()->setRGB('FF0000');
                 
                 $instructions = [
-                    'A5' => '1. Kolom dengan tanda (*) wajib diisi',
-                    'A6' => '2. No Badge harus unik (tidak boleh sama)',
-                    'A7' => '3. Email harus valid dan unik',
-                    'A8' => '4. Project: Pilih dari dropdown',
-                    'A9' => '5. Jabatan: Pilih dari dropdown',
-                    'A10' => '6. Status Karyawan: Pilih dari dropdown (Tetap/Kontrak/Harian/dll)',
-                    'A11' => '7. Jenis Kelamin: Pilih dari dropdown (Laki-laki/Perempuan)',
-                    'A12' => '8. Status Perkawinan: Pilih dari dropdown (TK = Tidak Kawin, K = Kawin)',
-                    'A13' => '9. Jumlah Tanggungan: Pilih dari dropdown (0, 1, 2, 3) - untuk PTKP pajak',
-                    'A14' => '10. Tanggal Lahir format: YYYY-MM-DD (contoh: 1990-01-15)',
-                    'A15' => '11. Tanggal Masuk format: YYYY-MM-DD (contoh: 2024-01-01)',
-                    'A16' => '12. Habis Kontrak format: YYYY-MM-DD (opsional, kosongkan jika tidak ada)',
-                    'A17' => '13. Status: Pilih dari dropdown (Aktif/Tidak Aktif)',
-                    'A18' => '14. Password default untuk semua user: nicepatrol',
-                    'A19' => '15. Hapus baris contoh sebelum import',
-                    'A20' => '16. Area kerja akan otomatis di-assign berdasarkan project',
+                    'A7' => '1. Kolom A (No Badge), B (Nama Lengkap), C (Email) WAJIB diisi semua',
+                    'A8' => '2. Jika salah satu dari A, B, C kosong = baris akan di-skip otomatis',
+                    'A9' => '3. No Badge harus unik (tidak boleh sama)',
+                    'A10' => '4. Email harus valid dan unik',
+                    'A11' => '5. Project: Pilih dari dropdown',
+                    'A12' => '6. Jabatan: Pilih dari dropdown',
+                    'A13' => '7. Status Karyawan: Pilih dari dropdown (Tetap/Kontrak/Harian/dll)',
+                    'A14' => '8. Jenis Kelamin: Pilih dari dropdown (Laki-laki/Perempuan)',
+                    'A15' => '9. Status Perkawinan: Pilih dari dropdown (TK = Tidak Kawin, K = Kawin)',
+                    'A16' => '10. Jumlah Tanggungan: Pilih dari dropdown (0, 1, 2, 3) - untuk PTKP pajak',
+                    'A17' => '11. Tanggal Lahir format: YYYY-MM-DD (contoh: 1990-01-15)',
+                    'A18' => '12. Tanggal Masuk format: YYYY-MM-DD (contoh: 2024-01-01)',
+                    'A19' => '13. Habis Kontrak format: YYYY-MM-DD (opsional, kosongkan jika tidak ada)',
+                    'A20' => '14. Status: Pilih dari dropdown (Aktif/Tidak Aktif)',
+                    'A21' => '15. Password default untuk semua user: nicepatrol',
+                    'A22' => '16. Area kerja akan otomatis di-assign berdasarkan project',
+                    'A23' => '',
+                    'A24' => '⚠️ BARIS INSTRUKSI INI AKAN DI-SKIP OTOMATIS (A, B, C tidak diisi semua)',
                 ];
                 
                 foreach ($instructions as $cell => $text) {
                     $sheet->setCellValue($cell, $text);
                     $sheet->getStyle($cell)->getFont()->setSize(9);
+                    if (strpos($text, '⚠️') !== false || strpos($text, 'WAJIB') !== false) {
+                        $sheet->getStyle($cell)->getFont()->setBold(true)->getColor()->setRGB('FF0000');
+                    }
                 }
                 
                 // Show available options
-                $row = 21;
+                $row = 26;
                 
                 if (!empty($projects)) {
                     $sheet->setCellValue('A' . $row, 'DAFTAR PROJECT:');

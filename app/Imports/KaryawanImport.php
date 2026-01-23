@@ -35,15 +35,46 @@ class KaryawanImport implements ToCollection, WithHeadingRow
             $rowNumber = $index + 2; // +2 karena header di row 1, data mulai row 2
             
             try {
-                // Handle backward compatibility for "No Badge" vs "NIK Karyawan"
-                if (isset($row['no_badge']) && !isset($row['nik_karyawan'])) {
-                    $row['nik_karyawan'] = $row['no_badge'];
-                }
+                // Convert to array for easier handling
+                $rowArray = $row->toArray();
                 
-                // Skip empty rows
-                if (empty($row['nik_karyawan']) && empty($row['nama_lengkap'])) {
+                // Skip empty rows - SIMPLE: Cek kolom A, B, C (No Badge, Nama, Email)
+                $nikKaryawan = trim($rowArray[0] ?? ''); // Column A
+                $namaLengkap = trim($rowArray[1] ?? ''); // Column B  
+                $email = trim($rowArray[2] ?? ''); // Column C
+                
+                // Jika ketiga kolom utama kosong, skip baris ini
+                if (empty($nikKaryawan) && empty($namaLengkap) && empty($email)) {
                     continue;
                 }
+                
+                // Jika salah satu dari 3 kolom utama kosong, juga skip (kemungkinan instruksi)
+                if (empty($nikKaryawan) || empty($namaLengkap) || empty($email)) {
+                    continue;
+                }
+                
+                // Map to expected field names using array indices (more reliable)
+                $mappedRow = [
+                    'nik_karyawan' => $rowArray[0] ?? '', // A: No Badge
+                    'nama_lengkap' => $rowArray[1] ?? '', // B: Nama Lengkap
+                    'email' => $rowArray[2] ?? '', // C: Email
+                    'no_telepon' => $rowArray[3] ?? null, // D: No. Telepon
+                    'project' => $rowArray[4] ?? '', // E: Project
+                    'jabatan' => $rowArray[5] ?? '', // F: Jabatan
+                    'status_karyawan' => $rowArray[6] ?? '', // G: Status Karyawan
+                    'jenis_kelamin' => $rowArray[7] ?? '', // H: Jenis Kelamin
+                    'status_perkawinan' => $rowArray[8] ?? '', // I: Status Perkawinan
+                    'jumlah_tanggungan' => $rowArray[9] ?? '', // J: Jumlah Tanggungan
+                    'tanggal_lahir' => $rowArray[10] ?? null, // K: Tanggal Lahir
+                    'tempat_lahir' => $rowArray[11] ?? null, // L: Tempat Lahir
+                    'tanggal_masuk' => $rowArray[12] ?? '', // M: Tanggal Masuk
+                    'habis_kontrak' => $rowArray[13] ?? null, // N: Habis Kontrak
+                    'status' => $rowArray[14] ?? '', // O: Status
+                    'gaji_pokok' => $rowArray[15] ?? null, // P: Gaji Pokok (if exists)
+                ];
+                
+                // Use mapped row
+                $row = collect($mappedRow);
                 
                 // Validate required fields
                 $validator = Validator::make($row->toArray(), [

@@ -100,55 +100,105 @@ class ImportKaryawanJob implements ShouldQueue
                     
                     $data = array_combine($cleanHeaders, $row);
                     
-                    // Map "No Badge" to "nik_karyawan" for backward compatibility
+                    // Map header fields to expected field names
+                    $mappedData = [];
+                    
+                    // Map "No Badge" to "nik_karyawan"
                     if (isset($data['no badge'])) {
-                        $data['nik_karyawan'] = $data['no badge'];
+                        $mappedData['nik_karyawan'] = $data['no badge'];
                     } elseif (isset($data['no_badge'])) {
-                        $data['nik_karyawan'] = $data['no_badge'];
+                        $mappedData['nik_karyawan'] = $data['no_badge'];
                     } elseif (isset($data['nik karyawan'])) {
-                        $data['nik_karyawan'] = $data['nik karyawan'];
+                        $mappedData['nik_karyawan'] = $data['nik karyawan'];
                     }
                     
-                    // Map other fields with spaces
+                    // Map "Nama Lengkap" to "nama_lengkap"
                     if (isset($data['nama lengkap'])) {
-                        $data['nama_lengkap'] = $data['nama lengkap'];
+                        $mappedData['nama_lengkap'] = $data['nama lengkap'];
                     }
+                    
+                    // Map "Email" (already correct)
+                    if (isset($data['email'])) {
+                        $mappedData['email'] = $data['email'];
+                    }
+                    
+                    // Map "No. Telepon" to "no_telepon"
                     if (isset($data['no. telepon'])) {
-                        $data['no_telepon'] = $data['no. telepon'];
+                        $mappedData['no_telepon'] = $data['no. telepon'];
+                    } elseif (isset($data['no telepon'])) {
+                        $mappedData['no_telepon'] = $data['no telepon'];
                     }
+                    
+                    // Map "Project" (already correct)
+                    if (isset($data['project'])) {
+                        $mappedData['project'] = $data['project'];
+                    }
+                    
+                    // Map "Jabatan" (already correct)
+                    if (isset($data['jabatan'])) {
+                        $mappedData['jabatan'] = $data['jabatan'];
+                    }
+                    
+                    // Map "Status Karyawan" to "status_karyawan"
                     if (isset($data['status karyawan'])) {
-                        $data['status_karyawan'] = $data['status karyawan'];
+                        $mappedData['status_karyawan'] = $data['status karyawan'];
                     }
+                    
+                    // Map "Jenis Kelamin" to "jenis_kelamin"
                     if (isset($data['jenis kelamin'])) {
-                        $data['jenis_kelamin'] = $data['jenis kelamin'];
+                        $mappedData['jenis_kelamin'] = $data['jenis kelamin'];
                     }
+                    
+                    // Map "Status Perkawinan" to "status_perkawinan"
                     if (isset($data['status perkawinan'])) {
-                        $data['status_perkawinan'] = $data['status perkawinan'];
+                        $mappedData['status_perkawinan'] = $data['status perkawinan'];
                     }
+                    
+                    // Map "Jumlah Tanggungan" to "jumlah_tanggungan"
                     if (isset($data['jumlah tanggungan'])) {
-                        $data['jumlah_tanggungan'] = $data['jumlah tanggungan'];
+                        $mappedData['jumlah_tanggungan'] = $data['jumlah tanggungan'];
                     }
+                    
+                    // Map "Tanggal Lahir" to "tanggal_lahir"
                     if (isset($data['tanggal lahir'])) {
-                        $data['tanggal_lahir'] = $data['tanggal lahir'];
+                        $mappedData['tanggal_lahir'] = $data['tanggal lahir'];
                     }
+                    
+                    // Map "Tempat Lahir" to "tempat_lahir"
                     if (isset($data['tempat lahir'])) {
-                        $data['tempat_lahir'] = $data['tempat lahir'];
+                        $mappedData['tempat_lahir'] = $data['tempat lahir'];
                     }
+                    
+                    // Map "Tanggal Masuk" to "tanggal_masuk"
                     if (isset($data['tanggal masuk'])) {
-                        $data['tanggal_masuk'] = $data['tanggal masuk'];
+                        $mappedData['tanggal_masuk'] = $data['tanggal masuk'];
                     }
+                    
+                    // Map "Habis Kontrak" to "habis_kontrak"
                     if (isset($data['habis kontrak'])) {
-                        $data['habis_kontrak'] = $data['habis kontrak'];
+                        $mappedData['habis_kontrak'] = $data['habis kontrak'];
                     }
+                    
+                    // Map "Status" (already correct)
+                    if (isset($data['status'])) {
+                        $mappedData['status'] = $data['status'];
+                    }
+                    
+                    // Use mapped data
+                    $data = $mappedData;
 
-                    // Skip empty rows
-                    if (empty($data['nik_karyawan']) && empty($data['nama_lengkap'])) {
+                    // Skip empty rows - SIMPLE: Cek kolom A, B, C (No Badge, Nama, Email)
+                    $nikKaryawan = trim($data['nik_karyawan'] ?? '');
+                    $namaLengkap = trim($data['nama_lengkap'] ?? '');
+                    $email = trim($data['email'] ?? '');
+                    
+                    // Jika ketiga kolom utama kosong, skip baris ini
+                    if (empty($nikKaryawan) && empty($namaLengkap) && empty($email)) {
                         continue;
                     }
                     
-                    // Skip instruction rows
-                    if (strpos($data['nik_karyawan'], 'PETUNJUK') !== false || 
-                        strpos($data['nik_karyawan'], 'DAFTAR') !== false) {
+                    // Jika salah satu dari 3 kolom utama kosong, juga skip (kemungkinan instruksi)
+                    if (empty($nikKaryawan) || empty($namaLengkap) || empty($email)) {
                         continue;
                     }
 
