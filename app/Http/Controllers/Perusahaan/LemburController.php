@@ -8,9 +8,12 @@ use App\Models\Project;
 use App\Models\Karyawan;
 use App\Models\PayrollSetting;
 use App\Models\TemplateKomponenGaji;
+use App\Imports\LemburImport;
+use App\Exports\LemburTemplateExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LemburController extends Controller
 {
@@ -634,6 +637,115 @@ class LemburController extends Controller
         ]);
     }
     
+    /**
+     * Download template for import
+     */
+    public function downloadTemplate(Request $request)
+    {
+        $projectId = $request->get('project_id');
+        $employeeIds = $request->get('employee_ids');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        
+        // Validate project belongs to user's perusahaan
+        if ($projectId) {
+            $project = Project::where('id', $projectId)
+                ->where('perusahaan_id', auth()->user()->perusahaan_id)
+                ->first();
+                
+            if (!$project) {
+                return redirect()->back()->with('error', 'Project tidak ditemukan');
+            }
+        }
+        
+        // Parse employee IDs
+        $selectedEmployeeIds = [];
+        if ($employeeIds) {
+            $selectedEmployeeIds = array_map('intval', explode(',', $employeeIds));
+        }
+        
+        $export = new LemburTemplateExport($projectId, $selectedEmployeeIds, $startDate, $endDate);
+        $filename = 'template-import-lembur';
+        
+        if ($projectId && $project) {
+            $filename .= '-' . str_replace(' ', '-', strtolower($project->nama));
+        }
+        
+        if ($startDate && $endDate) {
+            $filename .= '-' . $startDate . '-to-' . $endDate;
+        }
+        
+        return Excel::download($export, $filename . '.xlsx');
+    }
+
+    /**
+     * Import lembur from Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls|max:2048'
+        ]);
+
+        try {
+            // Import without project/employee restrictions - read everything from Excel
+            $import = new LemburImport(auth()->user()->perusahaan_id);
+            Excel::import($import, $request->file('file'));
+
+            $importedCount = $import->getImportedCount();
+            $skippedCount = $import->getSkippedCount();
+            $silentlySkippedCount = $import->getSilentlySkippedCount();
+            $errorRows = $import->getErrorRows();
+
+            $message = "Import selesai. {$importedCount} data berhasil diimport";
+            
+            if ($silentlySkippedCount > 0) {
+                $message .= ", {$silentlySkippedCount} data dilewati";
+            }
+            
+            if ($skippedCount > 0) {
+                $message .= ", {$skippedCount} data gagal karena error";
+            }
+
+            // If there are errors, store them in session for display
+            if (!empty($errorRows)) {
+                session(['import_errors' => $errorRows]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => [
+                    'imported_count' => $importedCount,
+                    'skipped_count' => $skippedCount,
+                    'silently_skipped_count' => $silentlySkippedCount,
+                    'has_errors' => !empty($errorRows)
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal import data: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Show import errors
+     */
+    public function showImportErrors()
+    {
+        $importErrors = session('import_errors', []);
+        
+        if (empty($importErrors)) {
+            return redirect()->route('perusahaan.lembur.index')
+                ->with('info', 'Tidak ada error import untuk ditampilkan.');
+        }
+
+        return view('perusahaan.lembur.import-errors', compact('importErrors'));
+    }
+
     public function searchKaryawan(Request $request)
     {
         $projectId = $request->get('project_id');

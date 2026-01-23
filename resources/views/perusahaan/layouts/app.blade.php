@@ -628,7 +628,7 @@
             });
         @endif
 
-        @if($errors->any())
+        @if(isset($errors) && is_object($errors) && $errors->any())
             Swal.fire({
                 icon: 'error',
                 title: 'Validasi Gagal!',

@@ -128,6 +128,22 @@ class DaftarPayrollController extends Controller
         // Get Variable components that should be included based on templates
         $expectedVariableComponents = $this->getExpectedVariableComponents($payroll->karyawan);
         
+        // Calculate overtime allowance for this period
+        $overtimeData = $this->calculateOvertimeAllowance($payroll->karyawan, $payroll->periode);
+        
+        // Always add Upah Lembur as a default variable component
+        $expectedVariableComponents['upah_lembur'] = [
+            'id' => 'upah_lembur',
+            'nama' => 'Upah Lembur',
+            'kode' => 'UPAH_LEMBUR',
+            'nilai' => $overtimeData['total_upah'],
+            'tipe' => 'Otomatis',
+            'source' => 'overtime_calculation',
+            'detail' => $overtimeData['total_upah'] > 0 ? 
+                "Lembur {$overtimeData['jumlah_hari']} hari ({$overtimeData['total_jam']} jam)" : 
+                "Tidak ada lembur yang disetujui"
+        ];
+        
         // First, process existing tunjangan_detail
         if ($payroll->tunjangan_detail && count($payroll->tunjangan_detail) > 0) {
             foreach ($payroll->tunjangan_detail as $index => $tunjangan) {
@@ -175,15 +191,22 @@ class DaftarPayrollController extends Controller
             }
             
             if (!$alreadyExists) {
-                $variableTunjangan[] = [
+                $componentData = [
                     'nama' => $expectedComponent['nama'],
                     'kode' => $expectedComponent['kode'] ?? 'TEMPLATE',
                     'tipe' => $expectedComponent['tipe'] ?? 'Tetap',
                     'nilai_dasar' => $expectedComponent['nilai'],
                     'nilai_hitung' => $expectedComponent['nilai'],
                     'index' => 'template_' . $expectedComponent['id'],
-                    'source' => 'template_missing'
+                    'source' => $expectedComponent['source']
                 ];
+                
+                // Add detail for overtime component
+                if (isset($expectedComponent['detail'])) {
+                    $componentData['detail'] = $expectedComponent['detail'];
+                }
+                
+                $variableTunjangan[] = $componentData;
                 $totalVariableTunjangan += $expectedComponent['nilai'];
             }
         }
@@ -598,6 +621,37 @@ class DaftarPayrollController extends Controller
         return $allowances;
     }
     
+    /**
+     * Calculate overtime allowance for an employee in a specific period
+     */
+    private function calculateOvertimeAllowance($karyawan, $periode)
+    {
+        // Parse periode to get start and end dates
+        $periodeDate = \Carbon\Carbon::createFromFormat('Y-m', $periode);
+        $startDate = $periodeDate->copy()->startOfMonth();
+        $endDate = $periodeDate->copy()->endOfMonth();
+        
+        // Get approved overtime records for this employee in this period
+        $approvedLemburs = \App\Models\Lembur::where('karyawan_id', $karyawan->id)
+            ->where('status', 'approved')
+            ->whereBetween('tanggal_lembur', [$startDate, $endDate])
+            ->get();
+        
+        $totalUpahLembur = 0;
+        $totalJamLembur = 0;
+        
+        foreach ($approvedLemburs as $lembur) {
+            $totalUpahLembur += $lembur->total_upah_lembur ?? 0;
+            $totalJamLembur += $lembur->total_jam ?? 0;
+        }
+        
+        return [
+            'total_upah' => $totalUpahLembur,
+            'total_jam' => $totalJamLembur,
+            'jumlah_hari' => $approvedLemburs->count()
+        ];
+    }
+
     /**
      * Get expected Variable components based on templates for an employee
      */

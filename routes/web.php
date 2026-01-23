@@ -64,6 +64,17 @@ Route::middleware('auth')->group(function () {
     Route::prefix('perusahaan')->name('perusahaan.')->middleware('perusahaan')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'index'])->name('dashboard');
         
+        // Dashboard API endpoints
+        Route::prefix('dashboard/api')->name('dashboard.api.')->group(function () {
+            Route::get('/stats', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getStats'])->name('stats');
+            Route::get('/patrol-chart', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getPatrolChart'])->name('patrol-chart');
+            Route::get('/attendance-chart', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getAttendanceChart'])->name('attendance-chart');
+            Route::get('/project-chart', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getProjectChart'])->name('project-chart');
+            Route::get('/monthly-patrol-trend', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getMonthlyPatrolTrend'])->name('monthly-patrol-trend');
+            Route::get('/recent-activities', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getRecentActivities'])->name('recent-activities');
+            Route::get('/today-attendance-summary', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getTodayAttendanceSummary'])->name('today-attendance-summary');
+        });
+        
         // Profil Perusahaan
         Route::get('/profil', [\App\Http\Controllers\Perusahaan\ProfilController::class, 'index'])->name('profil.index');
         Route::put('/profil', [\App\Http\Controllers\Perusahaan\ProfilController::class, 'update'])->name('profil.update');
@@ -334,6 +345,9 @@ Route::middleware('auth')->group(function () {
         Route::get('lembur-karyawan/{project}', [\App\Http\Controllers\Perusahaan\LemburController::class, 'getKaryawanByProject'])->name('lembur.karyawan-by-project');
         Route::get('lembur-search-karyawan', [\App\Http\Controllers\Perusahaan\LemburController::class, 'searchKaryawan'])->name('lembur.search-karyawan');
         Route::get('lembur-overtime-rate', [\App\Http\Controllers\Perusahaan\LemburController::class, 'getOvertimeRate'])->name('lembur.overtime-rate');
+        Route::get('lembur-template-download', [\App\Http\Controllers\Perusahaan\LemburController::class, 'downloadTemplate'])->name('lembur.template-download');
+        Route::post('lembur-import', [\App\Http\Controllers\Perusahaan\LemburController::class, 'import'])->name('lembur.import');
+        Route::get('lembur-import-errors', [\App\Http\Controllers\Perusahaan\LemburController::class, 'showImportErrors'])->name('lembur.import-errors');
         
         // Cuti Routes
         Route::resource('cuti', \App\Http\Controllers\Perusahaan\CutiController::class);

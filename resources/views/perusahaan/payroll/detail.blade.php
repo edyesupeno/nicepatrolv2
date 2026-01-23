@@ -178,10 +178,11 @@
                             @php
                                 // For existing payrolls without kode, use nama as fallback
                                 $componentCode = $tunjangan['kode'] ?? $tunjangan['nama'];
-                                $isEditable = isset($komponenPayrolls[$componentCode]) && $komponenPayrolls[$componentCode]->boleh_edit && $payroll->status == 'draft';
+                                $isOvertimeComponent = ($tunjangan['source'] ?? '') === 'overtime_calculation';
+                                $isEditable = isset($komponenPayrolls[$componentCode]) && $komponenPayrolls[$componentCode]->boleh_edit && $payroll->status == 'draft' && !$isOvertimeComponent;
                                 $isFromTemplate = ($tunjangan['source'] ?? '') === 'template_missing';
                             @endphp
-                            <div class="flex items-center justify-between py-2 text-xs {{ $isFromTemplate ? 'bg-yellow-50 border border-yellow-200 rounded px-2' : '' }}">
+                            <div class="flex items-center justify-between py-2 text-xs {{ $isFromTemplate ? 'bg-yellow-50 border border-yellow-200 rounded px-2' : ($isOvertimeComponent ? 'bg-blue-50 border border-blue-200 rounded px-2' : '') }}">
                                 <span class="text-gray-700">
                                     {{ $tunjangan['nama'] }}
                                     @if($isFromTemplate)
@@ -193,10 +194,14 @@
                                             ({{ number_format($tunjangan['nilai_dasar'], 0) }} x {{ $payroll->hari_masuk }} hari)
                                         @elseif($tunjangan['tipe'] == 'Lembur Per Hari')
                                             ({{ number_format($tunjangan['nilai_dasar'], 0) }} x {{ $payroll->hari_lembur }} hari)
+                                        @elseif($tunjangan['tipe'] == 'Otomatis' && isset($tunjangan['detail']))
+                                            <span class="text-xs text-blue-600 ml-1">({{ $tunjangan['detail'] }})</span>
                                         @endif
                                     @endif
                                     @if($isEditable && !$isFromTemplate)
                                         <i class="fas fa-edit text-blue-500 ml-1" title="Bisa diedit"></i>
+                                    @elseif($isOvertimeComponent)
+                                        <i class="fas fa-calculator text-blue-500 ml-1" title="Dihitung otomatis dari data lembur"></i>
                                     @endif
                                 </span>
                                 <div class="flex items-center gap-2">
@@ -205,6 +210,11 @@
                                         <button type="button" class="text-xs text-blue-600 hover:text-blue-800" onclick="Swal.fire({icon: 'info', title: 'Info', text: 'Regenerate payroll untuk menerapkan komponen ini', confirmButtonText: 'OK'})">
                                             <i class="fas fa-sync-alt"></i>
                                         </button>
+                                    @elseif($isOvertimeComponent)
+                                        <span class="font-medium text-blue-700">+ Rp {{ number_format($tunjangan['nilai_hitung'], 0, ',', '.') }}</span>
+                                        <span class="text-xs text-blue-600 ml-1" title="Dihitung otomatis dari data lembur yang disetujui">
+                                            <i class="fas fa-info-circle"></i>
+                                        </span>
                                     @elseif($isEditable)
                                         <div class="inline-edit-container" data-component-type="tunjangan" data-component-code="{{ $componentCode }}" data-component-index="{{ $tunjangan['index'] }}">
                                             <div class="view-mode">
