@@ -143,33 +143,70 @@
                     <span class="text-sm font-bold text-gray-900">Rp {{ number_format($payroll->gaji_pokok, 0, ',', '.') }}</span>
                 </div>
 
-                <!-- Tunjangan -->
-                @if($payroll->tunjangan_detail && count($payroll->tunjangan_detail) > 0)
-                    <div class="bg-green-50 rounded-lg p-4">
-                        <p class="text-sm font-semibold text-green-900 mb-2">Tunjangan</p>
-                        @foreach($payroll->tunjangan_detail as $index => $tunjangan)
+                <!-- Komponen Gaji Fixed -->
+                @if($fixedAllowances && count($fixedAllowances) > 0)
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <p class="text-sm font-semibold text-gray-900 mb-2">Komponen Gaji Tetap</p>
+                        @foreach($fixedAllowances as $allowance)
+                            <div class="flex items-center justify-between py-2 text-xs">
+                                <span class="text-gray-700">{{ $allowance['nama'] }}</span>
+                                <span class="font-medium text-gray-700">+ Rp {{ number_format($allowance['nilai'], 0, ',', '.') }}</span>
+                            </div>
+                        @endforeach
+                        <div class="flex items-center justify-between pt-2 mt-2 border-t border-gray-300">
+                            <span class="text-sm font-semibold text-gray-900">Total Komponen Tetap</span>
+                            <span class="text-sm font-bold text-gray-700">Rp {{ number_format($totalFixedAllowances, 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Upah Tetap (Total) -->
+                <div class="flex items-center justify-between py-3 bg-blue-100 rounded-lg px-4 border border-blue-200">
+                    <span class="text-sm font-bold text-blue-900">
+                        <i class="fas fa-calculator mr-2"></i>
+                        Upah Tetap (Gaji Pokok + Komponen Tetap)
+                    </span>
+                    <span class="text-lg font-bold text-blue-900">Rp {{ number_format($upahTetap, 0, ',', '.') }}</span>
+                </div>
+
+                <!-- Upah Tidak Tetap (Variable) - Always show this section -->
+                <div class="bg-green-50 rounded-lg p-4">
+                    <p class="text-sm font-semibold text-green-900 mb-2">Upah Tidak Tetap</p>
+                    
+                    @if($variableTunjangan && count($variableTunjangan) > 0)
+                        @foreach($variableTunjangan as $tunjangan)
                             @php
                                 // For existing payrolls without kode, use nama as fallback
                                 $componentCode = $tunjangan['kode'] ?? $tunjangan['nama'];
                                 $isEditable = isset($komponenPayrolls[$componentCode]) && $komponenPayrolls[$componentCode]->boleh_edit && $payroll->status == 'draft';
+                                $isFromTemplate = ($tunjangan['source'] ?? '') === 'template_missing';
                             @endphp
-                            <div class="flex items-center justify-between py-2 text-xs">
+                            <div class="flex items-center justify-between py-2 text-xs {{ $isFromTemplate ? 'bg-yellow-50 border border-yellow-200 rounded px-2' : '' }}">
                                 <span class="text-gray-700">
                                     {{ $tunjangan['nama'] }}
-                                    @if($tunjangan['tipe'] == 'Persentase')
-                                        ({{ number_format($tunjangan['nilai_dasar'], 0) }}%)
-                                    @elseif($tunjangan['tipe'] == 'Per Hari Masuk')
-                                        ({{ number_format($tunjangan['nilai_dasar'], 0) }} x {{ $payroll->hari_masuk }} hari)
-                                    @elseif($tunjangan['tipe'] == 'Lembur Per Hari')
-                                        ({{ number_format($tunjangan['nilai_dasar'], 0) }} x {{ $payroll->hari_lembur }} hari)
+                                    @if($isFromTemplate)
+                                        <span class="text-xs text-yellow-600 ml-1">(Belum di payroll - dari template)</span>
+                                    @else
+                                        @if($tunjangan['tipe'] == 'Persentase')
+                                            ({{ number_format($tunjangan['nilai_dasar'], 0) }}%)
+                                        @elseif($tunjangan['tipe'] == 'Per Hari Masuk')
+                                            ({{ number_format($tunjangan['nilai_dasar'], 0) }} x {{ $payroll->hari_masuk }} hari)
+                                        @elseif($tunjangan['tipe'] == 'Lembur Per Hari')
+                                            ({{ number_format($tunjangan['nilai_dasar'], 0) }} x {{ $payroll->hari_lembur }} hari)
+                                        @endif
                                     @endif
-                                    @if($isEditable)
+                                    @if($isEditable && !$isFromTemplate)
                                         <i class="fas fa-edit text-blue-500 ml-1" title="Bisa diedit"></i>
                                     @endif
                                 </span>
                                 <div class="flex items-center gap-2">
-                                    @if($isEditable)
-                                        <div class="inline-edit-container" data-component-type="tunjangan" data-component-code="{{ $componentCode }}" data-component-index="{{ $index }}">
+                                    @if($isFromTemplate)
+                                        <span class="font-medium text-yellow-600">+ Rp {{ number_format($tunjangan['nilai_hitung'], 0, ',', '.') }}</span>
+                                        <button type="button" class="text-xs text-blue-600 hover:text-blue-800" onclick="Swal.fire({icon: 'info', title: 'Info', text: 'Regenerate payroll untuk menerapkan komponen ini', confirmButtonText: 'OK'})">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    @elseif($isEditable)
+                                        <div class="inline-edit-container" data-component-type="tunjangan" data-component-code="{{ $componentCode }}" data-component-index="{{ $tunjangan['index'] }}">
                                             <div class="view-mode">
                                                 <span class="component-value font-medium text-green-700 cursor-pointer hover:bg-green-100 px-2 py-1 rounded" onclick="enableEdit(this)">
                                                     + Rp {{ number_format($tunjangan['nilai_hitung'], 0, ',', '.') }}
@@ -190,96 +227,306 @@
                                 </div>
                             </div>
                         @endforeach
-                        <div class="flex items-center justify-between pt-2 mt-2 border-t border-green-200">
-                            <span class="text-sm font-semibold text-green-900">Total Tunjangan</span>
-                            <span class="text-sm font-bold text-green-700" id="total-tunjangan">Rp {{ number_format($payroll->total_tunjangan, 0, ',', '.') }}</span>
+                    @else
+                        <div class="flex items-center justify-between py-2 text-xs">
+                            <span class="text-gray-500 italic">Tidak ada komponen upah tidak tetap</span>
+                            <span class="font-medium text-gray-500">Rp 0</span>
                         </div>
+                    @endif
+                    <div class="flex items-center justify-between pt-2 mt-2 border-t border-green-200">
+                        <span class="text-sm font-semibold text-green-900">Total Upah Tidak Tetap</span>
+                        <span class="text-sm font-bold text-green-700" id="total-tunjangan">Rp {{ number_format($totalVariableTunjangan, 0, ',', '.') }}</span>
                     </div>
-                @endif
+                </div>
 
                 <!-- BPJS -->
                 <div class="bg-blue-50 rounded-lg p-4">
                     <p class="text-sm font-semibold text-blue-900 mb-2">BPJS (Ditanggung Perusahaan)</p>
+                    
+                    <!-- BPJS Kesehatan -->
                     <div class="flex items-center justify-between py-2 text-xs">
-                        <span class="text-gray-700">BPJS Kesehatan</span>
-                        <span class="font-medium text-blue-700">+ Rp {{ number_format($payroll->bpjs_kesehatan, 0, ',', '.') }}</span>
+                        <div class="flex flex-col">
+                            <span class="text-gray-700">BPJS Kesehatan</span>
+                            @if($payrollSetting)
+                                <span class="text-xs text-gray-500">{{ number_format($payrollSetting->bpjs_kesehatan_perusahaan, 2) }}% dari upah tetap</span>
+                            @endif
+                        </div>
+                        @php
+                            // Calculate BPJS Kesehatan based on upah tetap
+                            $bpjsKesehatanCalculated = $payrollSetting ? ($upahTetap * $payrollSetting->bpjs_kesehatan_perusahaan) / 100 : $payroll->bpjs_kesehatan;
+                        @endphp
+                        <span class="font-medium text-blue-700">+ Rp {{ number_format($bpjsKesehatanCalculated, 0, ',', '.') }}</span>
                     </div>
-                    <div class="flex items-center justify-between py-2 text-xs">
-                        <span class="text-gray-700">BPJS Ketenagakerjaan (JHT + JP + JKK + JKM)</span>
-                        <span class="font-medium text-blue-700">+ Rp {{ number_format($payroll->bpjs_ketenagakerjaan, 0, ',', '.') }}</span>
+                    
+                    <!-- BPJS Ketenagakerjaan Detail -->
+                    <div class="py-2 text-xs border-t border-blue-200 mt-2">
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex flex-col">
+                                <span class="text-gray-700 font-medium">BPJS Ketenagakerjaan</span>
+                                <span class="text-xs text-gray-500">Breakdown komponen:</span>
+                            </div>
+                            @php
+                                // Calculate total BPJS Ketenagakerjaan based on upah tetap
+                                $bpjsKetenagakerjaanCalculated = $payrollSetting ? 
+                                    ($upahTetap * ($payrollSetting->bpjs_jht_perusahaan + $payrollSetting->bpjs_jp_perusahaan + $payrollSetting->bpjs_jkk_perusahaan + $payrollSetting->bpjs_jkm_perusahaan)) / 100 : 
+                                    $payroll->bpjs_ketenagakerjaan;
+                            @endphp
+                            <span class="font-medium text-blue-700">+ Rp {{ number_format($bpjsKetenagakerjaanCalculated, 0, ',', '.') }}</span>
+                        </div>
+                        
+                        @if($payrollSetting)
+                            @php
+                                // Calculate individual BPJS components based on upah tetap (gaji pokok + fixed allowances)
+                                $jhtPerusahaan = ($upahTetap * $payrollSetting->bpjs_jht_perusahaan) / 100;
+                                $jpPerusahaan = ($upahTetap * $payrollSetting->bpjs_jp_perusahaan) / 100;
+                                $jkkPerusahaan = ($upahTetap * $payrollSetting->bpjs_jkk_perusahaan) / 100;
+                                $jkmPerusahaan = ($upahTetap * $payrollSetting->bpjs_jkm_perusahaan) / 100;
+                            @endphp
+                            
+                            <!-- JHT (Jaminan Hari Tua) -->
+                            <div class="flex items-center justify-between py-1 ml-4">
+                                <div class="flex flex-col">
+                                    <span class="text-gray-600">• JHT (Jaminan Hari Tua)</span>
+                                    <span class="text-xs text-gray-400">{{ number_format($payrollSetting->bpjs_jht_perusahaan, 2) }}% dari upah tetap</span>
+                                </div>
+                                <span class="text-xs text-blue-600">Rp {{ number_format($jhtPerusahaan, 0, ',', '.') }}</span>
+                            </div>
+                            
+                            <!-- JP (Jaminan Pensiun) -->
+                            <div class="flex items-center justify-between py-1 ml-4">
+                                <div class="flex flex-col">
+                                    <span class="text-gray-600">• JP (Jaminan Pensiun)</span>
+                                    <span class="text-xs text-gray-400">{{ number_format($payrollSetting->bpjs_jp_perusahaan, 2) }}% dari upah tetap</span>
+                                </div>
+                                <span class="text-xs text-blue-600">Rp {{ number_format($jpPerusahaan, 0, ',', '.') }}</span>
+                            </div>
+                            
+                            <!-- JKK (Jaminan Kecelakaan Kerja) -->
+                            <div class="flex items-center justify-between py-1 ml-4">
+                                <div class="flex flex-col">
+                                    <span class="text-gray-600">• JKK (Jaminan Kecelakaan Kerja)</span>
+                                    <span class="text-xs text-gray-400">{{ number_format($payrollSetting->bpjs_jkk_perusahaan, 2) }}% dari upah tetap</span>
+                                </div>
+                                <span class="text-xs text-blue-600">Rp {{ number_format($jkkPerusahaan, 0, ',', '.') }}</span>
+                            </div>
+                            
+                            <!-- JKM (Jaminan Kematian) -->
+                            <div class="flex items-center justify-between py-1 ml-4">
+                                <div class="flex flex-col">
+                                    <span class="text-gray-600">• JKM (Jaminan Kematian)</span>
+                                    <span class="text-xs text-gray-400">{{ number_format($payrollSetting->bpjs_jkm_perusahaan, 2) }}% dari upah tetap</span>
+                                </div>
+                                <span class="text-xs text-blue-600">Rp {{ number_format($jkmPerusahaan, 0, ',', '.') }}</span>
+                            </div>
+                        @endif
                     </div>
+                    
                     <div class="flex items-center justify-between pt-2 mt-2 border-t border-blue-200">
                         <span class="text-sm font-semibold text-blue-900">Total BPJS Perusahaan</span>
-                        <span class="text-sm font-bold text-blue-700">+ Rp {{ number_format($payroll->bpjs_kesehatan + $payroll->bpjs_ketenagakerjaan, 0, ',', '.') }}</span>
+                        @php
+                            $totalBpjsCalculated = $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
+                        @endphp
+                        <span class="text-sm font-bold text-blue-700">+ Rp {{ number_format($totalBpjsCalculated, 0, ',', '.') }}</span>
                     </div>
                 </div>
 
                 <!-- Gaji Bruto -->
+                @php
+                    // Calculate Gaji Bruto based on corrected values
+                    $gajiBrutoRecalculated = $upahTetap + $totalVariableTunjangan + $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
+                @endphp
                 <div class="flex items-center justify-between py-3 bg-gray-100 rounded-lg px-4">
                     <span class="text-sm font-bold text-gray-900">Gaji Bruto</span>
-                    <span class="text-lg font-bold text-gray-900" id="gaji-bruto">Rp {{ number_format($payroll->gaji_bruto, 0, ',', '.') }}</span>
+                    <span class="text-lg font-bold text-gray-900" id="gaji-bruto">Rp {{ number_format($gajiBrutoRecalculated, 0, ',', '.') }}</span>
                 </div>
 
                 <!-- Potongan -->
                 @if($payroll->potongan_detail && count($payroll->potongan_detail) > 0)
                     <div class="bg-red-50 rounded-lg p-4">
                         <p class="text-sm font-semibold text-red-900 mb-2">Potongan</p>
+                        @php
+                            $totalPotonganRecalculated = 0;
+                        @endphp
                         @foreach($payroll->potongan_detail as $index => $potongan)
                             @php
                                 // For existing payrolls without kode, use nama as fallback
                                 $componentCode = $potongan['kode'] ?? $potongan['nama'];
                                 $isEditable = isset($komponenPayrolls[$componentCode]) && $komponenPayrolls[$componentCode]->boleh_edit && $payroll->status == 'draft';
+                                
+                                // Recalculate BPJS employee deductions based on upah tetap
+                                $displayValue = $potongan['nilai_hitung'];
+                                $potonganName = strtolower(trim($potongan['nama']));
+                                
+                                if (strpos($potonganName, 'bpjs kesehatan') !== false && $payrollSetting) {
+                                    // BPJS Kesehatan employee portion (1%)
+                                    $displayValue = ($upahTetap * $payrollSetting->bpjs_kesehatan_karyawan) / 100;
+                                } elseif (strpos($potonganName, 'bpjs ketenagakerjaan') !== false && $payrollSetting) {
+                                    // BPJS Ketenagakerjaan employee portion (JHT + JP)
+                                    $displayValue = ($upahTetap * ($payrollSetting->bpjs_jht_karyawan + $payrollSetting->bpjs_jp_karyawan)) / 100;
+                                }
+                                
+                                $totalPotonganRecalculated += $displayValue;
                             @endphp
                             <div class="flex items-center justify-between py-2 text-xs">
                                 <span class="text-gray-700">
                                     {{ $potongan['nama'] }}
                                     @if($potongan['tipe'] == 'Persentase')
-                                        ({{ number_format($potongan['nilai_dasar'], 0) }}%)
+                                        @if(strpos($potonganName, 'bpjs') !== false)
+                                            ({{ number_format($potongan['nilai_dasar'], 0) }}% dari upah tetap)
+                                        @else
+                                            ({{ number_format($potongan['nilai_dasar'], 0) }}%)
+                                        @endif
                                     @endif
                                     @if($isEditable)
                                         <i class="fas fa-edit text-blue-500 ml-1" title="Bisa diedit"></i>
                                     @endif
                                 </span>
                                 <div class="flex items-center gap-2">
-                                    @if($isEditable)
+                                    @if($isEditable && strpos($potonganName, 'bpjs') === false)
                                         <div class="inline-edit-container" data-component-type="potongan" data-component-code="{{ $componentCode }}" data-component-index="{{ $index }}">
                                             <div class="view-mode">
                                                 <span class="component-value font-medium text-red-700 cursor-pointer hover:bg-red-100 px-2 py-1 rounded" onclick="enableEdit(this)">
-                                                    - Rp {{ number_format($potongan['nilai_hitung'], 0, ',', '.') }}
+                                                    - Rp {{ number_format($displayValue, 0, ',', '.') }}
                                                 </span>
                                             </div>
                                             <div class="edit-mode hidden">
                                                 <input type="number" 
                                                        class="component-input w-24 px-2 py-1 text-xs border border-red-500 rounded focus:ring-1 focus:ring-red-500" 
-                                                       value="{{ $potongan['nilai_hitung'] }}"
-                                                       data-original="{{ $potongan['nilai_hitung'] }}"
+                                                       value="{{ $displayValue }}"
+                                                       data-original="{{ $displayValue }}"
                                                        onblur="saveEdit(this)"
                                                        onkeypress="handleKeyPress(event, this)">
                                             </div>
                                         </div>
                                     @else
-                                        <span class="font-medium text-red-700">- Rp {{ number_format($potongan['nilai_hitung'], 0, ',', '.') }}</span>
+                                        <span class="font-medium text-red-700">- Rp {{ number_format($displayValue, 0, ',', '.') }}</span>
+                                        @if(strpos($potonganName, 'bpjs') !== false)
+                                            <span class="text-xs text-blue-600 ml-1" title="Dihitung otomatis dari upah tetap">
+                                                <i class="fas fa-calculator"></i>
+                                            </span>
+                                        @endif
                                     @endif
                                 </div>
                             </div>
                         @endforeach
+                        
+                        <!-- Add BPJS Perusahaan as deductions (dipotong dari gaji karyawan) -->
+                        <div class="border-t border-red-200 pt-2 mt-2">
+                            <p class="text-xs text-red-800 mb-2 font-medium">BPJS Ditanggung Perusahaan (Dipotong dari Gaji)</p>
+                            
+                            <!-- BPJS Kesehatan Perusahaan -->
+                            <div class="flex items-center justify-between py-2 text-xs">
+                                <span class="text-gray-700">
+                                    BPJS Kesehatan Perusahaan (4% dari upah tetap)
+                                    <span class="text-xs text-red-600 ml-1" title="Dipotong dari gaji untuk bayar ke perusahaan">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                </span>
+                                <span class="font-medium text-red-700">- Rp {{ number_format($bpjsKesehatanCalculated, 0, ',', '.') }}</span>
+                            </div>
+                            
+                            <!-- BPJS Ketenagakerjaan Perusahaan -->
+                            <div class="flex items-center justify-between py-2 text-xs">
+                                <span class="text-gray-700">
+                                    BPJS Ketenagakerjaan Perusahaan (6.24% dari upah tetap)
+                                    <span class="text-xs text-red-600 ml-1" title="Dipotong dari gaji untuk bayar ke perusahaan">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                </span>
+                                <span class="font-medium text-red-700">- Rp {{ number_format($bpjsKetenagakerjaanCalculated, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                        
+                        @php
+                            // Add BPJS perusahaan to total potongan
+                            $totalPotonganRecalculated += $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
+                        @endphp
+                        
                         <div class="flex items-center justify-between pt-2 mt-2 border-t border-red-200">
                             <span class="text-sm font-semibold text-red-900">Total Potongan</span>
-                            <span class="text-sm font-bold text-red-700" id="total-potongan">Rp {{ number_format($payroll->total_potongan, 0, ',', '.') }}</span>
+                            <span class="text-sm font-bold text-red-700" id="total-potongan">Rp {{ number_format($totalPotonganRecalculated, 0, ',', '.') }}</span>
                         </div>
                     </div>
                 @endif
 
                 <!-- Pajak -->
                 <div class="flex items-center justify-between py-3 border-b border-gray-200">
-                    <span class="text-sm font-medium text-gray-700">Pajak PPh 21</span>
-                    <span class="text-sm font-bold text-red-600">- Rp {{ number_format($payroll->pajak_pph21, 0, ',', '.') }}</span>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-medium text-gray-700">Pajak PPh 21</span>
+                        <span class="text-xs text-gray-500">Dihitung dari upah tetap</span>
+                    </div>
+                    @php
+                        // Recalculate PPh 21 based on upah tetap if payroll setting exists
+                        $pajakPph21Calculated = $payroll->pajak_pph21; // Default to stored value
+                        
+                        if ($payrollSetting && $payrollSetting->pph21_bracket1_rate > 0) {
+                            // Use upah tetap instead of gaji pokok for PPh 21 calculation
+                            $gajiKotorSebelumPajak = $upahTetap + $totalVariableTunjangan + $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated - $totalPotonganRecalculated;
+                            
+                            // Get PTKP from karyawan
+                            $ptkpValue = $payroll->karyawan->ptkp_value ?? 54000000; // Default TK/0
+                            
+                            // Calculate annual gross income
+                            $penghasilanBrutoTahunan = $gajiKotorSebelumPajak * 12;
+                            
+                            // Calculate net income (gross - job cost 5%, max 6M/year)
+                            $biayaJabatan = min($penghasilanBrutoTahunan * 0.05, 6000000);
+                            $penghasilanNettoTahunan = $penghasilanBrutoTahunan - $biayaJabatan;
+                            
+                            // Calculate taxable income (PKP) = Net - PTKP
+                            $pkp = max(0, $penghasilanNettoTahunan - $ptkpValue);
+                            
+                            // Calculate PPh 21 with progressive rates
+                            $pph21Tahunan = 0;
+                            
+                            if ($pkp > 0) {
+                                // Layer 1: 0 - 60 million
+                                if ($pkp <= 60000000) {
+                                    $pph21Tahunan = $pkp * ($payrollSetting->pph21_bracket1_rate / 100);
+                                } 
+                                // Layer 2: 60 - 250 million
+                                else if ($pkp <= 250000000) {
+                                    $pph21Tahunan = (60000000 * ($payrollSetting->pph21_bracket1_rate / 100)) +
+                                                   (($pkp - 60000000) * ($payrollSetting->pph21_bracket2_rate / 100));
+                                }
+                                // Layer 3: 250 - 500 million
+                                else if ($pkp <= 500000000) {
+                                    $pph21Tahunan = (60000000 * ($payrollSetting->pph21_bracket1_rate / 100)) +
+                                                   (190000000 * ($payrollSetting->pph21_bracket2_rate / 100)) +
+                                                   (($pkp - 250000000) * ($payrollSetting->pph21_bracket3_rate / 100));
+                                }
+                                // Layer 4: 500 million - 5 billion
+                                else if ($pkp <= 5000000000) {
+                                    $pph21Tahunan = (60000000 * ($payrollSetting->pph21_bracket1_rate / 100)) +
+                                                   (190000000 * ($payrollSetting->pph21_bracket2_rate / 100)) +
+                                                   (250000000 * ($payrollSetting->pph21_bracket3_rate / 100)) +
+                                                   (($pkp - 500000000) * ($payrollSetting->pph21_bracket4_rate / 100));
+                                }
+                                // Layer 5: > 5 billion
+                                else {
+                                    $pph21Tahunan = (60000000 * ($payrollSetting->pph21_bracket1_rate / 100)) +
+                                                   (190000000 * ($payrollSetting->pph21_bracket2_rate / 100)) +
+                                                   (250000000 * ($payrollSetting->pph21_bracket3_rate / 100)) +
+                                                   (4500000000 * ($payrollSetting->pph21_bracket4_rate / 100)) +
+                                                   (($pkp - 5000000000) * ($payrollSetting->pph21_bracket5_rate / 100));
+                                }
+                            }
+                            
+                            // PPh 21 per month
+                            $pajakPph21Calculated = $pph21Tahunan / 12;
+                        }
+                    @endphp
+                    <span class="text-sm font-bold text-red-600">- Rp {{ number_format($pajakPph21Calculated, 0, ',', '.') }}</span>
                 </div>
 
                 <!-- Gaji Netto -->
+                @php
+                    // Recalculate Gaji Netto based on corrected values
+                    $gajiNettoRecalculated = $gajiBrutoRecalculated - $totalPotonganRecalculated - $pajakPph21Calculated;
+                @endphp
                 <div class="flex items-center justify-between py-4 bg-gradient-to-r from-green-500 to-green-600 rounded-lg px-4">
                     <span class="text-base font-bold text-white">Gaji Netto (Take Home Pay)</span>
-                    <span class="text-2xl font-bold text-white" id="gaji-netto">Rp {{ number_format($payroll->gaji_netto, 0, ',', '.') }}</span>
+                    <span class="text-2xl font-bold text-white" id="gaji-netto">Rp {{ number_format($gajiNettoRecalculated, 0, ',', '.') }}</span>
                 </div>
             </div>
         </div>

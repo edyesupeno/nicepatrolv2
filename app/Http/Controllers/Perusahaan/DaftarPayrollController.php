@@ -113,6 +113,81 @@ class DaftarPayrollController extends Controller
             'paidBy:id,name'
         ]);
         
+        // Get payroll settings for BPJS percentage display
+        $payrollSetting = \App\Models\PayrollSetting::first();
+        
+        // Get fixed allowances for this employee (same logic as in LemburController)
+        $fixedAllowances = $this->getEmployeeFixedAllowances($payroll->karyawan);
+        $totalFixedAllowances = array_sum(array_column($fixedAllowances, 'nilai'));
+        $upahTetap = $payroll->gaji_pokok + $totalFixedAllowances;
+        
+        // Filter tunjangan_detail to show Variable category components from database
+        $variableTunjangan = [];
+        $totalVariableTunjangan = 0;
+        
+        // Get Variable components that should be included based on templates
+        $expectedVariableComponents = $this->getExpectedVariableComponents($payroll->karyawan);
+        
+        // First, process existing tunjangan_detail
+        if ($payroll->tunjangan_detail && count($payroll->tunjangan_detail) > 0) {
+            foreach ($payroll->tunjangan_detail as $index => $tunjangan) {
+                // Check component category from database
+                $componentCode = $tunjangan['kode'] ?? $tunjangan['nama'];
+                $komponenPayroll = \App\Models\KomponenPayroll::where(function($q) use ($componentCode, $tunjangan) {
+                    $q->where('kode', $componentCode)
+                      ->orWhere('nama_komponen', $componentCode)
+                      ->orWhere('nama_komponen', $tunjangan['nama']);
+                })->first();
+                
+                $isVariable = false;
+                if ($komponenPayroll) {
+                    // Check if kategori is Variable
+                    $isVariable = ($komponenPayroll->kategori === 'Variable');
+                } else {
+                    // If not found in master, check by name pattern (fallback)
+                    $tunjanganNameLower = strtolower(trim($tunjangan['nama']));
+                    // Common variable allowances patterns
+                    $variablePatterns = ['uang makan', 'transport', 'insentif', 'bonus', 'komisi', 'makan'];
+                    foreach ($variablePatterns as $pattern) {
+                        if (strpos($tunjanganNameLower, $pattern) !== false) {
+                            $isVariable = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if ($isVariable) {
+                    $variableTunjangan[] = array_merge($tunjangan, ['index' => $index, 'source' => 'payroll_data']);
+                    $totalVariableTunjangan += $tunjangan['nilai_hitung'];
+                }
+            }
+        }
+        
+        // Then, add missing Variable components from templates that are not in payroll yet
+        foreach ($expectedVariableComponents as $expectedComponent) {
+            // Check if this component is already in variableTunjangan
+            $alreadyExists = false;
+            foreach ($variableTunjangan as $existing) {
+                if (strtolower(trim($existing['nama'])) === strtolower(trim($expectedComponent['nama']))) {
+                    $alreadyExists = true;
+                    break;
+                }
+            }
+            
+            if (!$alreadyExists) {
+                $variableTunjangan[] = [
+                    'nama' => $expectedComponent['nama'],
+                    'kode' => $expectedComponent['kode'] ?? 'TEMPLATE',
+                    'tipe' => $expectedComponent['tipe'] ?? 'Tetap',
+                    'nilai_dasar' => $expectedComponent['nilai'],
+                    'nilai_hitung' => $expectedComponent['nilai'],
+                    'index' => 'template_' . $expectedComponent['id'],
+                    'source' => 'template_missing'
+                ];
+                $totalVariableTunjangan += $expectedComponent['nilai'];
+            }
+        }
+        
         // Get kehadiran data based on periode_start and periode_end
         // If periode_start/end not set, fallback to periode month
         if ($payroll->periode_start && $payroll->periode_end) {
@@ -145,7 +220,7 @@ class DaftarPayrollController extends Controller
             ->get()
             ->keyBy('kode');
         
-        return view('perusahaan.payroll.detail', compact('payroll', 'kehadirans', 'komponenPayrolls'));
+        return view('perusahaan.payroll.detail', compact('payroll', 'kehadirans', 'komponenPayrolls', 'payrollSetting', 'fixedAllowances', 'totalFixedAllowances', 'upahTetap', 'variableTunjangan', 'totalVariableTunjangan'));
     }
     
     public function approve(Request $request, Payroll $payroll)
@@ -291,16 +366,54 @@ class DaftarPayrollController extends Controller
                 $totalField => $newTotal,
             ];
             
-            // Recalculate gaji_bruto and gaji_netto
+            // Recalculate gaji_bruto and gaji_netto using upah tetap calculation
             if ($componentType === 'tunjangan') {
-                // Recalculate gaji_bruto: gaji_pokok + total_tunjangan + bpjs
-                $updateData['gaji_bruto'] = $payroll->gaji_pokok + $newTotal + ($payroll->bpjs_kesehatan + $payroll->bpjs_ketenagakerjaan);
-                // Recalculate gaji_netto: gaji_bruto - total_potongan - pajak
-                $updateData['gaji_netto'] = $updateData['gaji_bruto'] - $payroll->total_potongan - $payroll->pajak_pph21;
+                // Get fixed allowances for upah tetap calculation
+                $fixedAllowances = $this->getEmployeeFixedAllowances($payroll->karyawan);
+                $totalFixedAllowances = array_sum(array_column($fixedAllowances, 'nilai'));
+                $upahTetap = $payroll->gaji_pokok + $totalFixedAllowances;
+                
+                // Get payroll setting for BPJS calculation
+                $payrollSetting = \App\Models\PayrollSetting::first();
+                
+                // Calculate BPJS based on upah tetap
+                $bpjsKesehatanCalculated = $payrollSetting ? ($upahTetap * $payrollSetting->bpjs_kesehatan_perusahaan) / 100 : $payroll->bpjs_kesehatan;
+                $bpjsKetenagakerjaanCalculated = $payrollSetting ? 
+                    ($upahTetap * ($payrollSetting->bpjs_jht_perusahaan + $payrollSetting->bpjs_jp_perusahaan + $payrollSetting->bpjs_jkk_perusahaan + $payrollSetting->bpjs_jkm_perusahaan)) / 100 : 
+                    $payroll->bpjs_ketenagakerjaan;
+                
+                // Recalculate gaji_bruto: upah_tetap + total_tunjangan_variable + bpjs_calculated
+                $updateData['gaji_bruto'] = $upahTetap + $newTotal + $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
+                
+                // Calculate total potongan including BPJS employee + BPJS perusahaan
+                $bpjsKaryawanKesehatan = $payrollSetting ? ($upahTetap * $payrollSetting->bpjs_kesehatan_karyawan) / 100 : 0;
+                $bpjsKaryawanKetenagakerjaan = $payrollSetting ? ($upahTetap * ($payrollSetting->bpjs_jht_karyawan + $payrollSetting->bpjs_jp_karyawan)) / 100 : 0;
+                $totalPotonganRecalculated = $payroll->total_potongan + $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated - ($payroll->bpjs_kesehatan + $payroll->bpjs_ketenagakerjaan);
+                
+                // Recalculate gaji_netto: gaji_bruto - total_potongan_recalculated - pajak
+                $updateData['gaji_netto'] = $updateData['gaji_bruto'] - $totalPotonganRecalculated - $payroll->pajak_pph21;
             } else { // potongan
-                // Gaji bruto doesn't change when potongan changes
-                // Only recalculate gaji_netto: gaji_bruto - total_potongan - pajak
-                $updateData['gaji_netto'] = $payroll->gaji_bruto - $newTotal - $payroll->pajak_pph21;
+                // For potongan changes, gaji bruto stays the same but recalculate with upah tetap
+                $fixedAllowances = $this->getEmployeeFixedAllowances($payroll->karyawan);
+                $totalFixedAllowances = array_sum(array_column($fixedAllowances, 'nilai'));
+                $upahTetap = $payroll->gaji_pokok + $totalFixedAllowances;
+                
+                $payrollSetting = \App\Models\PayrollSetting::first();
+                $bpjsKesehatanCalculated = $payrollSetting ? ($upahTetap * $payrollSetting->bpjs_kesehatan_perusahaan) / 100 : $payroll->bpjs_kesehatan;
+                $bpjsKetenagakerjaanCalculated = $payrollSetting ? 
+                    ($upahTetap * ($payrollSetting->bpjs_jht_perusahaan + $payrollSetting->bpjs_jp_perusahaan + $payrollSetting->bpjs_jkk_perusahaan + $payrollSetting->bpjs_jkm_perusahaan)) / 100 : 
+                    $payroll->bpjs_ketenagakerjaan;
+                
+                // Gaji bruto with upah tetap calculation
+                $totalTunjangan = $payroll->total_tunjangan;
+                $gajiBrutoRecalculated = $upahTetap + $totalTunjangan + $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
+                
+                // Total potongan includes BPJS perusahaan
+                $totalPotonganRecalculated = $newTotal + $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
+                
+                // Only recalculate gaji_netto: gaji_bruto - total_potongan_recalculated - pajak
+                $updateData['gaji_netto'] = $gajiBrutoRecalculated - $totalPotonganRecalculated - $payroll->pajak_pph21;
+                $updateData['gaji_bruto'] = $gajiBrutoRecalculated; // Update gaji bruto to show correct value
             }
             
             $payroll->update($updateData);
@@ -382,5 +495,219 @@ class DaftarPayrollController extends Controller
         }
         
         return $stats;
+    }
+    
+    /**
+     * Get all fixed allowances for an employee
+     */
+    private function getEmployeeFixedAllowances($karyawan)
+    {
+        $allowances = [];
+        
+        // Get employee-specific allowance templates (highest priority)
+        $employeeTemplates = \App\Models\TemplateKomponenGaji::with('komponenPayroll')
+            ->where('karyawan_id', $karyawan->id)
+            ->where('aktif', true)
+            ->whereHas('komponenPayroll', function($q) {
+                $q->where('jenis', 'Tunjangan')
+                  ->where('kategori', 'Fixed')
+                  ->where('aktif', true);
+            })
+            ->get();
+            
+        foreach ($employeeTemplates as $template) {
+            $allowances[$template->komponen_payroll_id] = [
+                'nama' => $template->komponenPayroll->nama_komponen,
+                'nilai' => $template->nilai,
+                'source' => 'employee_specific'
+            ];
+        }
+        
+        // Get jabatan-specific allowances (if not overridden by employee-specific)
+        if ($karyawan->jabatan_id) {
+            $jabatanTemplates = \App\Models\TemplateKomponenGaji::with('komponenPayroll')
+                ->where('jabatan_id', $karyawan->jabatan_id)
+                ->where('aktif', true)
+                ->whereHas('komponenPayroll', function($q) {
+                    $q->where('jenis', 'Tunjangan')
+                      ->where('kategori', 'Fixed')
+                      ->where('aktif', true);
+                })
+                ->get();
+                
+            foreach ($jabatanTemplates as $template) {
+                // Only add if not already set by employee-specific template
+                if (!isset($allowances[$template->komponen_payroll_id])) {
+                    $allowances[$template->komponen_payroll_id] = [
+                        'nama' => $template->komponenPayroll->nama_komponen,
+                        'nilai' => $template->nilai,
+                        'source' => 'jabatan_specific'
+                    ];
+                }
+            }
+        }
+        
+        // Get project-specific allowances (if not overridden)
+        if ($karyawan->project_id) {
+            $projectTemplates = \App\Models\TemplateKomponenGaji::with('komponenPayroll')
+                ->where('project_id', $karyawan->project_id)
+                ->where('aktif', true)
+                ->whereHas('komponenPayroll', function($q) {
+                    $q->where('jenis', 'Tunjangan')
+                      ->where('kategori', 'Fixed')
+                      ->where('aktif', true);
+                })
+                ->get();
+                
+            foreach ($projectTemplates as $template) {
+                // Only add if not already set by higher priority templates
+                if (!isset($allowances[$template->komponen_payroll_id])) {
+                    $allowances[$template->komponen_payroll_id] = [
+                        'nama' => $template->komponenPayroll->nama_komponen,
+                        'nilai' => $template->nilai,
+                        'source' => 'project_specific'
+                    ];
+                }
+            }
+        }
+        
+        // Get default/general allowances (lowest priority)
+        $defaultTemplates = \App\Models\TemplateKomponenGaji::with('komponenPayroll')
+            ->whereNull('karyawan_id')
+            ->whereNull('jabatan_id')
+            ->whereNull('project_id')
+            ->where('aktif', true)
+            ->whereHas('komponenPayroll', function($q) {
+                $q->where('jenis', 'Tunjangan')
+                  ->where('kategori', 'Fixed')
+                  ->where('aktif', true);
+            })
+            ->get();
+            
+        foreach ($defaultTemplates as $template) {
+            // Only add if not already set by higher priority templates
+            if (!isset($allowances[$template->komponen_payroll_id])) {
+                $allowances[$template->komponen_payroll_id] = [
+                    'nama' => $template->komponenPayroll->nama_komponen,
+                    'nilai' => $template->nilai,
+                    'source' => 'default'
+                ];
+            }
+        }
+        
+        return $allowances;
+    }
+    
+    /**
+     * Get expected Variable components based on templates for an employee
+     */
+    private function getExpectedVariableComponents($karyawan)
+    {
+        $components = [];
+        
+        // Get employee-specific Variable templates (highest priority)
+        $employeeTemplates = \App\Models\TemplateKomponenGaji::with('komponenPayroll')
+            ->where('karyawan_id', $karyawan->id)
+            ->where('aktif', true)
+            ->whereHas('komponenPayroll', function($q) {
+                $q->where('jenis', 'Tunjangan')
+                  ->where('kategori', 'Variable')
+                  ->where('aktif', true);
+            })
+            ->get();
+            
+        foreach ($employeeTemplates as $template) {
+            $components[$template->komponen_payroll_id] = [
+                'id' => $template->id,
+                'nama' => $template->komponenPayroll->nama_komponen,
+                'kode' => $template->komponenPayroll->kode,
+                'nilai' => $template->nilai,
+                'tipe' => $template->komponenPayroll->tipe_perhitungan ?? 'Tetap',
+                'source' => 'employee_specific'
+            ];
+        }
+        
+        // Get jabatan-specific Variable templates (if not overridden by employee-specific)
+        if ($karyawan->jabatan_id) {
+            $jabatanTemplates = \App\Models\TemplateKomponenGaji::with('komponenPayroll')
+                ->where('jabatan_id', $karyawan->jabatan_id)
+                ->where('aktif', true)
+                ->whereHas('komponenPayroll', function($q) {
+                    $q->where('jenis', 'Tunjangan')
+                      ->where('kategori', 'Variable')
+                      ->where('aktif', true);
+                })
+                ->get();
+                
+            foreach ($jabatanTemplates as $template) {
+                // Only add if not already set by employee-specific template
+                if (!isset($components[$template->komponen_payroll_id])) {
+                    $components[$template->komponen_payroll_id] = [
+                        'id' => $template->id,
+                        'nama' => $template->komponenPayroll->nama_komponen,
+                        'kode' => $template->komponenPayroll->kode,
+                        'nilai' => $template->nilai,
+                        'tipe' => $template->komponenPayroll->tipe_perhitungan ?? 'Tetap',
+                        'source' => 'jabatan_specific'
+                    ];
+                }
+            }
+        }
+        
+        // Get project-specific Variable templates (if not overridden)
+        if ($karyawan->project_id) {
+            $projectTemplates = \App\Models\TemplateKomponenGaji::with('komponenPayroll')
+                ->where('project_id', $karyawan->project_id)
+                ->where('aktif', true)
+                ->whereHas('komponenPayroll', function($q) {
+                    $q->where('jenis', 'Tunjangan')
+                      ->where('kategori', 'Variable')
+                      ->where('aktif', true);
+                })
+                ->get();
+                
+            foreach ($projectTemplates as $template) {
+                // Only add if not already set by higher priority templates
+                if (!isset($components[$template->komponen_payroll_id])) {
+                    $components[$template->komponen_payroll_id] = [
+                        'id' => $template->id,
+                        'nama' => $template->komponenPayroll->nama_komponen,
+                        'kode' => $template->komponenPayroll->kode,
+                        'nilai' => $template->nilai,
+                        'tipe' => $template->komponenPayroll->tipe_perhitungan ?? 'Tetap',
+                        'source' => 'project_specific'
+                    ];
+                }
+            }
+        }
+        
+        // Get default/general Variable templates (lowest priority)
+        $defaultTemplates = \App\Models\TemplateKomponenGaji::with('komponenPayroll')
+            ->whereNull('karyawan_id')
+            ->whereNull('jabatan_id')
+            ->whereNull('project_id')
+            ->where('aktif', true)
+            ->whereHas('komponenPayroll', function($q) {
+                $q->where('jenis', 'Tunjangan')
+                  ->where('kategori', 'Variable')
+                  ->where('aktif', true);
+            })
+            ->get();
+            
+        foreach ($defaultTemplates as $template) {
+            // Only add if not already set by higher priority templates
+            if (!isset($components[$template->komponen_payroll_id])) {
+                $components[$template->komponen_payroll_id] = [
+                    'id' => $template->id,
+                    'nama' => $template->komponenPayroll->nama_komponen,
+                    'kode' => $template->komponenPayroll->kode,
+                    'nilai' => $template->nilai,
+                    'tipe' => $template->komponenPayroll->tipe_perhitungan ?? 'Tetap',
+                    'source' => 'default'
+                ];
+            }
+        }
+        
+        return $components;
     }
 }

@@ -73,6 +73,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('projects', \App\Http\Controllers\Perusahaan\ProjectController::class);
         Route::get('projects/{project}/jabatans', [\App\Http\Controllers\Perusahaan\ProjectController::class, 'getJabatans'])->name('projects.jabatans');
         Route::get('projects/{project}/guest-card-areas', [\App\Http\Controllers\Perusahaan\ProjectController::class, 'getAreas'])->name('projects.guest-card-areas');
+        Route::put('projects/{project}/batas-cuti', [\App\Http\Controllers\Perusahaan\ProjectController::class, 'updateBatasCuti'])->name('projects.update-batas-cuti');
         Route::put('projects/{project}/guest-book-settings', [\App\Http\Controllers\Perusahaan\ProjectController::class, 'updateGuestBookSettings'])->name('projects.guest-book-settings');
         
         // Project Contacts Routes
@@ -325,6 +326,33 @@ Route::middleware('auth')->group(function () {
         Route::post('manajemen-gaji/clear-cache', [\App\Http\Controllers\Perusahaan\ManajemenGajiController::class, 'clearCache'])->name('manajemen-gaji.clear-cache');
         Route::put('manajemen-gaji/{karyawan}/update-gaji-pokok', [\App\Http\Controllers\Perusahaan\ManajemenGajiController::class, 'updateGajiPokok'])->name('manajemen-gaji.update-gaji-pokok');
         Route::post('manajemen-gaji/update-massal', [\App\Http\Controllers\Perusahaan\ManajemenGajiController::class, 'updateMassal'])->name('manajemen-gaji.update-massal');
+        
+        // Lembur Routes
+        Route::resource('lembur', \App\Http\Controllers\Perusahaan\LemburController::class);
+        Route::post('lembur/{lembur}/approve', [\App\Http\Controllers\Perusahaan\LemburController::class, 'approve'])->name('lembur.approve');
+        Route::post('lembur/{lembur}/reject', [\App\Http\Controllers\Perusahaan\LemburController::class, 'reject'])->name('lembur.reject');
+        Route::get('lembur-karyawan/{project}', [\App\Http\Controllers\Perusahaan\LemburController::class, 'getKaryawanByProject'])->name('lembur.karyawan-by-project');
+        Route::get('lembur-search-karyawan', [\App\Http\Controllers\Perusahaan\LemburController::class, 'searchKaryawan'])->name('lembur.search-karyawan');
+        Route::get('lembur-overtime-rate', [\App\Http\Controllers\Perusahaan\LemburController::class, 'getOvertimeRate'])->name('lembur.overtime-rate');
+        
+        // Cuti Routes
+        Route::resource('cuti', \App\Http\Controllers\Perusahaan\CutiController::class);
+        Route::post('cuti/{cuti}/approve', [\App\Http\Controllers\Perusahaan\CutiController::class, 'approve'])->name('cuti.approve');
+        Route::post('cuti/{cuti}/reject', [\App\Http\Controllers\Perusahaan\CutiController::class, 'reject'])->name('cuti.reject');
+        Route::get('cuti-karyawans/{project}', [\App\Http\Controllers\Perusahaan\CutiController::class, 'getKaryawansByProject'])->name('cuti.karyawans');
+        Route::get('cuti-sisa/{karyawan}/{project?}', [\App\Http\Controllers\Perusahaan\CutiController::class, 'getSisaCutiTahunan'])->name('cuti.sisa');
+        
+        // Kontrak & Resign Routes
+        Route::get('kontrak-resign', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'index'])->name('kontrak-resign.index');
+        Route::get('kontrak-resign/create-resign', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'createResign'])->name('kontrak-resign.create-resign');
+        Route::post('kontrak-resign/store-resign', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'storeResign'])->name('kontrak-resign.store-resign');
+        Route::get('kontrak-resign/resign/{resign}', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'showResign'])->name('kontrak-resign.show-resign');
+        Route::get('kontrak-resign/resign/{resign}/edit', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'editResign'])->name('kontrak-resign.edit-resign');
+        Route::put('kontrak-resign/resign/{resign}', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'updateResign'])->name('kontrak-resign.update-resign');
+        Route::delete('kontrak-resign/resign/{resign}', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'destroyResign'])->name('kontrak-resign.destroy-resign');
+        Route::post('kontrak-resign/resign/{resign}/approve', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'approveResign'])->name('kontrak-resign.approve-resign');
+        Route::post('kontrak-resign/resign/{resign}/reject', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'rejectResign'])->name('kontrak-resign.reject-resign');
+        Route::get('kontrak-resign-karyawans/{project}', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'getKaryawansByProject'])->name('kontrak-resign.karyawans');
         
         Route::resource('checkpoints', \App\Http\Controllers\Perusahaan\CheckpointController::class);
         Route::resource('patrolis', \App\Http\Controllers\Perusahaan\PatroliController::class)->only(['index', 'show']);

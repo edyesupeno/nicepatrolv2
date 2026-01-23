@@ -215,7 +215,7 @@
                 @php
                     $firstTemplate = $templateList->first();
                     $karyawan = $firstTemplate->karyawan;
-                    $jabatan = $firstTemplate->jabatan;
+                    $jabatan = $firstTemplate->jabatan ?? null;
                     $totalTunjangan = $templateList->where('komponenPayroll.jenis', 'Tunjangan')->sum('nilai');
                     $totalPotongan = $templateList->where('komponenPayroll.jenis', 'Potongan')->sum('nilai');
                 @endphp
@@ -260,14 +260,14 @@
                         <div class="flex items-center gap-2 text-sm">
                             <i class="fas fa-briefcase text-gray-400 w-4"></i>
                             <span class="text-gray-600">Jabatan:</span>
-                            <span class="font-medium text-gray-900">{{ $jabatan->nama }}</span>
+                            <span class="font-medium text-gray-900">{{ $jabatan ? $jabatan->nama : 'Tidak ada jabatan' }}</span>
                         </div>
                         
                         <!-- Project Info -->
                         <div class="flex items-center gap-2 text-sm">
                             <i class="fas fa-building text-gray-400 w-4"></i>
                             <span class="text-gray-600">Project:</span>
-                            <span class="font-medium text-gray-900">{{ Str::limit($project->nama, 20) }}</span>
+                            <span class="font-medium text-gray-900">{{ $project ? Str::limit($project->nama, 20) : 'Tidak ada project' }}</span>
                         </div>
 
                         <hr class="my-3">

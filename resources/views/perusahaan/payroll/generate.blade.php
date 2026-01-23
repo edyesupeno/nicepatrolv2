@@ -7,7 +7,7 @@
 @section('content')
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Left: Form -->
-    <div class="lg:col-span-2">
+    <div class="lg:col-span-2 relative z-10">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <form method="POST" action="{{ route('perusahaan.payroll.store') }}" id="generateForm">
                 @csrf
@@ -160,7 +160,7 @@
     </div>
 
     <!-- Right: Info -->
-    <div class="space-y-6">
+    <div class="space-y-6 relative z-0">
         <!-- Pengaturan Periode -->
         @if($setting && $setting->periode_auto_generate)
         <div class="bg-green-50 border border-green-200 rounded-xl p-4">

@@ -249,14 +249,14 @@
 
                 <!-- Kehadiran Menu (Collapsible) -->
                 <div class="mb-1">
-                    <button onclick="toggleSubmenu('kehadiran')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.kehadiran.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                    <button onclick="toggleSubmenu('kehadiran')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.kehadiran.*') || request()->routeIs('perusahaan.lembur.*') || request()->routeIs('perusahaan.cuti.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
                         <div class="flex items-center">
                             <i class="fas fa-calendar-check w-5 text-center mr-3"></i>
                             <span class="font-medium">Presensi Karyawan</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-kehadiran"></i>
                     </button>
-                    <div id="submenu-kehadiran" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.kehadiran.*') ? '' : 'hidden' }}">
+                    <div id="submenu-kehadiran" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.kehadiran.*') || request()->routeIs('perusahaan.lembur.*') || request()->routeIs('perusahaan.cuti.*') ? '' : 'hidden' }}">
                         <a href="{{ route('perusahaan.kehadiran.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.kehadiran.index') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-calendar-check w-5 text-center mr-3 text-xs"></i>
                             <span>Kehadiran</span>
@@ -272,6 +272,15 @@
                         <a href="{{ route('perusahaan.kehadiran.manajemen-shift') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.kehadiran.manajemen-shift') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-clock w-5 text-center mr-3 text-xs"></i>
                             <span>Manajemen Shift</span>
+                        </a>
+                        <a href="{{ route('perusahaan.lembur.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.lembur.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-user-clock w-5 text-center mr-3 text-xs"></i>
+                            <span>Permintaan Lembur</span>
+                        </a>
+                        
+                        <a href="{{ route('perusahaan.cuti.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.cuti.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-calendar-times w-5 text-center mr-3 text-xs"></i>
+                            <span>Permintaan Cuti</span>
                         </a>
                     </div>
                 </div>
@@ -319,14 +328,14 @@
 
                 <!-- Karyawan Menu (Collapsible) -->
                 <div class="mb-1">
-                    <button onclick="toggleSubmenu('karyawan')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.karyawans.*') || request()->routeIs('perusahaan.jabatans.*') || request()->routeIs('perusahaan.status-karyawan.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                    <button onclick="toggleSubmenu('karyawan')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.karyawans.*') || request()->routeIs('perusahaan.jabatans.*') || request()->routeIs('perusahaan.status-karyawan.*') || request()->routeIs('perusahaan.kontrak-resign.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
                         <div class="flex items-center">
                             <i class="fas fa-users w-5 text-center mr-3"></i>
                             <span class="font-medium">HR Management</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-karyawan"></i>
                     </button>
-                    <div id="submenu-karyawan" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.karyawans.*') || request()->routeIs('perusahaan.jabatans.*') || request()->routeIs('perusahaan.status-karyawan.*') ? '' : 'hidden' }}">
+                    <div id="submenu-karyawan" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.karyawans.*') || request()->routeIs('perusahaan.jabatans.*') || request()->routeIs('perusahaan.status-karyawan.*') || request()->routeIs('perusahaan.kontrak-resign.*') ? '' : 'hidden' }}">
                         <a href="{{ route('perusahaan.karyawans.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.karyawans.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-user w-5 text-center mr-3 text-xs"></i>
                             <span>Karyawan</span>
@@ -338,6 +347,10 @@
                         <a href="{{ route('perusahaan.jabatans.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.jabatans.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-user-tie w-5 text-center mr-3 text-xs"></i>
                             <span>Jabatan</span>
+                        </a>
+                        <a href="{{ route('perusahaan.kontrak-resign.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.kontrak-resign.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-file-contract w-5 text-center mr-3 text-xs"></i>
+                            <span>Kontrak & Resign</span>
                         </a>
                     </div>
                 </div>

@@ -1675,12 +1675,22 @@ function addNewPosJaga() {
     const name = document.getElementById('pos_jaga_search').value.trim();
     
     if (!name) {
-        alert('Masukkan nama POS Jaga');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Perhatian!',
+            text: 'Masukkan nama POS Jaga',
+            confirmButtonText: 'OK'
+        });
         return;
     }
     
     if (!selectedAreaId) {
-        alert('Pilih area terlebih dahulu');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Perhatian!',
+            text: 'Pilih area terlebih dahulu',
+            confirmButtonText: 'OK'
+        });
         return;
     }
     
@@ -1688,7 +1698,12 @@ function addNewPosJaga() {
     const projectId = document.getElementById('project_select').value;
     
     if (!projectId) {
-        alert('Pilih project terlebih dahulu');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Perhatian!',
+            text: 'Pilih project terlebih dahulu',
+            confirmButtonText: 'OK'
+        });
         return;
     }
     

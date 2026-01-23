@@ -25,6 +25,7 @@ class Project extends Model
         'guest_book_mode',
         'enable_questionnaire',
         'enable_guest_card',
+        'batas_cuti_tahunan',
     ];
 
     protected $casts = [

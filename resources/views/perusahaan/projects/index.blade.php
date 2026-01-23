@@ -106,6 +106,49 @@
                 </div>
 
                 <div class="flex items-center text-sm text-gray-600">
+                    <i class="fas fa-calendar-alt text-gray-400 mr-2.5 w-4"></i>
+                    <span class="font-medium">Batas Cuti:</span>
+                    <div class="ml-2 flex items-center group">
+                        <span id="batas-cuti-display-{{ $project->hash_id }}" class="cursor-pointer">{{ $project->batas_cuti_tahunan }} hari/tahun</span>
+                        <button 
+                            type="button" 
+                            onclick="editBatasCuti('{{ $project->hash_id }}', {{ $project->batas_cuti_tahunan }})"
+                            class="ml-2 text-blue-500 hover:text-blue-700 transition-colors"
+                            title="Edit Batas Cuti"
+                        >
+                            <i class="fas fa-pencil-alt text-xs"></i>
+                        </button>
+                        <div id="batas-cuti-edit-{{ $project->hash_id }}" class="hidden ml-2 flex items-center">
+                            <input 
+                                type="number" 
+                                id="batas-cuti-input-{{ $project->hash_id }}"
+                                min="1" 
+                                max="365" 
+                                value="{{ $project->batas_cuti_tahunan }}"
+                                class="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            >
+                            <span class="text-xs text-gray-500 ml-1">hari</span>
+                            <button 
+                                type="button" 
+                                onclick="saveBatasCuti('{{ $project->hash_id }}')"
+                                class="ml-2 text-green-600 hover:text-green-800"
+                                title="Simpan"
+                            >
+                                <i class="fas fa-check text-xs"></i>
+                            </button>
+                            <button 
+                                type="button" 
+                                onclick="cancelEditBatasCuti('{{ $project->hash_id }}', {{ $project->batas_cuti_tahunan }})"
+                                class="ml-1 text-red-600 hover:text-red-800"
+                                title="Batal"
+                            >
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center text-sm text-gray-600">
                     <i class="fas fa-book text-gray-400 mr-2.5 w-4"></i>
                     <span class="font-medium">Buku Tamu:</span>
                     <span class="ml-2">
@@ -264,6 +307,26 @@
                     </div>
 
                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Batas Cuti Tahunan <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input 
+                                type="number" 
+                                name="batas_cuti_tahunan" 
+                                value="12"
+                                min="1"
+                                max="365"
+                                required
+                                class="w-full px-4 py-3 pr-20 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                                placeholder="12"
+                            >
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 text-sm">hari/tahun</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Maksimal hari cuti yang dapat diambil karyawan dalam 1 tahun</p>
+                    </div>
+
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Status <span class="text-red-500">*</span></label>
                         <select 
                             name="is_active" 
@@ -377,6 +440,26 @@
                             rows="3"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                         ></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Batas Cuti Tahunan <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input 
+                                type="number" 
+                                name="batas_cuti_tahunan" 
+                                id="edit_batas_cuti_tahunan"
+                                min="1"
+                                max="365"
+                                required
+                                class="w-full px-4 py-3 pr-20 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                                placeholder="12"
+                            >
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 text-sm">hari/tahun</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Maksimal hari cuti yang dapat diambil karyawan dalam 1 tahun</p>
                     </div>
 
                     <div>
@@ -725,6 +808,7 @@ async function openEditModal(hashId) {
         }
         
         document.getElementById('edit_deskripsi').value = data.deskripsi || '';
+        document.getElementById('edit_batas_cuti_tahunan').value = data.batas_cuti_tahunan || 12;
         document.getElementById('edit_is_active').value = data.is_active ? '1' : '0';
         document.getElementById('formEdit').action = `/perusahaan/projects/${hashId}`;
         
@@ -813,6 +897,119 @@ document.addEventListener('DOMContentLoaded', function() {
     if (guestCardToggle) {
         guestCardToggle.addEventListener('change', toggleGuestCardAreas);
     }
+});
+
+// Inline Edit Batas Cuti Functions
+function editBatasCuti(projectId, currentValue) {
+    // Hide display, show edit
+    document.getElementById(`batas-cuti-display-${projectId}`).classList.add('hidden');
+    document.getElementById(`batas-cuti-edit-${projectId}`).classList.remove('hidden');
+    
+    // Focus on input
+    const input = document.getElementById(`batas-cuti-input-${projectId}`);
+    input.focus();
+    input.select();
+}
+
+function cancelEditBatasCuti(projectId, originalValue) {
+    // Reset input value
+    document.getElementById(`batas-cuti-input-${projectId}`).value = originalValue;
+    
+    // Show display, hide edit
+    document.getElementById(`batas-cuti-display-${projectId}`).classList.remove('hidden');
+    document.getElementById(`batas-cuti-edit-${projectId}`).classList.add('hidden');
+}
+
+async function saveBatasCuti(projectId) {
+    const input = document.getElementById(`batas-cuti-input-${projectId}`);
+    const newValue = parseInt(input.value);
+    
+    // Validation
+    if (!newValue || newValue < 1 || newValue > 365) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Nilai Tidak Valid!',
+            text: 'Batas cuti harus antara 1-365 hari',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+    
+    try {
+        // Show loading
+        const display = document.getElementById(`batas-cuti-display-${projectId}`);
+        const originalText = display.textContent;
+        display.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i> Menyimpan...';
+        display.classList.remove('hidden');
+        document.getElementById(`batas-cuti-edit-${projectId}`).classList.add('hidden');
+        
+        const response = await fetch(`/perusahaan/projects/${projectId}/batas-cuti`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                batas_cuti_tahunan: newValue
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update display
+            display.textContent = `${newValue} hari/tahun`;
+            
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            throw new Error(data.message || 'Gagal menyimpan');
+        }
+    } catch (error) {
+        // Restore original display
+        document.getElementById(`batas-cuti-display-${projectId}`).textContent = originalText;
+        document.getElementById(`batas-cuti-display-${projectId}`).classList.remove('hidden');
+        document.getElementById(`batas-cuti-edit-${projectId}`).classList.add('hidden');
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: error.message || 'Terjadi kesalahan saat menyimpan',
+            confirmButtonText: 'OK'
+        });
+    }
+}
+
+// Add keyboard event listeners for inline edit
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle keyboard events for all batas cuti inputs
+    document.addEventListener('keydown', function(e) {
+        if (e.target.id && e.target.id.startsWith('batas-cuti-input-')) {
+            const projectId = e.target.id.replace('batas-cuti-input-', '');
+            const originalValue = parseInt(e.target.getAttribute('data-original-value') || e.target.value);
+            
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveBatasCuti(projectId);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelEditBatasCuti(projectId, originalValue);
+            }
+        }
+    });
+    
+    // Store original value when editing starts
+    document.addEventListener('focus', function(e) {
+        if (e.target.id && e.target.id.startsWith('batas-cuti-input-')) {
+            e.target.setAttribute('data-original-value', e.target.value);
+        }
+    });
 });
 </script>
 @endpush
