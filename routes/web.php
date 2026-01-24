@@ -279,6 +279,15 @@ Route::middleware('auth')->group(function () {
         Route::get('kru-change/{kruChange}/questionnaire/{tipeJawaban}/edit', [\App\Http\Controllers\Perusahaan\KruChangeQuestionnaireController::class, 'editQuestionnaire'])->name('kru-change.questionnaire.edit');
         Route::put('kru-change/{kruChange}/questionnaire/{tipeJawaban}', [\App\Http\Controllers\Perusahaan\KruChangeQuestionnaireController::class, 'updateQuestionnaire'])->name('kru-change.questionnaire.update');
         Route::delete('kru-change/{kruChange}/questionnaire/{tipeJawaban}/{pertanyaanId}', [\App\Http\Controllers\Perusahaan\KruChangeQuestionnaireController::class, 'deleteAnswer'])->name('kru-change.questionnaire.delete-answer');
+        
+        // Patroli Mandiri Routes
+        Route::resource('patroli-mandiri', \App\Http\Controllers\Perusahaan\PatroliMandiriController::class);
+        Route::get('patroli-mandiri-areas/{project}', [\App\Http\Controllers\Perusahaan\PatroliMandiriController::class, 'getAreasByProject'])->name('patroli-mandiri.areas-by-project');
+        Route::get('patroli-mandiri-search-locations', [\App\Http\Controllers\Perusahaan\PatroliMandiriController::class, 'searchLocations'])->name('patroli-mandiri.search-locations');
+        Route::get('patroli-mandiri-search-jenis-kendala', [\App\Http\Controllers\Perusahaan\PatroliMandiriController::class, 'searchJenisKendala'])->name('patroli-mandiri.search-jenis-kendala');
+        Route::post('patroli-mandiri/{patroliMandiri}/review', [\App\Http\Controllers\Perusahaan\PatroliMandiriController::class, 'review'])->name('patroli-mandiri.review');
+        Route::get('patroli-mandiri-stats', [\App\Http\Controllers\Perusahaan\PatroliMandiriController::class, 'getStatistics'])->name('patroli-mandiri.statistics');
+        
         Route::get('karyawans/import-progress', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'importProgress'])->name('karyawans.import-progress');
         Route::get('karyawans/export-page', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'exportPage'])->name('karyawans.export-page');
         Route::post('karyawans/export-excel', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'exportExcel'])->name('karyawans.export-excel');
@@ -529,6 +538,9 @@ Route::middleware('auth')->group(function () {
         // Laporan Patroli Routes
         Route::prefix('laporan-patroli')->name('laporan-patroli.')->group(function () {
             Route::get('insiden', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'insiden'])->name('insiden');
+            Route::get('insiden/{patroliMandiri}', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'insidenShow'])->name('insiden.show');
+            Route::get('insiden/{patroliMandiri}/pdf', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'insidenExportPdf'])->name('insiden.pdf');
+            Route::post('insiden/export-multiple', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'insidenExportMultiplePdf'])->name('insiden.export-multiple');
             Route::get('kawasan', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'kawasan'])->name('kawasan');
             Route::get('kawasan/{area}/detail', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'kawasanDetail'])->name('kawasan.detail');
             Route::get('aset-bermasalah', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'asetBermasalah'])->name('aset-bermasalah');

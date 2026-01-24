@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- Prevent caching -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>@yield('title', 'Dashboard') - {{ setting('app_name', 'Nice Patrol') }}</title>
     
     <!-- Favicon -->
@@ -496,14 +500,14 @@
 
                 <!-- Regu Patroli Menu (Collapsible) -->
                 <div class="mb-1">
-                    <button onclick="toggleSubmenu('tim-patroli')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.tim-patroli.*') || request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') || request()->routeIs('perusahaan.kru-change.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                    <button onclick="toggleSubmenu('tim-patroli')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.tim-patroli.*') || request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') || request()->routeIs('perusahaan.kru-change.*') || request()->routeIs('perusahaan.patroli-mandiri.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
                         <div class="flex items-center">
                             <i class="fas fa-users w-5 text-center mr-3"></i>
                             <span class="font-medium">Regu Patroli</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-tim-patroli"></i>
                     </button>
-                    <div id="submenu-tim-patroli" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.tim-patroli.*') || request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') || request()->routeIs('perusahaan.kru-change.*') ? '' : 'hidden' }}">
+                    <div id="submenu-tim-patroli" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.tim-patroli.*') || request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') || request()->routeIs('perusahaan.kru-change.*') || request()->routeIs('perusahaan.patroli-mandiri.*') ? '' : 'hidden' }}">
                         <a href="{{ route('perusahaan.tim-patroli.master') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.tim-patroli.master') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-users-cog w-5 text-center mr-3 text-xs"></i>
                             <span>Regu Patroli</span>
@@ -511,6 +515,10 @@
                         <a href="{{ route('perusahaan.kru-change.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.kru-change.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-exchange-alt w-5 text-center mr-3 text-xs"></i>
                             <span>Kru Change</span>
+                        </a>
+                        <a href="{{ route('perusahaan.patroli-mandiri.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.patroli-mandiri.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-walking w-5 text-center mr-3 text-xs"></i>
+                            <span>Patroli Mandiri</span>
                         </a>
                         <a href="{{ route('perusahaan.patrol.inventaris-patroli') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-clipboard-list w-5 text-center mr-3 text-xs"></i>
@@ -529,9 +537,9 @@
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-laporan-patroli"></i>
                     </button>
                     <div id="submenu-laporan-patroli" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.laporan-patroli.*') ? '' : 'hidden' }}">
-                        <a href="{{ route('perusahaan.laporan-patroli.insiden') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.laporan-patroli.insiden') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                        <a href="{{ route('perusahaan.laporan-patroli.insiden') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.laporan-patroli.insiden*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-exclamation-circle w-5 text-center mr-3 text-xs"></i>
-                            <span>Laporan Patroli Mandiri</span>
+                            <span>Laporan Insiden</span>
                         </a>
                         <a href="{{ route('perusahaan.laporan-patroli.kawasan') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.laporan-patroli.kawasan') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-map-marked-alt w-5 text-center mr-3 text-xs"></i>
@@ -566,7 +574,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-semibold truncate">{{ auth()->user()->name }}</p>
-                        <p class="text-xs text-blue-200 font-medium">{{ ucfirst(auth()->user()->role) }}</p>
+                        <p class="text-xs text-blue-200 font-medium">Admin</p>
                     </div>
                 </div>
                 <form method="POST" action="{{ route('logout') }}" id="logoutForm">
@@ -674,6 +682,14 @@
 
         // Auto-open submenu if active
         document.addEventListener('DOMContentLoaded', function() {
+            // Force clear any cached menu state
+            localStorage.removeItem('menuState');
+            sessionStorage.clear();
+            
+            // Debug: Log current route
+            console.log('Current URL:', window.location.href);
+            console.log('Current pathname:', window.location.pathname);
+            
             const activeSubmenu = document.querySelector('[id^="submenu-"]:not(.hidden)');
             if (activeSubmenu) {
                 const menuId = activeSubmenu.id.replace('submenu-', '');
@@ -681,6 +697,36 @@
                 if (icon) {
                     icon.style.transform = 'rotate(180deg)';
                 }
+                console.log('Active submenu found:', menuId);
+            }
+            
+            // Force refresh menu display
+            const menuItems = document.querySelectorAll('.menu-item');
+            menuItems.forEach(item => {
+                item.style.display = 'flex';
+            });
+            
+            // Debug: Check if Regu Patroli submenu should be open
+            const currentPath = window.location.pathname;
+            if (currentPath.includes('kru-change') || currentPath.includes('patroli-mandiri')) {
+                const timPatroliSubmenu = document.getElementById('submenu-tim-patroli');
+                const timPatroliIcon = document.getElementById('icon-tim-patroli');
+                if (timPatroliSubmenu && timPatroliSubmenu.classList.contains('hidden')) {
+                    timPatroliSubmenu.classList.remove('hidden');
+                    if (timPatroliIcon) {
+                        timPatroliIcon.style.transform = 'rotate(180deg)';
+                    }
+                    console.log('Forced open Regu Patroli submenu');
+                }
+            }
+            
+            // Force reload page if coming from different layout
+            const isPatroliMandiriPage = currentPath.includes('patroli-mandiri');
+            const hasCorrectLayout = document.querySelector('#submenu-tim-patroli');
+            
+            if (isPatroliMandiriPage && !hasCorrectLayout) {
+                console.log('Wrong layout detected, reloading...');
+                window.location.reload(true);
             }
         });
 

@@ -13,9 +13,282 @@ use Carbon\Carbon;
 
 class LaporanPatroliController extends Controller
 {
-    public function insiden()
+    public function insiden(Request $request)
     {
-        return view('perusahaan.laporan-patroli.insiden');
+        try {
+            // Check if patroli_mandiri table exists
+            if (!\Illuminate\Support\Facades\Schema::hasTable('patroli_mandiri')) {
+                return view('perusahaan.laporan-patroli.insiden-empty')->with('info', 'Fitur Laporan Insiden belum tersedia. Silakan hubungi administrator untuk mengaktifkan fitur ini.');
+            }
+
+            $query = \App\Models\PatroliMandiri::with([
+                'project:id,nama',
+                'areaPatrol:id,nama',
+                'petugas:id,name',
+                'reviewer:id,name'
+            ]);
+
+            // Filter hanya yang tidak aman (insiden)
+            $query->where('status_lokasi', 'tidak_aman');
+
+            // Search
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('nama_lokasi', 'ILIKE', "%{$search}%")
+                      ->orWhere('jenis_kendala', 'ILIKE', "%{$search}%")
+                      ->orWhere('deskripsi_kendala', 'ILIKE', "%{$search}%")
+                      ->orWhereHas('petugas', function($sq) use ($search) {
+                          $sq->where('name', 'ILIKE', "%{$search}%");
+                      });
+                });
+            }
+
+            // Filter by project
+            if ($request->filled('project_id')) {
+                $query->where('project_id', $request->project_id);
+            }
+
+            // Filter by area
+            if ($request->filled('area_id')) {
+                $query->where('area_patrol_id', $request->area_id);
+            }
+
+            // Filter by jenis kendala
+            if ($request->filled('jenis_kendala')) {
+                $query->where('jenis_kendala', $request->jenis_kendala);
+            }
+
+            // Filter by prioritas
+            if ($request->filled('prioritas')) {
+                $query->where('prioritas', $request->prioritas);
+            }
+
+            // Filter by status laporan
+            if ($request->filled('status_laporan')) {
+                $query->where('status_laporan', $request->status_laporan);
+            }
+
+            // Filter by date range
+            if ($request->filled('tanggal_mulai')) {
+                $query->whereDate('waktu_laporan', '>=', $request->tanggal_mulai);
+            }
+            if ($request->filled('tanggal_selesai')) {
+                $query->whereDate('waktu_laporan', '<=', $request->tanggal_selesai);
+            }
+
+            $insiden = $query->orderBy('waktu_laporan', 'desc')->paginate(15)->withQueryString();
+
+            // Get filter options
+            $projects = \App\Models\Project::select('id', 'nama')
+                ->where('is_active', true)
+                ->orderBy('nama')
+                ->get();
+
+            $areas = \App\Models\AreaPatrol::select('id', 'nama', 'project_id')
+                ->where('is_active', true)
+                ->orderBy('nama')
+                ->get();
+
+            // Get unique jenis kendala for filter
+            $jenisKendala = \App\Models\PatroliMandiri::select('jenis_kendala')
+                ->where('status_lokasi', 'tidak_aman')
+                ->whereNotNull('jenis_kendala')
+                ->distinct()
+                ->pluck('jenis_kendala')
+                ->map(function($item) {
+                    return [
+                        'value' => $item,
+                        'label' => ucwords(str_replace('_', ' ', $item))
+                    ];
+                })
+                ->sortBy('label');
+
+            // Statistics
+            $stats = $this->getInsidenStats($request);
+
+            return view('perusahaan.laporan-patroli.insiden', compact(
+                'insiden', 
+                'projects', 
+                'areas', 
+                'jenisKendala', 
+                'stats'
+            ));
+
+        } catch (\Exception $e) {
+            \Log::error('Error in LaporanPatroliController@insiden: ' . $e->getMessage());
+            
+            return view('perusahaan.laporan-patroli.insiden-empty')
+                ->with('error', 'Terjadi kesalahan saat memuat data laporan insiden. Silakan coba lagi atau hubungi administrator.');
+        }
+    }
+
+    private function getInsidenStats($request)
+    {
+        $query = \App\Models\PatroliMandiri::where('status_lokasi', 'tidak_aman');
+
+        // Apply same filters as main query
+        if ($request->filled('project_id')) {
+            $query->where('project_id', $request->project_id);
+        }
+        if ($request->filled('area_id')) {
+            $query->where('area_patrol_id', $request->area_id);
+        }
+        if ($request->filled('jenis_kendala')) {
+            $query->where('jenis_kendala', $request->jenis_kendala);
+        }
+        if ($request->filled('tanggal_mulai')) {
+            $query->whereDate('waktu_laporan', '>=', $request->tanggal_mulai);
+        }
+        if ($request->filled('tanggal_selesai')) {
+            $query->whereDate('waktu_laporan', '<=', $request->tanggal_selesai);
+        }
+
+        $totalInsiden = $query->count();
+        $insidenKritis = $query->where('prioritas', 'kritis')->count();
+        $insidenTinggi = $query->where('prioritas', 'tinggi')->count();
+        $insidenSedang = $query->where('prioritas', 'sedang')->count();
+        $insidenRendah = $query->where('prioritas', 'rendah')->count();
+
+        $insidenSubmitted = $query->where('status_laporan', 'submitted')->count();
+        $insidenReviewed = $query->where('status_laporan', 'reviewed')->count();
+        $insidenResolved = $query->where('status_laporan', 'resolved')->count();
+
+        // Insiden hari ini
+        $insidenHariIni = \App\Models\PatroliMandiri::where('status_lokasi', 'tidak_aman')
+            ->whereDate('waktu_laporan', today())
+            ->count();
+
+        // Insiden minggu ini
+        $insidenMingguIni = \App\Models\PatroliMandiri::where('status_lokasi', 'tidak_aman')
+            ->whereBetween('waktu_laporan', [now()->startOfWeek(), now()->endOfWeek()])
+            ->count();
+
+        return [
+            'total_insiden' => $totalInsiden,
+            'insiden_kritis' => $insidenKritis,
+            'insiden_tinggi' => $insidenTinggi,
+            'insiden_sedang' => $insidenSedang,
+            'insiden_rendah' => $insidenRendah,
+            'insiden_submitted' => $insidenSubmitted,
+            'insiden_reviewed' => $insidenReviewed,
+            'insiden_resolved' => $insidenResolved,
+            'insiden_hari_ini' => $insidenHariIni,
+            'insiden_minggu_ini' => $insidenMingguIni,
+            'resolution_rate' => $totalInsiden > 0 ? round(($insidenResolved / $totalInsiden) * 100, 1) : 0,
+        ];
+    }
+
+    public function insidenShow(\App\Models\PatroliMandiri $patroliMandiri)
+    {
+        try {
+            // Check if patroli_mandiri table exists
+            if (!\Illuminate\Support\Facades\Schema::hasTable('patroli_mandiri')) {
+                return redirect()->route('perusahaan.laporan-patroli.insiden')
+                    ->with('error', 'Fitur Laporan Insiden belum tersedia. Silakan hubungi administrator untuk mengaktifkan fitur ini.');
+            }
+
+            // Only show incidents (tidak_aman)
+            if ($patroliMandiri->status_lokasi !== 'tidak_aman') {
+                return redirect()->route('perusahaan.laporan-patroli.insiden')
+                    ->with('error', 'Data yang diminta bukan merupakan laporan insiden.');
+            }
+
+            $patroliMandiri->load([
+                'project:id,nama',
+                'areaPatrol:id,nama',
+                'petugas:id,name,email',
+                'reviewer:id,name,email'
+            ]);
+
+            return view('perusahaan.laporan-patroli.insiden-show', compact('patroliMandiri'));
+
+        } catch (\Exception $e) {
+            \Log::error('Error in LaporanPatroliController@insidenShow: ' . $e->getMessage());
+            
+            return redirect()->route('perusahaan.laporan-patroli.insiden')
+                ->with('error', 'Terjadi kesalahan saat memuat detail insiden. Silakan coba lagi atau hubungi administrator.');
+        }
+    }
+
+    public function insidenExportPdf(\App\Models\PatroliMandiri $patroliMandiri)
+    {
+        try {
+            // Check if patroli_mandiri table exists
+            if (!\Illuminate\Support\Facades\Schema::hasTable('patroli_mandiri')) {
+                return redirect()->route('perusahaan.laporan-patroli.insiden')
+                    ->with('error', 'Fitur Laporan Insiden belum tersedia. Silakan hubungi administrator untuk mengaktifkan fitur ini.');
+            }
+
+            // Only export incidents (tidak_aman)
+            if ($patroliMandiri->status_lokasi !== 'tidak_aman') {
+                return redirect()->route('perusahaan.laporan-patroli.insiden')
+                    ->with('error', 'Data yang diminta bukan merupakan laporan insiden.');
+            }
+
+            $patroliMandiri->load([
+                'project:id,nama',
+                'areaPatrol:id,nama',
+                'petugas:id,name,email',
+                'reviewer:id,name,email'
+            ]);
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('perusahaan.laporan-patroli.insiden-pdf', compact('patroliMandiri'));
+
+            $filename = 'Laporan_Insiden_' . $patroliMandiri->hash_id . '_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s') . '.pdf';
+            
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Error in LaporanPatroliController@insidenExportPdf: ' . $e->getMessage());
+            
+            return redirect()->route('perusahaan.laporan-patroli.insiden')
+                ->with('error', 'Terjadi kesalahan saat mengekspor PDF. Silakan coba lagi atau hubungi administrator.');
+        }
+    }
+
+    public function insidenExportMultiplePdf(Request $request)
+    {
+        try {
+            // Check if patroli_mandiri table exists
+            if (!\Illuminate\Support\Facades\Schema::hasTable('patroli_mandiri')) {
+                return redirect()->route('perusahaan.laporan-patroli.insiden')
+                    ->with('error', 'Fitur Laporan Insiden belum tersedia. Silakan hubungi administrator untuk mengaktifkan fitur ini.');
+            }
+
+            $validated = $request->validate([
+                'insiden_ids' => 'required|array',
+                'insiden_ids.*' => 'exists:patroli_mandiri,id'
+            ]);
+
+            $insidenList = \App\Models\PatroliMandiri::whereIn('id', $validated['insiden_ids'])
+                ->where('status_lokasi', 'tidak_aman') // Only incidents
+                ->with([
+                    'project:id,nama',
+                    'areaPatrol:id,nama',
+                    'petugas:id,name,email',
+                    'reviewer:id,name,email'
+                ])
+                ->orderBy('waktu_laporan', 'desc')
+                ->get();
+
+            if ($insidenList->isEmpty()) {
+                return redirect()->route('perusahaan.laporan-patroli.insiden')
+                    ->with('error', 'Tidak ada data insiden yang valid untuk diekspor.');
+            }
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('perusahaan.laporan-patroli.insiden-multiple-pdf', compact('insidenList'));
+            
+            $filename = 'Laporan_Insiden_Multiple_' . \Carbon\Carbon::now()->format('Y-m-d_H-i-s') . '.pdf';
+            
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Error in LaporanPatroliController@insidenExportMultiplePdf: ' . $e->getMessage());
+            
+            return redirect()->route('perusahaan.laporan-patroli.insiden')
+                ->with('error', 'Terjadi kesalahan saat mengekspor PDF multiple. Silakan coba lagi atau hubungi administrator.');
+        }
     }
 
     public function kawasan(Request $request)

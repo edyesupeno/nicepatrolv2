@@ -86,6 +86,12 @@ $apiRoutes = function () {
         Route::get('buku-tamu-available-cards', [\App\Http\Controllers\Api\BukuTamuController::class, 'getAvailableCards']);
         Route::post('buku-tamu/{bukuTamu}/assign-card', [\App\Http\Controllers\Api\BukuTamuController::class, 'assignCard']);
         Route::post('buku-tamu/{bukuTamu}/return-card', [\App\Http\Controllers\Api\BukuTamuController::class, 'returnCard']);
+
+        // Patroli Mandiri
+        Route::apiResource('patroli-mandiri', \App\Http\Controllers\Api\PatroliMandiriController::class);
+        Route::get('patroli-mandiri-projects', [\App\Http\Controllers\Api\PatroliMandiriController::class, 'getProjects']);
+        Route::get('patroli-mandiri-areas/{project}', [\App\Http\Controllers\Api\PatroliMandiriController::class, 'getAreasByProject']);
+        Route::get('patroli-mandiri-jenis-kendala', [\App\Http\Controllers\Api\PatroliMandiriController::class, 'getJenisKendala']);
     });
 };
 

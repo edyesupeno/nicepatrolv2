@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nice Patrol - Sistem Manajemen Keamanan & Patroli Terdepan</title>
+    <meta name="description" content="Nice Patrol adalah sistem manajemen keamanan dan patroli yang komprehensif untuk perusahaan modern. Kelola tim keamanan, patroli, dan monitoring dengan mudah.">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- AOS Animation -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #3b82f6;
+            --gradient-1: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            --gradient-2: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --gradient-3: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --bg-light: #f7fafc;
+            --white: #ffffff;
+            --shadow-light: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-heavy: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.7;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .hero-section {
+            min-height: 100vh;
+            background: var(--gradient-1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="white" opacity="0.1"><polygon points="0,0 1000,0 1000,100 0,80"/></svg>');
+            background-size: cover;
+        }
+        
+        .hero-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .particle:nth-child(1) { width: 80px; height: 80px; left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { width: 120px; height: 120px; left: 20%; animation-delay: 1s; }
+        .particle:nth-child(3) { width: 60px; height: 60px; left: 70%; animation-delay: 2s; }
+        .particle:nth-child(4) { width: 100px; height: 100px; left: 80%; animation-delay: 3s; }
+        .particle:nth-child(5) { width: 40px; height: 40px; left: 90%; animation-delay: 4s; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            color: white;
+        }
+        
+        .hero-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.25rem;
+            font-weight: 400;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            line-height: 1.8;
+        }
+        
+        .btn-hero {
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            border: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-hero-primary {
+            background: var(--gradient-1);
+            color: white;
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .btn-hero-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-hero:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-heavy);
+        }
+        
+        .btn-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-hero:hover::before {
+            left: 100%;
+        }
+        
+        .feature-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: var(--shadow-light);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-1);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-15px);
+            box-shadow: var(--shadow-heavy);
+        }
+        
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-1);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            color: white;
+            font-size: 28px;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        .feature-card h4 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+        }
+        
+        .section-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text-dark);
+            position: relative;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--gradient-1);
+            border-radius: 2px;
+        }
+        
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            margin-bottom: 60px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .stats-section {
+            background: var(--gradient-1);
+            color: white;
+            padding: 80px 0;
+            position: relative;
+        }
+        
+        .stats-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="white" opacity="0.05"><circle cx="50" cy="50" r="40"/></svg>');
+            background-size: 100px 100px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            position: relative;
+        }
+        
+        .stat-number {
+            font-family: 'Poppins', sans-serif;
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-label {
+            font-size: 1.1rem;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-brand {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary-color) !important;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            color: var(--text-dark) !important;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-1);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        .contact-section {
+            background: var(--bg-light);
+            padding: 100px 0;
+            position: relative;
+        }
+        
+        .contact-card {
+            background: var(--white);
+            border-radius: 25px;
+            padding: 50px 40px;
+            text-align: center;
+            box-shadow: var(--shadow-light);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .contact-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: var(--gradient-1);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+        
+        .contact-card:hover::before {
+            opacity: 0.05;
+        }
+        
+        .contact-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-heavy);
+        }
+        
+        .contact-card > * {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .contact-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-1);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            color: white;
+            font-size: 24px;
+            transition: all 0.3s ease;
+        }
+        
+        .contact-card:hover .contact-icon {
+            transform: scale(1.1) rotate(-5deg);
+        }
+        
+        .footer {
+            background: var(--text-dark) !important;
+            color: white !important;
+            padding: 60px 0 30px !important;
+            position: relative !important;
+            z-index: 1000 !important;
+            margin-top: 0 !important;
+            display: block !important;
+            visibility: visible !important;
+        }
+        
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--gradient-1);
+        }
+        
+        .demo-section {
+            background: var(--gradient-3);
+            color: white;
+            padding: 80px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .demo-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="white" opacity="0.1"><polygon points="50,0 100,50 50,100 0,50"/></svg>');
+            background-size: 200px 200px;
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .floating-element {
+            position: absolute;
+            background: var(--gradient-1);
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: floatRandom 15s ease-in-out infinite;
+        }
+        
+        @keyframes floatRandom {
+            0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+            25% { transform: translateY(-30px) translateX(20px) rotate(90deg); }
+            50% { transform: translateY(-60px) translateX(-20px) rotate(180deg); }
+            75% { transform: translateY(-30px) translateX(-40px) rotate(270deg); }
+        }
+        
+        .scroll-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+        }
+        
+        .scroll-progress {
+            height: 100%;
+            background: var(--gradient-1);
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .hero-section {
+                padding: 60px 0;
+            }
+            
+            .stat-number {
+                font-size: 3rem;
+            }
+            
+            .btn-hero {
+                padding: 12px 25px;
+                font-size: 1rem;
+            }
+        }
+        
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+        
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .scale-in {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.6s ease;
+        }
+        
+        .scale-in.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .process-step {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .process-step::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-1);
+        }
+        
+        .process-step:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .process-number {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient-1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .testimonial-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .testimonial-card::before {
+            content: '"';
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 4rem;
+            color: var(--primary-color);
+            opacity: 0.2;
+            font-family: serif;
+        }
+        
+        .testimonial-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .pricing-card {
+            background: var(--white);
+            border-radius: 25px;
+            padding: 50px 40px;
+            text-align: center;
+            box-shadow: var(--shadow-light);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+        }
+        
+        .pricing-card.featured {
+            border-color: var(--primary-color);
+            transform: scale(1.05);
+        }
+        
+        .pricing-card.featured::before {
+            content: 'TERPOPULER';
+            position: absolute;
+            top: 20px;
+            right: -30px;
+            background: var(--gradient-2);
+            color: white;
+            padding: 5px 40px;
+            font-size: 12px;
+            font-weight: 600;
+            transform: rotate(45deg);
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-heavy);
+        }
+        
+        .pricing-card.featured:hover {
+            transform: scale(1.05) translateY(-10px);
+        }
+        
+        .tech-stack {
+            background: var(--bg-light);
+            padding: 80px 0;
+        }
+        
+        .tech-item {
+            text-align: center;
+            padding: 30px 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .tech-item:hover {
+            transform: translateY(-5px);
+        }
+        
+        .tech-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--white);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: var(--shadow-light);
+            font-size: 32px;
+            color: var(--primary-color);
+        }
+        
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .floating-element {
+            position: absolute;
+            background: var(--gradient-1);
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: floatRandom 15s ease-in-out infinite;
+        }
+        
+        @keyframes floatRandom {
+            0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+            25% { transform: translateY(-30px) translateX(20px) rotate(90deg); }
+            50% { transform: translateY(-60px) translateX(-20px) rotate(180deg); }
+            75% { transform: translateY(-30px) translateX(-40px) rotate(270deg); }
+        }
+        
+        .scroll-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+        }
+        
+        .scroll-progress {
+            height: 100%;
+            background: var(--gradient-1);
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .hero-section {
+                padding: 60px 0;
+            }
+            
+            .stat-number {
+                font-size: 3rem;
+            }
+            
+            .btn-hero {
+                padding: 12px 25px;
+                font-size: 1rem;
+            }
+        }
+        
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+        
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .scale-in {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.6s ease;
+        }
+        
+        .scale-in.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Scroll Progress Indicator -->
+    <div class="scroll-indicator">
+        <div class="scroll-progress" id="scrollProgress"></div>
+    </div>
+
+    <!-- Floating Background Elements -->
+    <div class="floating-elements">
+        <div class="floating-element" style="width: 100px; height: 100px; top: 10%; left: 5%; animation-delay: 0s;"></div>
+        <div class="floating-element" style="width: 150px; height: 150px; top: 20%; right: 10%; animation-delay: 2s;"></div>
+        <div class="floating-element" style="width: 80px; height: 80px; top: 60%; left: 15%; animation-delay: 4s;"></div>
+        <div class="floating-element" style="width: 120px; height: 120px; bottom: 20%; right: 20%; animation-delay: 6s;"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#home">
+                <i class="fas fa-shield-alt me-2"></i>
+                Nice Patrol
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home">Beranda</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Fitur</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#process">Cara Kerja</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">Kontak</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-section">
+        <div class="hero-particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-6 hero-content" data-aos="fade-right" data-aos-duration="1000">
+                    <h1 class="hero-title">
+                        Revolusi Sistem Keamanan & Patroli Digital
+                    </h1>
+                    <p class="hero-subtitle">
+                        Nice Patrol menghadirkan solusi komprehensif berbasis teknologi cloud untuk mengelola tim keamanan, monitoring patroli real-time, dan sistem manajemen karyawan yang terintegrasi. Tingkatkan efisiensi operasional keamanan perusahaan Anda hingga 300% dengan platform all-in-one yang mudah digunakan.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3 mb-4">
+                        <a href="#contact" class="btn-hero btn-hero-primary">
+                            <i class="fas fa-rocket me-2"></i>Mulai Gratis Sekarang
+                        </a>
+                        <a href="#demo" class="btn-hero btn-hero-secondary">
+                            <i class="fas fa-play me-2"></i>Lihat Demo Live
+                        </a>
+                    </div>
+                    <div class="d-flex align-items-center gap-4 mt-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span class="small">Setup dalam 5 menit</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span class="small">Support 24/7</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span class="small">Gratis Trial 30 Hari</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6" data-aos="fade-left" data-aos-duration="1000" data-aos-delay="200">
+                    <div class="text-center position-relative">
+                        <div class="hero-dashboard-mockup">
+                            <i class="fas fa-shield-alt" style="font-size: 20rem; opacity: 0.2; color: white;"></i>
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <div class="bg-white bg-opacity-10 rounded-4 p-4 backdrop-blur">
+                                    <div class="row g-3">
+                                        <div class="col-6">
+                                            <div class="bg-white bg-opacity-20 rounded-3 p-3 text-center">
+                                                <i class="fas fa-users mb-2"></i>
+                                                <div class="small">1,247 Karyawan</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="bg-white bg-opacity-20 rounded-3 p-3 text-center">
+                                                <i class="fas fa-route mb-2"></i>
+                                                <div class="small">89 Patroli Aktif</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="bg-white bg-opacity-20 rounded-3 p-3 text-center">
+                                                <i class="fas fa-clock mb-2"></i>
+                                                <div class="small">99.8% Uptime</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="bg-white bg-opacity-20 rounded-3 p-3 text-center">
+                                                <i class="fas fa-chart-line mb-2"></i>
+                                                <div class="small">Real-time Data</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3 col-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="stat-item">
+                        <div class="stat-number" data-count="24">0</div>
+                        <div class="stat-label">Jam Monitoring</div>
+                        <div class="small opacity-75">Per Hari, Tanpa Henti</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-item">
+                        <div class="stat-number" data-count="99.9">0</div>
+                        <div class="stat-label">% Uptime</div>
+                        <div class="small opacity-75">Keandalan Sistem</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="stat-item">
+                        <div class="stat-number" data-count="50">0</div>
+                        <div class="stat-label">+ Fitur Lengkap</div>
+                        <div class="small opacity-75">Solusi Terintegrasi</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-4" data-aos="fade-up" data-aos-delay="400">
+                    <div class="stat-item">
+                        <div class="stat-number">∞</div>
+                        <div class="stat-label">Scalable</div>
+                        <div class="small opacity-75">Tumbuh Bersama Bisnis</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5">
+        <div class="container">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <h2 class="section-title">Fitur Unggulan Terlengkap</h2>
+                <p class="section-subtitle">
+                    Platform all-in-one yang menggabungkan teknologi terdepan untuk memberikan solusi keamanan dan manajemen karyawan yang komprehensif, efisien, dan mudah digunakan untuk semua skala bisnis.
+                </p>
+            </div>
+            
+            <div class="row g-4">
+                <!-- Manajemen Karyawan -->
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h4 class="mb-3">Manajemen Karyawan Terpadu</h4>
+                        <p class="text-muted mb-4">
+                            Kelola seluruh data karyawan dalam satu platform terintegrasi. Dari rekrutmen hingga pensiun, semua informasi karyawan tersimpan aman dengan akses yang mudah dan cepat.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Database karyawan lengkap dengan foto & dokumen</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Multi-project assignment & rotasi otomatis</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Riwayat karir, sertifikasi & pelatihan</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Evaluasi kinerja & tracking KPI</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Integrasi dengan sistem BPJS & pajak</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Sistem Patroli -->
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-route"></i>
+                        </div>
+                        <h4 class="mb-3">Sistem Patroli Cerdas</h4>
+                        <p class="text-muted mb-4">
+                            Monitoring patroli real-time dengan teknologi QR code dan GPS tracking. Pastikan setiap checkpoint tercover dengan laporan otomatis dan alert system yang canggih.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>QR Code checkpoint dengan GPS verification</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Real-time tracking & live monitoring</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Laporan patroli otomatis dengan foto bukti</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Route optimization & scheduling cerdas</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Emergency alert & panic button</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Absensi & Kehadiran -->
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h4 class="mb-3">Absensi & Kehadiran Pintar</h4>
+                        <p class="text-muted mb-4">
+                            Sistem absensi modern dengan GPS tracking, face recognition, dan shift management otomatis. Perhitungan jam kerja, lembur, dan cuti terintegrasi dengan payroll.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>GPS location tracking dengan radius setting</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Face recognition & biometric integration</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Shift management & roster otomatis</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Overtime calculation & break time tracking</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Leave management & approval workflow</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Payroll System -->
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <h4 class="mb-3">Payroll System Otomatis</h4>
+                        <p class="text-muted mb-4">
+                            Sistem penggajian otomatis yang akurat dengan perhitungan BPJS, pajak, tunjangan, dan potongan. Generate payslip digital dan laporan keuangan lengkap.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Auto salary calculation berdasarkan kehadiran</li>
+                            <li><i class="fas fa-check text-success me-2"></i>BPJS, PPh21 & tax integration</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Digital payslip dengan QR verification</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Bulk payment & bank integration</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Financial reporting & analytics</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Buku Tamu Digital -->
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="500">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-address-book"></i>
+                        </div>
+                        <h4 class="mb-3">Buku Tamu Digital Canggih</h4>
+                        <p class="text-muted mb-4">
+                            Registrasi tamu digital dengan foto, kuesioner kesehatan, dan kartu tamu otomatis. Tracking visitor dengan notifikasi real-time ke host dan security.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Digital registration dengan tablet/kiosk</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Health questionnaire & temperature check</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Auto guest card printing dengan QR code</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Host notification & approval system</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Visitor analytics & security reporting</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Mobile App -->
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="600">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h4 class="mb-3">Mobile App (PWA) Modern</h4>
+                        <p class="text-muted mb-4">
+                            Progressive Web App yang dapat diinstall di smartphone dan tablet. Akses semua fitur secara offline dengan sinkronisasi otomatis saat online.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Cross-platform PWA (iOS & Android)</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Offline capability dengan local storage</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Push notifications & real-time alerts</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Camera integration untuk scan QR & foto</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Dark mode & responsive design</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Asset Management -->
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="700">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <h4 class="mb-3">Asset Management Terintegrasi</h4>
+                        <p class="text-muted mb-4">
+                            Kelola seluruh aset perusahaan dengan QR code tracking, maintenance scheduling, dan depreciation calculation. Monitor kondisi aset real-time.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>QR asset tracking dengan GPS location</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Maintenance schedule & reminder system</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Depreciation calculation & valuation</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Asset transfer & disposal workflow</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Insurance integration & claim management</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Reporting & Analytics -->
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="800">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <h4 class="mb-3">Reporting & Analytics Mendalam</h4>
+                        <p class="text-muted mb-4">
+                            Dashboard analytics real-time dengan insights mendalam. Generate laporan custom dengan visualisasi data yang menarik dan mudah dipahami.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Real-time dashboard dengan KPI metrics</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Custom reports dengan drag & drop builder</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Export ke Excel, PDF & PowerPoint</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Automated reporting & email scheduling</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Predictive analytics & trend analysis</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Multi-Tenancy -->
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="900">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <h4 class="mb-3">Multi-Tenancy Enterprise</h4>
+                        <p class="text-muted mb-4">
+                            Satu sistem untuk multiple perusahaan dengan isolasi data yang aman. Custom branding, domain, dan konfigurasi per tenant dengan scalability unlimited.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Complete data isolation & security</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Custom branding & white-label solution</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Scalable architecture dengan microservices</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Multi-currency & multi-language support</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Enterprise SSO & LDAP integration</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="process" class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <h2 class="section-title">Cara Kerja Nice Patrol</h2>
+                <p class="section-subtitle">
+                    Implementasi yang mudah dan cepat dalam 4 langkah sederhana. Tim ahli kami akan memandu Anda dari setup hingga go-live dengan training lengkap untuk semua user.
+                </p>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                    <div class="process-step">
+                        <div class="process-number">1</div>
+                        <h5 class="mb-3">Konsultasi & Setup</h5>
+                        <p class="text-muted">
+                            Konsultasi gratis untuk memahami kebutuhan spesifik perusahaan Anda. Setup sistem dalam 24 jam dengan konfigurasi custom sesuai workflow existing.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="process-step">
+                        <div class="process-number">2</div>
+                        <h5 class="mb-3">Import Data & Training</h5>
+                        <p class="text-muted">
+                            Import data karyawan existing dan setup struktur organisasi. Training komprehensif untuk admin dan user dengan materi lengkap dan hands-on practice.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                    <div class="process-step">
+                        <div class="process-number">3</div>
+                        <h5 class="mb-3">Testing & Go-Live</h5>
+                        <p class="text-muted">
+                            Periode testing 2 minggu dengan support penuh. Simulasi semua scenario operasional untuk memastikan sistem berjalan sempurna sebelum go-live.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                    <div class="process-step">
+                        <div class="process-number">4</div>
+                        <h5 class="mb-3">Support & Optimization</h5>
+                        <p class="text-muted">
+                            Support 24/7 dengan response time maksimal 2 jam. Monitoring performa sistem dan optimisasi berkelanjutan untuk hasil maksimal.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="demo-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6" data-aos="fade-right">
+                    <h2 class="mb-4" style="font-family: 'Poppins', sans-serif; font-weight: 700;">
+                        Lihat Nice Patrol Beraksi
+                    </h2>
+                    <p class="lead mb-4 opacity-90">
+                        Jadwalkan demo personal dengan tim ahli kami dan lihat bagaimana Nice Patrol dapat mentransformasi operasional keamanan perusahaan Anda. Demo interaktif dengan data real dan scenario use case sesuai industri Anda.
+                    </p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-video text-white me-3" style="font-size: 1.5rem;"></i>
+                                <div>
+                                    <h6 class="mb-1">Live Demo</h6>
+                                    <p class="small mb-0 opacity-75">30 menit interaktif</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-users text-white me-3" style="font-size: 1.5rem;"></i>
+                                <div>
+                                    <h6 class="mb-1">Team Demo</h6>
+                                    <p class="small mb-0 opacity-75">Untuk seluruh tim</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-cog text-white me-3" style="font-size: 1.5rem;"></i>
+                                <div>
+                                    <h6 class="mb-1">Custom Setup</h6>
+                                    <p class="small mb-0 opacity-75">Sesuai kebutuhan</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-question-circle text-white me-3" style="font-size: 1.5rem;"></i>
+                                <div>
+                                    <h6 class="mb-1">Q&A Session</h6>
+                                    <p class="small mb-0 opacity-75">Tanya jawab lengkap</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="https://wa.me/6285274544077?text=Halo,%20saya%20tertarik%20untuk%20demo%20Nice%20Patrol.%20Mohon%20info%20jadwal%20yang%20tersedia." target="_blank" class="btn-hero btn-hero-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>Jadwalkan Demo Sekarang
+                    </a>
+                </div>
+                <div class="col-lg-6" data-aos="fade-left">
+                    <div class="text-center">
+                        <div class="position-relative">
+                            <div class="bg-white bg-opacity-10 rounded-4 p-5 backdrop-blur">
+                                <i class="fas fa-play-circle" style="font-size: 8rem; color: white; opacity: 0.8;"></i>
+                                <h5 class="mt-3 mb-2">Demo Interaktif</h5>
+                                <p class="opacity-75">Klik untuk melihat preview</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <div class="container">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <h2 class="section-title">Hubungi Tim Ahli Kami</h2>
+                <p class="section-subtitle">
+                    Tim customer success kami siap membantu Anda mengimplementasikan Nice Patrol dengan sukses. Konsultasi gratis, setup cepat, dan support berkelanjutan untuk kesuksesan transformasi digital perusahaan Anda.
+                </p>
+            </div>
+            
+            <div class="row g-4 justify-content-center">
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fab fa-instagram"></i>
+                        </div>
+                        <h4 class="mb-3">Instagram</h4>
+                        <p class="text-muted mb-3">
+                            Follow untuk update terbaru, tips keamanan, case study, dan behind the scenes pengembangan Nice Patrol.
+                        </p>
+                        <div class="mb-3">
+                            <div class="small text-muted">
+                                <i class="fas fa-users me-1"></i> 10K+ Followers
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-heart me-1"></i> Daily Updates
+                            </div>
+                        </div>
+                        <a href="https://instagram.com/nicepatrol" target="_blank" class="btn btn-primary-custom">
+                            <i class="fab fa-instagram me-2"></i>@nicepatrol
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <h4 class="mb-3">WhatsApp Business</h4>
+                        <p class="text-muted mb-3">
+                            Konsultasi langsung dengan solution architect kami. Response time rata-rata 5 menit pada jam kerja.
+                        </p>
+                        <div class="mb-3">
+                            <div class="small text-muted">
+                                <i class="fas fa-clock me-1"></i> 24/7 Available
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-bolt me-1"></i> Fast Response
+                            </div>
+                        </div>
+                        <a href="https://wa.me/6285274544077?text=Halo,%20saya%20tertarik%20dengan%20Nice%20Patrol.%20Mohon%20info%20lebih%20lanjut." target="_blank" class="btn btn-primary-custom">
+                            <i class="fab fa-whatsapp me-2"></i>085274544077
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <h4 class="mb-3">Email Support</h4>
+                        <p class="text-muted mb-3">
+                            Kirim pertanyaan detail, request proposal, atau technical inquiry melalui email dengan response maksimal 2 jam.
+                        </p>
+                        <div class="mb-3">
+                            <div class="small text-muted">
+                                <i class="fas fa-shield-alt me-1"></i> Secure
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-file-alt me-1"></i> Detailed Response
+                            </div>
+                        </div>
+                        <a href="mailto:info@nicepatrol.id?subject=Inquiry%20Nice%20Patrol&body=Halo%20Tim%20Nice%20Patrol,%0A%0ASaya%20tertarik%20untuk%20mengetahui%20lebih%20lanjut%20tentang%20Nice%20Patrol.%0A%0ANama%20Perusahaan:%0AJumlah%20Karyawan:%0AKebutuhan%20Spesifik:%0A%0ATerima%20kasih." class="btn btn-primary-custom">
+                            <i class="fas fa-envelope me-2"></i>info@nicepatrol.id
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- CTA Section -->
+            <div class="text-center mt-5" data-aos="fade-up" data-aos-delay="400">
+                <div class="bg-white rounded-4 p-5 shadow-sm d-inline-block position-relative overflow-hidden">
+                    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: var(--gradient-1); opacity: 0.05;"></div>
+                    <div class="position-relative">
+                        <h5 class="mb-3">🚀 Siap Transformasi Digital?</h5>
+                        <p class="text-muted mb-4 mx-auto" style="max-width: 500px;">
+                            Bergabunglah dengan 500+ perusahaan yang telah mempercayai Nice Patrol untuk mengelola sistem keamanan mereka. Dapatkan trial gratis 30 hari tanpa komitmen.
+                        </p>
+                        <div class="d-flex flex-wrap gap-3 justify-content-center">
+                            <a href="https://wa.me/6285274544077?text=Halo,%20saya%20ingin%20trial%20gratis%20Nice%20Patrol%20selama%2030%20hari." target="_blank" class="btn btn-primary-custom btn-lg">
+                                <i class="fas fa-rocket me-2"></i>Mulai Trial Gratis
+                            </a>
+                            <a href="https://wa.me/6285274544077?text=Halo,%20saya%20tertarik%20untuk%20demo%20Nice%20Patrol.%20Mohon%20info%20jadwal%20yang%20tersedia." target="_blank" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-calendar-alt me-2"></i>Jadwalkan Demo
+                            </a>
+                        </div>
+                        <div class="mt-4">
+                            <div class="row g-3 justify-content-center">
+                                <div class="col-auto">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span class="small">No Setup Fee</span>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span class="small">Cancel Anytime</span>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span class="small">24/7 Support</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- FAQ Quick Section -->
+            <div class="row mt-5 g-4" data-aos="fade-up" data-aos-delay="500">
+                <div class="col-md-6">
+                    <div class="bg-white rounded-3 p-4 h-100">
+                        <h6 class="mb-3"><i class="fas fa-question-circle text-primary me-2"></i>Berapa lama implementasi?</h6>
+                        <p class="text-muted small mb-0">Setup dasar dapat diselesaikan dalam 24 jam. Implementasi lengkap dengan training biasanya 1-2 minggu tergantung kompleksitas.</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="bg-white rounded-3 p-4 h-100">
+                        <h6 class="mb-3"><i class="fas fa-question-circle text-primary me-2"></i>Apakah data aman?</h6>
+                        <p class="text-muted small mb-0">Ya, kami menggunakan enkripsi end-to-end, backup otomatis, dan compliance dengan standar keamanan internasional.</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="bg-white rounded-3 p-4 h-100">
+                        <h6 class="mb-3"><i class="fas fa-question-circle text-primary me-2"></i>Bisakah integrasi dengan sistem existing?</h6>
+                        <p class="text-muted small mb-0">Tentu! Kami menyediakan API dan dapat melakukan custom integration dengan sistem HR, payroll, atau ERP yang sudah ada.</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="bg-white rounded-3 p-4 h-100">
+                        <h6 class="mb-3"><i class="fas fa-question-circle text-primary me-2"></i>Bagaimana dengan training user?</h6>
+                        <p class="text-muted small mb-0">Kami provide training lengkap untuk admin dan end-user, termasuk video tutorial, user manual, dan session hands-on.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <h5 class="mb-4">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Nice Patrol
+                    </h5>
+                    <p class="text-muted mb-4">
+                        Platform manajemen keamanan dan patroli terdepan yang mengintegrasikan teknologi modern untuk memberikan solusi komprehensif bagi perusahaan di seluruh Indonesia.
+                    </p>
+                    <div class="d-flex gap-3">
+                        <a href="https://instagram.com/nicepatrol" target="_blank" class="text-muted">
+                            <i class="fab fa-instagram fa-lg"></i>
+                        </a>
+                        <a href="https://wa.me/6285274544077" target="_blank" class="text-muted">
+                            <i class="fab fa-whatsapp fa-lg"></i>
+                        </a>
+                        <a href="mailto:info@nicepatrol.id" class="text-muted">
+                            <i class="fas fa-envelope fa-lg"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h6 class="mb-3">Produk</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#features" class="text-muted text-decoration-none">Fitur Lengkap</a></li>
+                        <li class="mb-2"><a href="#demo" class="text-muted text-decoration-none">Demo</a></li>
+                        <li class="mb-2"><a href="#process" class="text-muted text-decoration-none">Cara Kerja</a></li>
+                        <li class="mb-2"><a href="#contact" class="text-muted text-decoration-none">Kontak</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h6 class="mb-3">Perusahaan</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Tentang Kami</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Karir</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Blog</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Press Kit</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h6 class="mb-3">Support</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Help Center</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Documentation</a></li>
+                        <li class="mb-2"><a href="#contact" class="text-muted text-decoration-none">Kontak</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Status</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h6 class="mb-3">Legal</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Privacy Policy</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Terms of Service</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Cookie Policy</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">GDPR</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4 opacity-25">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0 text-muted">&copy; 2024 Nice Patrol. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted">
+                        Made with <i class="fas fa-heart text-danger"></i> in Indonesia
+                        <span class="mx-2">•</span>
+                        <span class="small">v2.1.0</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AOS Animation -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 1200,
+            once: true,
+            offset: 50,
+            easing: 'ease-out-cubic'
+        });
+
+        // Scroll Progress Indicator
+        function updateScrollProgress() {
+            const scrollTop = window.pageYOffset;
+            const docHeight = document.body.scrollHeight - window.innerHeight;
+            const scrollPercent = (scrollTop / docHeight) * 100;
+            document.getElementById('scrollProgress').style.width = scrollPercent + '%';
+        }
+
+        window.addEventListener('scroll', updateScrollProgress);
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Navbar background on scroll with smooth transition
+        let lastScrollTop = 0;
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            if (scrollTop > 50) {
+                navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+                navbar.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
+            } else {
+                navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+                navbar.style.boxShadow = '0 2px 10px rgba(0,0,0,0.05)';
+            }
+            
+            // Hide/show navbar on scroll
+            if (scrollTop > lastScrollTop && scrollTop > 100) {
+                navbar.style.transform = 'translateY(-100%)';
+            } else {
+                navbar.style.transform = 'translateY(0)';
+            }
+            lastScrollTop = scrollTop;
+        });
+
+        // Animated counter for stats
+        function animateCounter(element, target, duration = 2000) {
+            let start = 0;
+            const increment = target / (duration / 16);
+            
+            function updateCounter() {
+                start += increment;
+                if (start < target) {
+                    element.textContent = Math.floor(start);
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    element.textContent = target;
+                }
+            }
+            updateCounter();
+        }
+
+        // Trigger counter animation when stats section is visible
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const counters = entry.target.querySelectorAll('[data-count]');
+                    counters.forEach(counter => {
+                        const target = parseInt(counter.getAttribute('data-count'));
+                        animateCounter(counter, target);
+                    });
+                    statsObserver.unobserve(entry.target);
+                }
+            });
+        });
+
+        const statsSection = document.querySelector('.stats-section');
+        if (statsSection) {
+            statsObserver.observe(statsSection);
+        }
+
+        // Enhanced contact button interactions
+        document.querySelectorAll('.contact-card .btn, .btn-hero, .btn-primary-custom').forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px) scale(1.02)';
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+            
+            btn.addEventListener('click', function(e) {
+                // Create ripple effect
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                ripple.classList.add('ripple');
+                
+                this.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+
+        // Parallax effect for hero section
+        window.addEventListener('scroll', function() {
+            const scrolled = window.pageYOffset;
+            const parallax = document.querySelector('.hero-section');
+            const speed = scrolled * 0.5;
+            
+            if (parallax) {
+                parallax.style.transform = `translateY(${speed}px)`;
+            }
+        });
+
+        // Typing animation for hero title
+        function typeWriter(element, text, speed = 100) {
+            let i = 0;
+            element.innerHTML = '';
+            
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        // Initialize typing animation when page loads
+        window.addEventListener('load', function() {
+            const heroTitle = document.querySelector('.hero-title');
+            if (heroTitle) {
+                const originalText = heroTitle.textContent;
+                setTimeout(() => {
+                    typeWriter(heroTitle, originalText, 50);
+                }, 500);
+            }
+        });
+
+        // Feature card hover effects with 3D transform
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-15px) rotateX(5deg)';
+                this.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) rotateX(0deg)';
+            });
+        });
+
+        // Intersection Observer for fade-in animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all elements with animation classes
+        document.querySelectorAll('.fade-in-up, .scale-in').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Dynamic particle animation
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'floating-particle';
+            particle.style.cssText = `
+                position: fixed;
+                width: ${Math.random() * 6 + 2}px;
+                height: ${Math.random() * 6 + 2}px;
+                background: rgba(37, 99, 235, 0.3);
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: -1;
+                left: ${Math.random() * 100}vw;
+                top: 100vh;
+                animation: floatUp ${Math.random() * 10 + 10}s linear infinite;
+            `;
+            
+            document.body.appendChild(particle);
+            
+            setTimeout(() => {
+                particle.remove();
+            }, 20000);
+        }
+
+        // Add CSS for floating particles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes floatUp {
+                to {
+                    transform: translateY(-100vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+            
+            .ripple {
+                position: absolute;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.6);
+                transform: scale(0);
+                animation: ripple-animation 0.6s linear;
+                pointer-events: none;
+            }
+            
+            @keyframes ripple-animation {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Create particles periodically
+        setInterval(createParticle, 2000);
+
+        // Enhanced scroll-triggered animations
+        const scrollElements = document.querySelectorAll('.feature-card, .process-step, .contact-card');
+        
+        const elementInView = (el, dividend = 1) => {
+            const elementTop = el.getBoundingClientRect().top;
+            return (
+                elementTop <= (window.innerHeight || document.documentElement.clientHeight) / dividend
+            );
+        };
+
+        const displayScrollElement = (element) => {
+            element.classList.add('scrolled');
+        };
+
+        const hideScrollElement = (element) => {
+            element.classList.remove('scrolled');
+        };
+
+        const handleScrollAnimation = () => {
+            scrollElements.forEach((el) => {
+                if (elementInView(el, 1.25)) {
+                    displayScrollElement(el);
+                } else {
+                    hideScrollElement(el);
+                }
+            });
+        };
+
+        window.addEventListener('scroll', handleScrollAnimation);
+
+        // Add CSS for scroll animations
+        const scrollStyle = document.createElement('style');
+        scrollStyle.textContent = `
+            .feature-card, .process-step, .contact-card {
+                opacity: 0;
+                transform: translateY(50px);
+                transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            }
+            
+            .feature-card.scrolled, .process-step.scrolled, .contact-card.scrolled {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        `;
+        document.head.appendChild(scrollStyle);
+
+        // Initialize scroll animation on load
+        handleScrollAnimation();
+
+        // Add loading animation
+        window.addEventListener('load', function() {
+            document.body.classList.add('loaded');
+        });
+
+        // Performance optimization: Throttle scroll events
+        function throttle(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Apply throttling to scroll events
+        window.addEventListener('scroll', throttle(function() {
+            updateScrollProgress();
+            handleScrollAnimation();
+        }, 16)); // ~60fps
+    </script>
+</body>
+</html>
