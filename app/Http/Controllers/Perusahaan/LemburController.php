@@ -14,73 +14,180 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class LemburController extends Controller
 {
+    /**
+     * Check if lemburs table exists
+     */
+    private function tableExists(): bool
+    {
+        try {
+            return Schema::hasTable('lemburs');
+        } catch (\Exception $e) {
+            \Log::error('Error checking lemburs table: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get error response when table doesn't exist
+     */
+    private function getTableNotExistsResponse($redirectRoute = 'perusahaan.lembur.index')
+    {
+        $message = 'Fitur Lembur belum tersedia. Silakan hubungi administrator untuk mengaktifkan fitur ini.';
+        
+        if ($redirectRoute === 'perusahaan.lembur.index') {
+            // For index page, return view with empty data
+            $lemburs = new LengthAwarePaginator(
+                collect([]), // Empty collection
+                0, // Total items
+                20, // Per page
+                1, // Current page
+                [
+                    'path' => request()->url(),
+                    'pageName' => 'page',
+                ]
+            );
+            
+            $projects = Project::select('id', 'nama')
+                ->where('perusahaan_id', auth()->user()->perusahaan_id)
+                ->orderBy('nama')
+                ->get();
+
+            $stats = [
+                'total' => 0,
+                'pending' => 0,
+                'approved' => 0,
+                'rejected' => 0,
+            ];
+
+            return view('perusahaan.lembur.index', compact('lemburs', 'projects', 'stats'))
+                ->with('info', $message);
+        }
+        
+        return redirect()->route($redirectRoute)->with('error', $message);
+    }
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $query = Lembur::with(['karyawan', 'project', 'approvedBy'])
-            ->orderBy('created_at', 'desc');
+        try {
+            // Check if lemburs table exists
+            if (!$this->tableExists()) {
+                return $this->getTableNotExistsResponse('perusahaan.lembur.index');
+            }
 
-        // Filter berdasarkan project
-        if ($request->filled('project_id')) {
-            $query->where('project_id', $request->project_id);
+            $query = Lembur::with(['karyawan', 'project', 'approvedBy'])
+                ->orderBy('created_at', 'desc');
+
+            // Filter berdasarkan project
+            if ($request->filled('project_id')) {
+                $query->where('project_id', $request->project_id);
+            }
+
+            // Filter berdasarkan status
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            // Filter berdasarkan tanggal
+            if ($request->filled('tanggal_mulai')) {
+                $query->whereDate('tanggal_lembur', '>=', $request->tanggal_mulai);
+            }
+
+            if ($request->filled('tanggal_selesai')) {
+                $query->whereDate('tanggal_lembur', '<=', $request->tanggal_selesai);
+            }
+
+            // Search berdasarkan nama karyawan
+            if ($request->filled('search')) {
+                $query->whereHas('karyawan', function($q) use ($request) {
+                    $q->where('nama_lengkap', 'like', '%' . $request->search . '%');
+                });
+            }
+
+            $lemburs = $query->paginate(20);
+
+            // Get projects untuk filter
+            $projects = Project::select('id', 'nama')
+                ->where('perusahaan_id', auth()->user()->perusahaan_id)
+                ->orderBy('nama')
+                ->get();
+
+            // Statistics
+            $stats = [
+                'total' => Lembur::count(),
+                'pending' => Lembur::where('status', 'pending')->count(),
+                'approved' => Lembur::where('status', 'approved')->count(),
+                'rejected' => Lembur::where('status', 'rejected')->count(),
+            ];
+
+            return view('perusahaan.lembur.index', compact('lemburs', 'projects', 'stats'));
+
+        } catch (\Exception $e) {
+            \Log::error('Error in LemburController@index: ' . $e->getMessage());
+            
+            // Return empty view with error message
+            $lemburs = new LengthAwarePaginator(
+                collect([]), // Empty collection
+                0, // Total items
+                20, // Per page
+                1, // Current page
+                [
+                    'path' => request()->url(),
+                    'pageName' => 'page',
+                ]
+            );
+            
+            $projects = Project::select('id', 'nama')
+                ->where('perusahaan_id', auth()->user()->perusahaan_id)
+                ->orderBy('nama')
+                ->get();
+
+            $stats = [
+                'total' => 0,
+                'pending' => 0,
+                'approved' => 0,
+                'rejected' => 0,
+            ];
+
+            return view('perusahaan.lembur.index', compact('lemburs', 'projects', 'stats'))
+                ->with('error', 'Terjadi kesalahan saat memuat data lembur. Silakan coba lagi atau hubungi administrator.');
         }
-
-        // Filter berdasarkan status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter berdasarkan tanggal
-        if ($request->filled('tanggal_mulai')) {
-            $query->whereDate('tanggal_lembur', '>=', $request->tanggal_mulai);
-        }
-
-        if ($request->filled('tanggal_selesai')) {
-            $query->whereDate('tanggal_lembur', '<=', $request->tanggal_selesai);
-        }
-
-        // Search berdasarkan nama karyawan
-        if ($request->filled('search')) {
-            $query->whereHas('karyawan', function($q) use ($request) {
-                $q->where('nama_lengkap', 'like', '%' . $request->search . '%');
-            });
-        }
-
-        $lemburs = $query->paginate(20);
-
-        // Get projects untuk filter
-        $projects = Project::select('id', 'nama')
-            ->where('perusahaan_id', auth()->user()->perusahaan_id)
-            ->orderBy('nama')
-            ->get();
-
-        // Statistics
-        $stats = [
-            'total' => Lembur::count(),
-            'pending' => Lembur::where('status', 'pending')->count(),
-            'approved' => Lembur::where('status', 'approved')->count(),
-            'rejected' => Lembur::where('status', 'rejected')->count(),
-        ];
-
-        return view('perusahaan.lembur.index', compact('lemburs', 'projects', 'stats'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        $projects = Project::select('id', 'nama')
-            ->where('perusahaan_id', auth()->user()->perusahaan_id)
-            ->orderBy('nama')
-            ->get();
+        try {
+            // Check if lemburs table exists
+            if (!$this->tableExists()) {
+                // Show create form with info message instead of redirecting
+                $projects = Project::select('id', 'nama')
+                    ->where('perusahaan_id', auth()->user()->perusahaan_id)
+                    ->orderBy('nama')
+                    ->get();
 
-        return view('perusahaan.lembur.create', compact('projects'));
+                return view('perusahaan.lembur.create', compact('projects'))
+                    ->with('info', 'Fitur Lembur belum tersedia. Silakan hubungi administrator untuk mengaktifkan fitur ini.');
+            }
+
+            $projects = Project::select('id', 'nama')
+                ->where('perusahaan_id', auth()->user()->perusahaan_id)
+                ->orderBy('nama')
+                ->get();
+
+            return view('perusahaan.lembur.create', compact('projects'));
+
+        } catch (\Exception $e) {
+            \Log::error('Error in LemburController@create: ' . $e->getMessage());
+            
+            return redirect()->route('perusahaan.lembur.index')
+                ->with('error', 'Terjadi kesalahan saat memuat halaman. Silakan coba lagi atau hubungi administrator.');
+        }
     }
 
     /**
@@ -88,77 +195,86 @@ class LemburController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'project_id' => 'required|exists:projects,id',
-            'karyawan_id' => 'required|exists:karyawans,id',
-            'tanggal_lembur' => 'required|date',
-            'jam_mulai' => 'required|date_format:H:i',
-            'jam_selesai' => 'required|date_format:H:i',
-            'alasan_lembur' => 'required|string|max:500',
-            'deskripsi_pekerjaan' => 'required|string|max:1000',
-            'tarif_lembur_per_jam' => 'nullable|numeric|min:0',
-        ]);
-
-        // Auto-assign perusahaan_id
-        $validated['perusahaan_id'] = auth()->user()->perusahaan_id;
-
-        // Validasi karyawan belongs to project
-        $karyawan = Karyawan::where('id', $validated['karyawan_id'])
-            ->where('project_id', $validated['project_id'])
-            ->where('is_active', true)
-            ->first();
-
-        if (!$karyawan) {
-            return back()->withErrors(['karyawan_id' => 'Karyawan tidak ditemukan di project ini.']);
-        }
-
-        // Validate time logic
-        $jamMulai = Carbon::parse($validated['jam_mulai']);
-        $jamSelesai = Carbon::parse($validated['jam_selesai']);
-        $jamSelesaiAdjusted = $jamSelesai->copy();
-        
-        // Handle overnight shift
-        if ($jamSelesaiAdjusted->lt($jamMulai)) {
-            $jamSelesaiAdjusted->addDay();
-        }
-        
-        $totalJam = $jamSelesaiAdjusted->diffInHours($jamMulai, true);
-        
-        // Validate reasonable working hours (max 12 hours)
-        if ($totalJam > 12) {
-            return back()->withErrors(['jam_selesai' => 'Total jam lembur tidak boleh lebih dari 12 jam.']);
-        }
-        
-        if ($totalJam <= 0) {
-            return back()->withErrors(['jam_selesai' => 'Jam selesai harus lebih besar dari jam mulai.']);
-        }
-        
-        // Validate minimum overtime duration (30 minutes = 0.5 hours)
-        if ($totalJam < 0.5) {
-            return back()->withErrors(['jam_selesai' => 'Durasi lembur minimal adalah 30 menit.']);
-        }
-
-        // Auto-calculate overtime rate if not provided
-        if (empty($validated['tarif_lembur_per_jam'])) {
-            $overtimeRateData = $this->calculateOvertimeRateForKaryawan($validated['tanggal_lembur'], $karyawan);
-            $validated['tarif_lembur_per_jam'] = $overtimeRateData['overtime_rate'] ?? 0;
-        }
-
-        // Use the already calculated total hours (rounded)
-        $validated['total_jam'] = round($totalJam, 0);
-        
-        // Calculate total upah (rounded)
-        $validated['total_upah_lembur'] = round($totalJam * $validated['tarif_lembur_per_jam'], 0);
-
         try {
+            // Check if lemburs table exists
+            if (!$this->tableExists()) {
+                return $this->getTableNotExistsResponse();
+            }
+
+            $validated = $request->validate([
+                'project_id' => 'required|exists:projects,id',
+                'karyawan_id' => 'required|exists:karyawans,id',
+                'tanggal_lembur' => 'required|date',
+                'jam_mulai' => 'required|date_format:H:i',
+                'jam_selesai' => 'required|date_format:H:i',
+                'alasan_lembur' => 'required|string|max:500',
+                'deskripsi_pekerjaan' => 'required|string|max:1000',
+                'tarif_lembur_per_jam' => 'nullable|numeric|min:0',
+            ]);
+
+            // Auto-assign perusahaan_id
+            $validated['perusahaan_id'] = auth()->user()->perusahaan_id;
+
+            // Validasi karyawan belongs to project
+            $karyawan = Karyawan::where('id', $validated['karyawan_id'])
+                ->where('project_id', $validated['project_id'])
+                ->where('is_active', true)
+                ->first();
+
+            if (!$karyawan) {
+                return back()->withErrors(['karyawan_id' => 'Karyawan tidak ditemukan di project ini.']);
+            }
+
+            // Validate time logic
+            $jamMulai = Carbon::parse($validated['jam_mulai']);
+            $jamSelesai = Carbon::parse($validated['jam_selesai']);
+            $jamSelesaiAdjusted = $jamSelesai->copy();
+            
+            // Handle overnight shift
+            if ($jamSelesaiAdjusted->lt($jamMulai)) {
+                $jamSelesaiAdjusted->addDay();
+            }
+            
+            $totalJam = $jamSelesaiAdjusted->diffInHours($jamMulai, true);
+            
+            // Validate reasonable working hours (max 12 hours)
+            if ($totalJam > 12) {
+                return back()->withErrors(['jam_selesai' => 'Total jam lembur tidak boleh lebih dari 12 jam.']);
+            }
+            
+            if ($totalJam <= 0) {
+                return back()->withErrors(['jam_selesai' => 'Jam selesai harus lebih besar dari jam mulai.']);
+            }
+            
+            // Validate minimum overtime duration (30 minutes = 0.5 hours)
+            if ($totalJam < 0.5) {
+                return back()->withErrors(['jam_selesai' => 'Durasi lembur minimal adalah 30 menit.']);
+            }
+
+            // Auto-calculate overtime rate if not provided
+            if (empty($validated['tarif_lembur_per_jam'])) {
+                $overtimeRateData = $this->calculateOvertimeRateForKaryawan($validated['tanggal_lembur'], $karyawan);
+                $validated['tarif_lembur_per_jam'] = $overtimeRateData['overtime_rate'] ?? 0;
+            }
+
+            // Use the already calculated total hours (rounded)
+            $validated['total_jam'] = round($totalJam, 0);
+            
+            // Calculate total upah (rounded)
+            $validated['total_upah_lembur'] = round($totalJam * $validated['tarif_lembur_per_jam'], 0);
+
             DB::transaction(function () use ($validated) {
                 $lembur = Lembur::create($validated);
             });
 
             return redirect()->route('perusahaan.lembur.index')
                 ->with('success', 'Permintaan lembur berhasil dibuat.');
+
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal membuat permintaan lembur: ' . $e->getMessage()]);
+            \Log::error('Error in LemburController@store: ' . $e->getMessage());
+            
+            return redirect()->route('perusahaan.lembur.index')
+                ->with('error', 'Terjadi kesalahan saat menyimpan data lembur. Silakan coba lagi atau hubungi administrator.');
         }
     }
 

@@ -171,7 +171,14 @@ class KruChangeController extends Controller
         try {
             // Check if kru_changes table exists
             if (!$this->tableExists()) {
-                return $this->getTableNotExistsResponse();
+                // Show create form with info message instead of redirecting
+                $projects = Project::select('id', 'nama')
+                    ->where('is_active', true)
+                    ->orderBy('nama')
+                    ->get();
+
+                return view('perusahaan.kru-change.create', compact('projects'))
+                    ->with('info', 'Fitur Kru Change belum tersedia. Silakan hubungi administrator untuk mengaktifkan fitur ini.');
             }
 
             $projects = Project::select('id', 'nama')
