@@ -16,79 +16,177 @@ use App\Models\PertanyaanKuesioner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class KruChangeController extends Controller
 {
+    /**
+     * Check if kru_changes table exists
+     */
+    private function tableExists(): bool
+    {
+        try {
+            return Schema::hasTable('kru_changes');
+        } catch (\Exception $e) {
+            \Log::error('Error checking kru_changes table: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get error response when table doesn't exist
+     */
+    private function getTableNotExistsResponse($redirectRoute = 'perusahaan.kru-change.index')
+    {
+        $message = 'Fitur Kru Change belum tersedia. Silakan hubungi administrator untuk mengaktifkan fitur ini.';
+        
+        if ($redirectRoute === 'perusahaan.kru-change.index') {
+            // For index page, return view with empty data
+            $kruChanges = new LengthAwarePaginator(
+                collect([]), // Empty collection
+                0, // Total items
+                15, // Per page
+                1, // Current page
+                [
+                    'path' => request()->url(),
+                    'pageName' => 'page',
+                ]
+            );
+            
+            $projects = Project::select('id', 'nama')
+                ->where('is_active', true)
+                ->orderBy('nama')
+                ->get();
+            $areas = AreaPatrol::select('id', 'nama', 'project_id')
+                ->where('is_active', true)
+                ->orderBy('nama')
+                ->get();
+
+            return view('perusahaan.kru-change.index', compact('kruChanges', 'projects', 'areas'))
+                ->with('info', $message);
+        }
+        
+        return redirect()->route($redirectRoute)->with('error', $message);
+    }
     public function index(Request $request)
     {
-        $query = KruChange::with([
-                'project:id,nama',
-                'areaPatrol:id,nama',
-                'timKeluar:id,nama_tim,jenis_regu',
-                'timMasuk:id,nama_tim,jenis_regu',
-                'petugasKeluar:id,name',
-                'petugasMasuk:id,name'
-            ]);
+        try {
+            // Check if kru_changes table exists
+            if (!$this->tableExists()) {
+                return $this->getTableNotExistsResponse('perusahaan.kru-change.index');
+            }
 
-        // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->whereHas('areaPatrol', function($sq) use ($search) {
-                    $sq->where('nama', 'ILIKE', "%{$search}%");
-                })
-                ->orWhereHas('timKeluar', function($sq) use ($search) {
-                    $sq->where('nama_tim', 'ILIKE', "%{$search}%");
-                })
-                ->orWhereHas('timMasuk', function($sq) use ($search) {
-                    $sq->where('nama_tim', 'ILIKE', "%{$search}%");
+            $query = KruChange::with([
+                    'project:id,nama',
+                    'areaPatrol:id,nama',
+                    'timKeluar:id,nama_tim,jenis_regu',
+                    'timMasuk:id,nama_tim,jenis_regu',
+                    'petugasKeluar:id,name',
+                    'petugasMasuk:id,name'
+                ]);
+
+            // Search
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->whereHas('areaPatrol', function($sq) use ($search) {
+                        $sq->where('nama', 'ILIKE', "%{$search}%");
+                    })
+                    ->orWhereHas('timKeluar', function($sq) use ($search) {
+                        $sq->where('nama_tim', 'ILIKE', "%{$search}%");
+                    })
+                    ->orWhereHas('timMasuk', function($sq) use ($search) {
+                        $sq->where('nama_tim', 'ILIKE', "%{$search}%");
+                    });
                 });
-            });
+            }
+
+            // Filter by project
+            if ($request->filled('project_id')) {
+                $query->where('project_id', $request->project_id);
+            }
+
+            // Filter by area
+            if ($request->filled('area_id')) {
+                $query->where('area_patrol_id', $request->area_id);
+            }
+
+            // Filter by status
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            // Filter by date
+            if ($request->filled('tanggal')) {
+                $query->whereDate('waktu_mulai_handover', $request->tanggal);
+            }
+
+            $kruChanges = $query->latest('waktu_mulai_handover')->paginate(15)->withQueryString();
+            
+            $projects = Project::select('id', 'nama')
+                ->where('is_active', true)
+                ->orderBy('nama')
+                ->get();
+
+            $areas = AreaPatrol::select('id', 'nama', 'project_id')
+                ->where('is_active', true)
+                ->orderBy('nama')
+                ->get();
+
+            return view('perusahaan.kru-change.index', compact('kruChanges', 'projects', 'areas'));
+
+        } catch (\Exception $e) {
+            \Log::error('Error in KruChangeController@index: ' . $e->getMessage());
+            
+            // Return empty view with error message
+            $kruChanges = new LengthAwarePaginator(
+                collect([]), // Empty collection
+                0, // Total items
+                15, // Per page
+                1, // Current page
+                [
+                    'path' => request()->url(),
+                    'pageName' => 'page',
+                ]
+            );
+            
+            $projects = Project::select('id', 'nama')
+                ->where('is_active', true)
+                ->orderBy('nama')
+                ->get();
+            $areas = AreaPatrol::select('id', 'nama', 'project_id')
+                ->where('is_active', true)
+                ->orderBy('nama')
+                ->get();
+
+            return view('perusahaan.kru-change.index', compact('kruChanges', 'projects', 'areas'))
+                ->with('error', 'Terjadi kesalahan saat memuat data. Silakan coba lagi atau hubungi administrator.');
         }
-
-        // Filter by project
-        if ($request->filled('project_id')) {
-            $query->where('project_id', $request->project_id);
-        }
-
-        // Filter by area
-        if ($request->filled('area_id')) {
-            $query->where('area_patrol_id', $request->area_id);
-        }
-
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by date
-        if ($request->filled('tanggal')) {
-            $query->whereDate('waktu_mulai_handover', $request->tanggal);
-        }
-
-        $kruChanges = $query->latest('waktu_mulai_handover')->paginate(15)->withQueryString();
-        
-        $projects = Project::select('id', 'nama')
-            ->where('is_active', true)
-            ->orderBy('nama')
-            ->get();
-
-        $areas = AreaPatrol::select('id', 'nama', 'project_id')
-            ->where('is_active', true)
-            ->orderBy('nama')
-            ->get();
-
-        return view('perusahaan.kru-change.index', compact('kruChanges', 'projects', 'areas'));
     }
 
     public function create()
     {
-        $projects = Project::select('id', 'nama')
-            ->where('is_active', true)
-            ->orderBy('nama')
-            ->get();
+        try {
+            // Check if kru_changes table exists
+            if (!$this->tableExists()) {
+                return $this->getTableNotExistsResponse();
+            }
 
-        return view('perusahaan.kru-change.create', compact('projects'));
+            $projects = Project::select('id', 'nama')
+                ->where('is_active', true)
+                ->orderBy('nama')
+                ->get();
+
+            return view('perusahaan.kru-change.create', compact('projects'));
+
+        } catch (\Exception $e) {
+            \Log::error('Error in KruChangeController@create: ' . $e->getMessage());
+            
+            return redirect()->route('perusahaan.kru-change.index')
+                ->with('error', 'Terjadi kesalahan saat memuat halaman. Silakan coba lagi atau hubungi administrator.');
+        }
     }
 
     public function getDataByProject(Request $request, $projectId)
@@ -198,65 +296,78 @@ class KruChangeController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'project_id' => 'required|exists:projects,id',
-            'area_patrol_id' => 'required|exists:area_patrols,id',
-            'tim_keluar_id' => 'required|exists:tim_patrolis,id',
-            'tim_masuk_id' => 'required|exists:tim_patrolis,id|different:tim_keluar_id',
-            'waktu_mulai_handover' => 'required|date',
-            'petugas_keluar_ids' => 'required|array|min:1',
-            'petugas_keluar_ids.*' => 'exists:users,id',
-            'petugas_masuk_ids' => 'nullable|array',
-            'petugas_masuk_ids.*' => 'exists:users,id',
-            'supervisor_id' => 'nullable|exists:users,id',
-            'catatan_keluar' => 'nullable|string|max:1000',
-            'foto_tim_keluar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'foto_tim_masuk' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ], [
-            'project_id.required' => 'Project wajib dipilih',
-            'area_patrol_id.required' => 'Area patroli wajib dipilih',
-            'tim_keluar_id.required' => 'Tim keluar wajib dipilih',
-            'tim_masuk_id.required' => 'Tim masuk wajib dipilih',
-            'tim_masuk_id.different' => 'Tim masuk harus berbeda dengan tim keluar',
-            'waktu_mulai_handover.required' => 'Waktu handover wajib diisi',
-            'petugas_keluar_ids.required' => 'Minimal satu petugas keluar wajib dipilih',
-            'petugas_keluar_ids.min' => 'Minimal satu petugas keluar wajib dipilih',
-            'foto_tim_keluar.image' => 'Foto tim keluar harus berupa gambar',
-            'foto_tim_keluar.mimes' => 'Foto tim keluar harus berformat jpeg, png, atau jpg',
-            'foto_tim_keluar.max' => 'Foto tim keluar maksimal 2MB',
-            'foto_tim_masuk.image' => 'Foto tim masuk harus berupa gambar',
-            'foto_tim_masuk.mimes' => 'Foto tim masuk harus berformat jpeg, png, atau jpg',
-            'foto_tim_masuk.max' => 'Foto tim masuk maksimal 2MB',
-        ]);
+        try {
+            // Check if kru_changes table exists
+            if (!$this->tableExists()) {
+                return $this->getTableNotExistsResponse();
+            }
 
-        // Get shift info from teams
-        $timKeluar = TimPatroli::find($validated['tim_keluar_id']);
-        $timMasuk = TimPatroli::find($validated['tim_masuk_id']);
+            $validated = $request->validate([
+                'project_id' => 'required|exists:projects,id',
+                'area_patrol_id' => 'required|exists:area_patrols,id',
+                'tim_keluar_id' => 'required|exists:tim_patrolis,id',
+                'tim_masuk_id' => 'required|exists:tim_patrolis,id|different:tim_keluar_id',
+                'waktu_mulai_handover' => 'required|date',
+                'petugas_keluar_ids' => 'required|array|min:1',
+                'petugas_keluar_ids.*' => 'exists:users,id',
+                'petugas_masuk_ids' => 'nullable|array',
+                'petugas_masuk_ids.*' => 'exists:users,id',
+                'supervisor_id' => 'nullable|exists:users,id',
+                'catatan_keluar' => 'nullable|string|max:1000',
+                'foto_tim_keluar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'foto_tim_masuk' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            ], [
+                'project_id.required' => 'Project wajib dipilih',
+                'area_patrol_id.required' => 'Area patroli wajib dipilih',
+                'tim_keluar_id.required' => 'Tim keluar wajib dipilih',
+                'tim_masuk_id.required' => 'Tim masuk wajib dipilih',
+                'tim_masuk_id.different' => 'Tim masuk harus berbeda dengan tim keluar',
+                'waktu_mulai_handover.required' => 'Waktu handover wajib diisi',
+                'petugas_keluar_ids.required' => 'Minimal satu petugas keluar wajib dipilih',
+                'petugas_keluar_ids.min' => 'Minimal satu petugas keluar wajib dipilih',
+                'foto_tim_keluar.image' => 'Foto tim keluar harus berupa gambar',
+                'foto_tim_keluar.mimes' => 'Foto tim keluar harus berformat jpeg, png, atau jpg',
+                'foto_tim_keluar.max' => 'Foto tim keluar maksimal 2MB',
+                'foto_tim_masuk.image' => 'Foto tim masuk harus berupa gambar',
+                'foto_tim_masuk.mimes' => 'Foto tim masuk harus berformat jpeg, png, atau jpg',
+                'foto_tim_masuk.max' => 'Foto tim masuk maksimal 2MB',
+            ]);
 
-        $validated['perusahaan_id'] = auth()->user()->perusahaan_id;
-        $validated['shift_keluar_id'] = $timKeluar->shift_id;
-        $validated['shift_masuk_id'] = $timMasuk->shift_id;
-        $validated['status'] = 'pending';
-        
-        // Set first petugas for backward compatibility
-        $validated['petugas_keluar_id'] = $validated['petugas_keluar_ids'][0] ?? null;
-        $validated['petugas_masuk_id'] = $validated['petugas_masuk_ids'][0] ?? null;
+            // Get shift info from teams
+            $timKeluar = TimPatroli::find($validated['tim_keluar_id']);
+            $timMasuk = TimPatroli::find($validated['tim_masuk_id']);
 
-        // Handle photo uploads
-        if ($request->hasFile('foto_tim_keluar')) {
-            $fotoKeluarPath = $request->file('foto_tim_keluar')->store('kru-change/tim-keluar', 'public');
-            $validated['foto_tim_keluar'] = $fotoKeluarPath;
+            $validated['perusahaan_id'] = auth()->user()->perusahaan_id;
+            $validated['shift_keluar_id'] = $timKeluar->shift_id;
+            $validated['shift_masuk_id'] = $timMasuk->shift_id;
+            $validated['status'] = 'pending';
+            
+            // Set first petugas for backward compatibility
+            $validated['petugas_keluar_id'] = $validated['petugas_keluar_ids'][0] ?? null;
+            $validated['petugas_masuk_id'] = $validated['petugas_masuk_ids'][0] ?? null;
+
+            // Handle photo uploads
+            if ($request->hasFile('foto_tim_keluar')) {
+                $fotoKeluarPath = $request->file('foto_tim_keluar')->store('kru-change/tim-keluar', 'public');
+                $validated['foto_tim_keluar'] = $fotoKeluarPath;
+            }
+
+            if ($request->hasFile('foto_tim_masuk')) {
+                $fotoMasukPath = $request->file('foto_tim_masuk')->store('kru-change/tim-masuk', 'public');
+                $validated['foto_tim_masuk'] = $fotoMasukPath;
+            }
+
+            $kruChange = KruChange::create($validated);
+
+            return redirect()->route('perusahaan.kru-change.show', $kruChange->hash_id)
+                ->with('success', 'Kru change berhasil dijadwalkan');
+
+        } catch (\Exception $e) {
+            \Log::error('Error in KruChangeController@store: ' . $e->getMessage());
+            
+            return redirect()->route('perusahaan.kru-change.index')
+                ->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi atau hubungi administrator.');
         }
-
-        if ($request->hasFile('foto_tim_masuk')) {
-            $fotoMasukPath = $request->file('foto_tim_masuk')->store('kru-change/tim-masuk', 'public');
-            $validated['foto_tim_masuk'] = $fotoMasukPath;
-        }
-
-        $kruChange = KruChange::create($validated);
-
-        return redirect()->route('perusahaan.kru-change.show', $kruChange->hash_id)
-            ->with('success', 'Kru change berhasil dijadwalkan');
     }
 
     public function show(KruChange $kruChange)
