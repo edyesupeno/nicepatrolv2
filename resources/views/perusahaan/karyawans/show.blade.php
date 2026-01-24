@@ -34,6 +34,10 @@
                         <i class="fas fa-info-circle mr-3" style="color: #3B82C8;"></i>
                         Informasi
                     </a>
+                    <a href="#area-kerja" class="flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition nav-link" data-target="area-kerja">
+                        <i class="fas fa-map-marker-alt mr-3 text-gray-400"></i>
+                        Area Kerja
+                    </a>
                     <a href="#pengalaman-kerja" class="flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition nav-link" data-target="pengalaman-kerja">
                         <i class="fas fa-briefcase mr-3 text-gray-400"></i>
                         Pengalaman Kerja
@@ -162,6 +166,73 @@
                     @endif
                 </div>
             </div>
+
+    <!-- Area Kerja -->
+    <div id="area-kerja" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                <i class="fas fa-map-marker-alt mr-2" style="color: #3B82C8;"></i>
+                Area Kerja
+                @if($karyawan->areas && $karyawan->areas->count() > 0)
+                    <span class="ml-2 px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
+                        {{ $karyawan->areas->count() }} area
+                    </span>
+                @endif
+            </h3>
+            <div class="flex gap-2">
+                <button onclick="assignAllAvailableAreas()" class="px-4 py-2 text-white rounded-lg hover:shadow-lg transition text-sm font-medium" style="background: linear-gradient(135deg, #3B82C8 0%, #2563A8 100%);">
+                    <i class="fas fa-check-double mr-1"></i>Assign Semua Area
+                </button>
+                <button onclick="openTambahAreaModal()" class="px-4 py-2 text-white rounded-lg hover:shadow-lg transition text-sm font-medium" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                    <i class="fas fa-plus mr-1"></i>Tambah Area
+                </button>
+                @if($karyawan->areas && $karyawan->areas->count() > 0)
+                <button onclick="removeAllAreas()" class="px-4 py-2 text-white rounded-lg hover:shadow-lg transition text-sm font-medium" style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);">
+                    <i class="fas fa-trash-alt mr-1"></i>Hapus Semua
+                </button>
+                @endif
+            </div>
+        </div>
+        
+        @if($karyawan->areas && $karyawan->areas->count() > 0)
+            <div class="space-y-3">
+                @foreach($karyawan->areas as $area)
+                    <div class="border-l-4 rounded-lg p-4 {{ $area->pivot->is_primary ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50' }}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h4 class="font-semibold text-gray-900">{{ $area->nama }}</h4>
+                                    @if($area->pivot->is_primary)
+                                        <span class="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
+                                            Area Utama
+                                        </span>
+                                    @endif
+                                </div>
+                                <p class="text-sm text-gray-600">{{ $area->alamat ?? 'Alamat tidak tersedia' }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Project: {{ $area->project->nama ?? 'N/A' }}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                @if(!$area->pivot->is_primary)
+                                    <button onclick="setPrimaryArea('{{ $area->hash_id }}')" class="px-3 py-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition" title="Jadikan Area Utama">
+                                        <i class="fas fa-star"></i>
+                                    </button>
+                                @endif
+                                <button onclick="hapusArea('{{ $area->hash_id }}')" class="px-3 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition" title="Hapus Area">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <div class="text-center py-8">
+                <i class="fas fa-map-marker-alt text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500 font-medium">Belum ada area kerja yang ditugaskan</p>
+                <p class="text-sm text-gray-400 mt-1">Klik tombol "Tambah Area" untuk menambahkan area kerja</p>
+            </div>
+        @endif
+    </div>
 
     <!-- Data Pribadi -->
     <div id="data-pribadi" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -2319,7 +2390,7 @@ function updatePageTitle(menuId) {
 // Show/hide sections based on active tab
 function showSection(sectionId) {
     // Hide all sections
-    document.querySelectorAll('[id="foto-karyawan"], [id="informasi"], [id="data-pribadi"], [id="pengalaman-kerja"], [id="pendidikan"], [id="sertifikasi"], [id="rekening-bank"], [id="bpjs"], [id="medical-checkup"], [id="akun-pengguna"], [id="kartu-akses"]').forEach(section => {
+    document.querySelectorAll('[id="foto-karyawan"], [id="informasi"], [id="data-pribadi"], [id="pengalaman-kerja"], [id="pendidikan"], [id="sertifikasi"], [id="rekening-bank"], [id="bpjs"], [id="medical-checkup"], [id="area-kerja"], [id="akun-pengguna"], [id="kartu-akses"]').forEach(section => {
         section.style.display = 'none';
     });
     
@@ -3177,6 +3248,395 @@ function previewAndUploadFoto(input) {
         // Submit form
         document.getElementById('uploadFotoForm').submit();
     }
+}
+
+// Area Management Functions
+function openTambahAreaModal() {
+    Swal.fire({
+        title: 'Tambah Area Kerja',
+        html: `
+            <div class="text-left">
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="block text-sm font-medium text-gray-700">Pilih Area</label>
+                        <button type="button" id="selectAllBtn" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                            <i class="fas fa-check-square mr-1"></i>Pilih Semua
+                        </button>
+                    </div>
+                    <div id="areaCheckboxContainer" class="max-h-60 overflow-y-auto border border-gray-300 rounded-lg p-3 bg-gray-50">
+                        <div class="text-center text-gray-500 py-4">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>Memuat area...
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="setPrimaryArea" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm text-gray-700">Set area pertama sebagai area utama</span>
+                    </label>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Tambah Area',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#10B981',
+        cancelButtonColor: '#6B7280',
+        width: '500px',
+        didOpen: () => {
+            loadAvailableAreasCheckbox();
+            setupSelectAllButton();
+        },
+        preConfirm: () => {
+            const selectedAreas = [];
+            const checkboxes = document.querySelectorAll('#areaCheckboxContainer input[type="checkbox"]:checked');
+            
+            checkboxes.forEach(checkbox => {
+                selectedAreas.push(checkbox.value);
+            });
+            
+            if (selectedAreas.length === 0) {
+                Swal.showValidationMessage('Pilih minimal satu area');
+                return false;
+            }
+            
+            const setPrimary = document.getElementById('setPrimaryArea').checked;
+            
+            return { selectedAreas, setPrimary };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            tambahMultipleAreas(result.value.selectedAreas, result.value.setPrimary);
+        }
+    });
+}
+
+function loadAvailableAreasCheckbox() {
+    fetch(`/perusahaan/karyawans/{{ $karyawan->hash_id }}/available-areas`)
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('areaCheckboxContainer');
+            
+            if (data.success && data.data.length > 0) {
+                let html = '';
+                data.data.forEach(area => {
+                    html += `
+                        <label class="flex items-center p-2 hover:bg-white rounded cursor-pointer">
+                            <input type="checkbox" value="${area.hash_id}" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-3">
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-900">${area.nama}</div>
+                                <div class="text-sm text-gray-500">${area.alamat || 'Alamat tidak tersedia'}</div>
+                                <div class="text-xs text-gray-400">Project: ${area.project_nama}</div>
+                            </div>
+                        </label>
+                    `;
+                });
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = `
+                    <div class="text-center text-gray-500 py-4">
+                        <i class="fas fa-info-circle mr-2"></i>Tidak ada area tersedia untuk ditambahkan
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading areas:', error);
+            document.getElementById('areaCheckboxContainer').innerHTML = `
+                <div class="text-center text-red-500 py-4">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Gagal memuat daftar area
+                </div>
+            `;
+        });
+}
+
+function setupSelectAllButton() {
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    
+    selectAllBtn.addEventListener('click', function() {
+        const container = document.getElementById('areaCheckboxContainer');
+        const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = !allChecked;
+        });
+        
+        // Update button text
+        if (allChecked) {
+            selectAllBtn.innerHTML = '<i class="fas fa-check-square mr-1"></i>Pilih Semua';
+        } else {
+            selectAllBtn.innerHTML = '<i class="fas fa-square mr-1"></i>Batal Pilih Semua';
+        }
+    });
+}
+
+function tambahMultipleAreas(areaHashIds, setPrimary) {
+    Swal.fire({
+        title: 'Menambahkan area...',
+        text: `Menambahkan ${areaHashIds.length} area kerja`,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    fetch(`/perusahaan/karyawans/{{ $karyawan->hash_id }}/areas/multiple`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            area_hash_ids: areaHashIds,
+            set_first_as_primary: setPrimary
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: data.message,
+                confirmButtonColor: '#10B981'
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: data.message || 'Terjadi kesalahan',
+                confirmButtonColor: '#EF4444'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Terjadi kesalahan saat menambahkan area'
+        });
+    });
+}
+
+function assignAllAvailableAreas() {
+    // First, get available areas
+    fetch(`/perusahaan/karyawans/{{ $karyawan->hash_id }}/available-areas`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data.length > 0) {
+                Swal.fire({
+                    title: 'Assign Semua Area?',
+                    text: `Akan menambahkan ${data.data.length} area kerja yang tersedia`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Assign Semua',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#3B82C8',
+                    cancelButtonColor: '#6B7280'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const allAreaIds = data.data.map(area => area.hash_id);
+                        tambahMultipleAreas(allAreaIds, false); // Don't set as primary
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Tidak Ada Area',
+                    text: 'Semua area di project ini sudah ditugaskan ke karyawan',
+                    confirmButtonColor: '#3B82C8'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Gagal memuat daftar area tersedia'
+            });
+        });
+}
+
+function removeAllAreas() {
+    Swal.fire({
+        title: 'Hapus Semua Area Kerja?',
+        text: 'Semua area kerja akan dihapus dari karyawan ini',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Hapus Semua',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#EF4444',
+        cancelButtonColor: '#6B7280'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Menghapus semua area...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch(`/perusahaan/karyawans/{{ $karyawan->hash_id }}/areas/remove-all`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: data.message,
+                        confirmButtonColor: '#10B981'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: data.message || 'Terjadi kesalahan',
+                        confirmButtonColor: '#EF4444'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Terjadi kesalahan saat menghapus area'
+                });
+            });
+        }
+    });
+}
+
+function setPrimaryArea(areaHashId) {
+    Swal.fire({
+        title: 'Jadikan Area Utama?',
+        text: 'Area ini akan menjadi area kerja utama karyawan',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Jadikan Utama',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#3B82C8',
+        cancelButtonColor: '#6B7280'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Memperbarui area utama...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch(`/perusahaan/karyawans/{{ $karyawan->hash_id }}/areas/${areaHashId}/set-primary`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: data.message,
+                        confirmButtonColor: '#3B82C8'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: data.message || 'Terjadi kesalahan',
+                        confirmButtonColor: '#EF4444'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Terjadi kesalahan saat memperbarui area utama'
+                });
+            });
+        }
+    });
+}
+
+function hapusArea(areaHashId) {
+    Swal.fire({
+        title: 'Hapus Area Kerja?',
+        text: 'Area kerja akan dihapus dari karyawan ini',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Hapus',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#EF4444',
+        cancelButtonColor: '#6B7280'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Menghapus area...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch(`/perusahaan/karyawans/{{ $karyawan->hash_id }}/areas/${areaHashId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: data.message,
+                        confirmButtonColor: '#10B981'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: data.message || 'Terjadi kesalahan',
+                        confirmButtonColor: '#EF4444'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Terjadi kesalahan saat menghapus area'
+                });
+            });
+        }
+    });
 }
 </script>
 @endpush

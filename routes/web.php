@@ -305,6 +305,14 @@ Route::middleware('auth')->group(function () {
         Route::put('karyawans/{karyawan}/medical-checkup/{checkup}', [\App\Http\Controllers\Perusahaan\MedicalCheckupController::class, 'update'])->name('karyawans.medical-checkup.update');
         Route::delete('karyawans/{karyawan}/medical-checkup/{checkup}', [\App\Http\Controllers\Perusahaan\MedicalCheckupController::class, 'destroy'])->name('karyawans.medical-checkup.destroy');
         
+        // Area Management Routes
+        Route::get('karyawans/{karyawan}/available-areas', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'getAvailableAreas'])->name('karyawans.available-areas');
+        Route::post('karyawans/{karyawan}/areas', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'addArea'])->name('karyawans.areas.add');
+        Route::post('karyawans/{karyawan}/areas/multiple', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'addMultipleAreas'])->name('karyawans.areas.add-multiple');
+        Route::delete('karyawans/{karyawan}/areas/remove-all', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'removeAllAreas'])->name('karyawans.areas.remove-all');
+        Route::put('karyawans/{karyawan}/areas/{area}/set-primary', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'setPrimaryArea'])->name('karyawans.areas.set-primary');
+        Route::delete('karyawans/{karyawan}/areas/{area}', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'removeArea'])->name('karyawans.areas.remove');
+        
         // Payroll Routes
         Route::get('payroll/generate', [\App\Http\Controllers\Perusahaan\PayrollController::class, 'generate'])->name('payroll.generate');
         Route::post('payroll/generate', [\App\Http\Controllers\Perusahaan\PayrollController::class, 'store'])->name('payroll.store');

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Project;
 use App\Models\Jabatan;
 use App\Models\StatusKaryawan;
+use App\Models\Area;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -69,7 +70,7 @@ class KaryawanController extends Controller
             abort(404);
         }
         
-        $karyawan = Karyawan::with(['project', 'jabatan.projects', 'user', 'perusahaan', 'pengalamanKerjas', 'pendidikans', 'sertifikasis', 'medicalCheckups'])
+        $karyawan = Karyawan::with(['project', 'jabatan.projects', 'user', 'perusahaan', 'pengalamanKerjas', 'pendidikans', 'sertifikasis', 'medicalCheckups', 'areas.project'])
                            ->findOrFail($id);
 
         $projects = Project::where('perusahaan_id', auth()->user()->perusahaan_id)->get();
@@ -184,6 +185,22 @@ class KaryawanController extends Controller
                 'kota' => $validated['kota'],
                 'provinsi' => $validated['provinsi'],
             ]);
+
+            // CRITICAL: Auto-assign semua area di project ke karyawan baru
+            $projectAreas = Area::where('project_id', $validated['project_id'])->get();
+            
+            if ($projectAreas->count() > 0) {
+                $areaData = [];
+                foreach ($projectAreas as $index => $area) {
+                    $areaData[$area->id] = [
+                        'is_primary' => $index === 0, // Area pertama jadi primary
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+                
+                $karyawan->areas()->attach($areaData);
+            }
 
             DB::commit();
 
@@ -513,7 +530,7 @@ class KaryawanController extends Controller
                 $karyawan->areas()->detach();
                 
                 // Ambil semua area di project baru
-                $newAreas = \App\Models\Area::where('project_id', $validated['project_id'])->get();
+                $newAreas = Area::where('project_id', $validated['project_id'])->get();
                 
                 if ($newAreas->count() > 0) {
                     // Assign semua area di project baru
@@ -1013,6 +1030,368 @@ class KaryawanController extends Controller
         $pdf->setPaper('a4', 'landscape');
         
         return $pdf->download($fileName . '.pdf');
+    }
+
+    // Area Management Methods
+    
+    public function getAvailableAreas($hashId)
+    {
+        try {
+            // Decode hash_id to get real id
+            $id = \Vinkla\Hashids\Facades\Hashids::decode($hashId)[0] ?? null;
+            
+            if (!$id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid ID'
+                ], 400);
+            }
+            
+            $karyawan = Karyawan::findOrFail($id);
+            
+            // Get areas dari project karyawan yang belum di-assign ke karyawan ini
+            $assignedAreaIds = $karyawan->areas()->pluck('areas.id')->toArray();
+            
+            $availableAreas = Area::select(['id', 'nama', 'alamat', 'project_id'])
+                ->with('project:id,nama')
+                ->where('project_id', $karyawan->project_id) // Hanya area dari project karyawan
+                ->whereNotIn('id', $assignedAreaIds)
+                ->get()
+                ->map(function ($area) {
+                    return [
+                        'hash_id' => $area->hash_id,
+                        'nama' => $area->nama,
+                        'alamat' => $area->alamat,
+                        'project_nama' => $area->project->nama ?? 'N/A'
+                    ];
+                });
+            
+            return response()->json([
+                'success' => true,
+                'data' => $availableAreas
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat daftar area: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function addArea(Request $request, $hashId)
+    {
+        try {
+            // Decode hash_id to get real id
+            $id = \Vinkla\Hashids\Facades\Hashids::decode($hashId)[0] ?? null;
+            
+            if (!$id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid ID'
+                ], 400);
+            }
+            
+            $validated = $request->validate([
+                'area_hash_id' => 'required|string',
+                'is_primary' => 'boolean'
+            ]);
+            
+            $karyawan = Karyawan::findOrFail($id);
+            
+            // Decode area hash_id
+            $areaId = \Vinkla\Hashids\Facades\Hashids::decode($validated['area_hash_id'])[0] ?? null;
+            
+            if (!$areaId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Area tidak valid'
+                ], 400);
+            }
+            
+            $area = Area::findOrFail($areaId);
+            
+            // Cek apakah area sudah di-assign
+            if ($karyawan->areas()->where('area_id', $areaId)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Area sudah ditugaskan ke karyawan ini'
+                ], 400);
+            }
+            
+            DB::beginTransaction();
+            
+            // Jika ini akan jadi primary area, set semua area lain jadi non-primary
+            if ($validated['is_primary'] ?? false) {
+                $karyawan->areas()->updateExistingPivot(
+                    $karyawan->areas()->pluck('areas.id')->toArray(),
+                    ['is_primary' => false]
+                );
+            }
+            
+            // Attach area baru
+            $karyawan->areas()->attach($areaId, [
+                'is_primary' => $validated['is_primary'] ?? false
+            ]);
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Area kerja berhasil ditambahkan'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan area: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function addMultipleAreas(Request $request, $hashId)
+    {
+        try {
+            // Decode hash_id to get real id
+            $id = \Vinkla\Hashids\Facades\Hashids::decode($hashId)[0] ?? null;
+            
+            if (!$id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid ID'
+                ], 400);
+            }
+            
+            $validated = $request->validate([
+                'area_hash_ids' => 'required|array|min:1',
+                'area_hash_ids.*' => 'required|string',
+                'set_first_as_primary' => 'boolean'
+            ]);
+            
+            $karyawan = Karyawan::findOrFail($id);
+            
+            // Decode area hash_ids
+            $areaIds = [];
+            foreach ($validated['area_hash_ids'] as $areaHashId) {
+                $areaId = \Vinkla\Hashids\Facades\Hashids::decode($areaHashId)[0] ?? null;
+                if ($areaId) {
+                    $areaIds[] = $areaId;
+                }
+            }
+            
+            if (empty($areaIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada area yang valid'
+                ], 400);
+            }
+            
+            // Verify all areas exist and belong to the same project as karyawan
+            $areas = Area::whereIn('id', $areaIds)
+                         ->where('project_id', $karyawan->project_id)
+                         ->get();
+            
+            if ($areas->count() !== count($areaIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Beberapa area tidak valid atau tidak sesuai dengan project karyawan'
+                ], 400);
+            }
+            
+            // Check for existing assignments
+            $existingAreaIds = $karyawan->areas()->whereIn('area_id', $areaIds)->pluck('area_id')->toArray();
+            if (!empty($existingAreaIds)) {
+                $existingAreas = Area::whereIn('id', $existingAreaIds)->pluck('nama')->toArray();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Area berikut sudah ditugaskan: ' . implode(', ', $existingAreas)
+                ], 400);
+            }
+            
+            DB::beginTransaction();
+            
+            // If setting first as primary, unset all current primary areas
+            if ($validated['set_first_as_primary'] ?? false) {
+                $karyawan->areas()->updateExistingPivot(
+                    $karyawan->areas()->pluck('areas.id')->toArray(),
+                    ['is_primary' => false]
+                );
+            }
+            
+            // Attach all areas
+            $attachData = [];
+            foreach ($areaIds as $index => $areaId) {
+                $attachData[$areaId] = [
+                    'is_primary' => ($validated['set_first_as_primary'] ?? false) && $index === 0,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ];
+            }
+            
+            $karyawan->areas()->attach($attachData);
+            
+            DB::commit();
+            
+            $count = count($areaIds);
+            return response()->json([
+                'success' => true,
+                'message' => "Berhasil menambahkan {$count} area kerja"
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan area: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function setPrimaryArea($hashId, $areaHashId)
+    {
+        try {
+            // Decode hash_id to get real id
+            $id = \Vinkla\Hashids\Facades\Hashids::decode($hashId)[0] ?? null;
+            $areaId = \Vinkla\Hashids\Facades\Hashids::decode($areaHashId)[0] ?? null;
+            
+            if (!$id || !$areaId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid ID'
+                ], 400);
+            }
+            
+            $karyawan = Karyawan::findOrFail($id);
+            
+            // Cek apakah area sudah di-assign ke karyawan
+            if (!$karyawan->areas()->where('area_id', $areaId)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Area tidak ditemukan pada karyawan ini'
+                ], 400);
+            }
+            
+            DB::beginTransaction();
+            
+            // Set semua area jadi non-primary
+            $karyawan->areas()->updateExistingPivot(
+                $karyawan->areas()->pluck('areas.id')->toArray(),
+                ['is_primary' => false]
+            );
+            
+            // Set area yang dipilih jadi primary
+            $karyawan->areas()->updateExistingPivot($areaId, ['is_primary' => true]);
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Area utama berhasil diperbarui'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui area utama: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function removeArea($hashId, $areaHashId)
+    {
+        try {
+            // Decode hash_id to get real id
+            $id = \Vinkla\Hashids\Facades\Hashids::decode($hashId)[0] ?? null;
+            $areaId = \Vinkla\Hashids\Facades\Hashids::decode($areaHashId)[0] ?? null;
+            
+            if (!$id || !$areaId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid ID'
+                ], 400);
+            }
+            
+            $karyawan = Karyawan::findOrFail($id);
+            
+            // Cek apakah area sudah di-assign ke karyawan
+            $pivotData = $karyawan->areas()->where('area_id', $areaId)->first();
+            if (!$pivotData) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Area tidak ditemukan pada karyawan ini'
+                ], 400);
+            }
+            
+            DB::beginTransaction();
+            
+            $wasPrimary = $pivotData->pivot->is_primary;
+            
+            // Detach area
+            $karyawan->areas()->detach($areaId);
+            
+            // Jika area yang dihapus adalah primary, set area pertama yang tersisa jadi primary
+            if ($wasPrimary) {
+                $firstArea = $karyawan->areas()->first();
+                if ($firstArea) {
+                    $karyawan->areas()->updateExistingPivot($firstArea->id, ['is_primary' => true]);
+                }
+            }
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Area kerja berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus area: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function removeAllAreas($hashId)
+    {
+        try {
+            // Decode hash_id to get real id
+            $id = \Vinkla\Hashids\Facades\Hashids::decode($hashId)[0] ?? null;
+            
+            if (!$id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid ID'
+                ], 400);
+            }
+            
+            $karyawan = Karyawan::findOrFail($id);
+            
+            $areaCount = $karyawan->areas()->count();
+            
+            if ($areaCount === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada area yang ditugaskan ke karyawan ini'
+                ], 400);
+            }
+            
+            DB::beginTransaction();
+            
+            // Detach all areas
+            $karyawan->areas()->detach();
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Berhasil menghapus {$areaCount} area kerja"
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus area: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
 
