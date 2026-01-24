@@ -140,6 +140,10 @@
                 <i class="fas fa-plus mr-2"></i>
                 Generate Payroll
             </a>
+            <a href="{{ route('perusahaan.daftar-payroll.export-page') }}" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
+                <i class="fas fa-download mr-2"></i>
+                Export Payroll
+            </a>
             @if($stats['draft'] > 0)
                 <button type="button" onclick="bulkApprove()" class="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">
                     <i class="fas fa-check-double mr-2"></i>
@@ -224,10 +228,10 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <p class="text-sm font-medium text-gray-900">Rp {{ number_format($payroll->gaji_bruto, 0, ',', '.') }}</p>
+                                <p class="text-sm font-medium text-gray-900">Rp {{ number_format($payroll->calculated_gaji_bruto, 0, ',', '.') }}</p>
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <p class="text-sm font-bold text-green-600">Rp {{ number_format($payroll->gaji_netto, 0, ',', '.') }}</p>
+                                <p class="text-sm font-bold text-green-600">Rp {{ number_format($payroll->calculated_gaji_netto, 0, ',', '.') }}</p>
                             </td>
                             <td class="px-6 py-4 text-center">
                                 @if($payroll->status == 'draft')

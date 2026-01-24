@@ -331,11 +331,6 @@ class LaporanPatroliController extends Controller
         ));
     }
 
-    public function inventaris()
-    {
-        return view('perusahaan.laporan-patroli.inventaris');
-    }
-
     public function kawasanDetail(Request $request, AreaPatrol $area)
     {
         $startDate = $request->get('start_date', now()->format('Y-m-d'));

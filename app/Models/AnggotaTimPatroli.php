@@ -57,8 +57,9 @@ class AnggotaTimPatroli extends Model
     public function getRoleNameAttribute(): string
     {
         return match($this->role) {
-            'anggota' => 'Anggota',
+            'leader' => 'Danru (Komandan Regu)',
             'wakil_leader' => 'Wakil Leader',
+            'anggota' => 'Anggota',
             default => 'Unknown'
         };
     }
@@ -75,8 +76,9 @@ class AnggotaTimPatroli extends Model
     public function getRoleBadgeAttribute(): string
     {
         return match($this->role) {
-            'anggota' => '<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">Anggota</span>',
+            'leader' => '<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Danru (Komandan Regu)</span>',
             'wakil_leader' => '<span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">Wakil Leader</span>',
+            'anggota' => '<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">Anggota</span>',
             default => '<span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">Unknown</span>'
         };
     }

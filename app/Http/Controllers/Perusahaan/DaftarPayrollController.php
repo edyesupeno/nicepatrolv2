@@ -6,9 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Payroll;
 use App\Models\Project;
 use App\Models\Jabatan;
+use App\Exports\SimplePayrollExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class DaftarPayrollController extends Controller
 {
@@ -37,6 +41,13 @@ class DaftarPayrollController extends Controller
                 'periode_start',
                 'periode_end',
                 'gaji_pokok',
+                'tunjangan_detail',
+                'total_tunjangan',
+                'potongan_detail',
+                'total_potongan',
+                'bpjs_kesehatan',
+                'bpjs_ketenagakerjaan',
+                'pajak_pph21',
                 'gaji_bruto',
                 'gaji_netto',
                 // Kehadiran columns
@@ -56,7 +67,7 @@ class DaftarPayrollController extends Controller
                 'created_at'
             ])
             ->with([
-                'karyawan:id,nik_karyawan,nama_lengkap,jabatan_id',
+                'karyawan:id,nik_karyawan,nama_lengkap,jabatan_id,gaji_pokok',
                 'karyawan.jabatan:id,nama',
                 'project:id,nama'
             ])
@@ -86,6 +97,122 @@ class DaftarPayrollController extends Controller
         $payrolls = $query->orderBy('created_at', 'desc')
             ->paginate(50)
             ->withQueryString();
+        
+        // Calculate actual values from detail breakdown for each payroll
+        $payrollSetting = \App\Models\PayrollSetting::first();
+        
+        foreach ($payrolls as $payroll) {
+            // Use the SAME calculation logic as in detail view
+            
+            // Calculate upah tetap (gaji pokok + fixed allowances)
+            $fixedAllowances = $this->getEmployeeFixedAllowances($payroll->karyawan);
+            $totalFixedAllowances = array_sum(array_column($fixedAllowances, 'nilai'));
+            $upahTetap = $payroll->gaji_pokok + $totalFixedAllowances;
+            
+            // Calculate Variable tunjangan (same logic as detail view)
+            $totalVariableTunjangan = 0;
+            
+            // Get Variable components from templates
+            $expectedVariableComponents = $this->getExpectedVariableComponents($payroll->karyawan);
+            
+            // Calculate overtime allowance
+            $overtimeData = $this->calculateOvertimeAllowance($payroll->karyawan, $payroll->periode);
+            
+            // Add Upah Lembur as variable component
+            $expectedVariableComponents['upah_lembur'] = [
+                'id' => 'upah_lembur',
+                'nama' => 'Upah Lembur',
+                'kode' => 'UPAH_LEMBUR',
+                'nilai' => $overtimeData['total_upah'],
+                'tipe' => 'Otomatis',
+                'source' => 'overtime_calculation'
+            ];
+            
+            // Process existing tunjangan_detail for Variable category
+            if ($payroll->tunjangan_detail && count($payroll->tunjangan_detail) > 0) {
+                foreach ($payroll->tunjangan_detail as $tunjangan) {
+                    $componentCode = $tunjangan['kode'] ?? $tunjangan['nama'];
+                    $komponenPayroll = \App\Models\KomponenPayroll::where(function($q) use ($componentCode, $tunjangan) {
+                        $q->where('kode', $componentCode)
+                          ->orWhere('nama_komponen', $componentCode)
+                          ->orWhere('nama_komponen', $tunjangan['nama']);
+                    })->first();
+                    
+                    $isVariable = false;
+                    if ($komponenPayroll) {
+                        $isVariable = ($komponenPayroll->kategori === 'Variable');
+                    } else {
+                        // Fallback pattern matching
+                        $tunjanganNameLower = strtolower(trim($tunjangan['nama']));
+                        $variablePatterns = ['uang makan', 'transport', 'insentif', 'bonus', 'komisi', 'makan'];
+                        foreach ($variablePatterns as $pattern) {
+                            if (strpos($tunjanganNameLower, $pattern) !== false) {
+                                $isVariable = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if ($isVariable) {
+                        $totalVariableTunjangan += $tunjangan['nilai_hitung'];
+                    }
+                }
+            }
+            
+            // Add missing Variable components from templates
+            foreach ($expectedVariableComponents as $expectedComponent) {
+                $alreadyExists = false;
+                if ($payroll->tunjangan_detail) {
+                    foreach ($payroll->tunjangan_detail as $existing) {
+                        if (strtolower(trim($existing['nama'])) === strtolower(trim($expectedComponent['nama']))) {
+                            $alreadyExists = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!$alreadyExists) {
+                    $totalVariableTunjangan += $expectedComponent['nilai'];
+                }
+            }
+            
+            // Calculate BPJS (same as detail view)
+            $bpjsKesehatanCalculated = $payrollSetting ? ($upahTetap * $payrollSetting->bpjs_kesehatan_perusahaan) / 100 : $payroll->bpjs_kesehatan;
+            $bpjsKetenagakerjaanCalculated = $payrollSetting ? 
+                ($upahTetap * ($payrollSetting->bpjs_jht_perusahaan + $payrollSetting->bpjs_jp_perusahaan + $payrollSetting->bpjs_jkk_perusahaan + $payrollSetting->bpjs_jkm_perusahaan)) / 100 : 
+                $payroll->bpjs_ketenagakerjaan;
+            
+            // Calculate Gaji Bruto (EXACT same formula as detail view)
+            $gajiBrutoRecalculated = $upahTetap + $totalVariableTunjangan + $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
+            
+            // Calculate total potongan (same logic as detail view)
+            $totalPotonganRecalculated = 0;
+            if ($payroll->potongan_detail && count($payroll->potongan_detail) > 0) {
+                foreach ($payroll->potongan_detail as $potongan) {
+                    $displayValue = $potongan['nilai_hitung'];
+                    $potonganName = strtolower(trim($potongan['nama']));
+                    
+                    // Recalculate BPJS employee deductions based on upah tetap
+                    if (strpos($potonganName, 'bpjs kesehatan') !== false && $payrollSetting) {
+                        $displayValue = ($upahTetap * $payrollSetting->bpjs_kesehatan_karyawan) / 100;
+                    } elseif (strpos($potonganName, 'bpjs ketenagakerjaan') !== false && $payrollSetting) {
+                        $displayValue = ($upahTetap * ($payrollSetting->bpjs_jht_karyawan + $payrollSetting->bpjs_jp_karyawan)) / 100;
+                    }
+                    
+                    $totalPotonganRecalculated += $displayValue;
+                }
+            }
+            
+            // Add BPJS perusahaan to total potongan (same as detail view)
+            $totalPotonganRecalculated += $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
+            
+            // Calculate Gaji Netto (EXACT same formula as detail view)
+            $gajiNettoRecalculated = $gajiBrutoRecalculated - $totalPotonganRecalculated - $payroll->pajak_pph21;
+            
+            // Set calculated values as attributes for display
+            $payroll->calculated_gaji_bruto = $gajiBrutoRecalculated;
+            $payroll->calculated_gaji_netto = $gajiNettoRecalculated;
+        }
         
         // Get statistics (optimized with single query)
         $stats = $this->getStatistics($periode, $projectId, $jabatanId);
@@ -302,6 +429,138 @@ class DaftarPayrollController extends Controller
         }
     }
     
+    public function testExport()
+    {
+        try {
+            // Simple test data
+            $data = collect([
+                ['No Badge' => 'B1849324', 'Nama' => 'Hang Nadim', 'Gaji' => 5000000],
+                ['No Badge' => 'B1849325', 'Nama' => 'Test User', 'Gaji' => 4000000],
+            ]);
+            
+            return Excel::download(new class($data) implements FromCollection, WithHeadings {
+                private $data;
+                
+                public function __construct($data) {
+                    $this->data = $data;
+                }
+                
+                public function collection() {
+                    return $this->data;
+                }
+                
+                public function headings(): array {
+                    return ['No Badge', 'Nama', 'Gaji'];
+                }
+            }, 'test_export.xlsx');
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()]);
+        }
+    }
+    
+    public function export(Request $request)
+    {
+        try {
+            // Get filters (same as index method)
+            $periode = $request->get('periode', now()->format('Y-m'));
+            $projectId = $request->get('project_id');
+            $jabatanId = $request->get('jabatan_id');
+            $status = $request->get('status', 'all');
+            $search = $request->get('search');
+            
+            // Validate periode format
+            try {
+                \Carbon\Carbon::createFromFormat('Y-m', $periode);
+            } catch (\Exception $e) {
+                return response()->json(['error' => 'Format periode tidak valid']);
+            }
+            
+            // Get payroll data
+            $query = Payroll::with([
+                    'karyawan:id,nik_karyawan,nama_lengkap,nama_bank,nomor_rekening,nama_pemilik_rekening',
+                    'project:id,nama'
+                ])
+                ->where('periode', $periode);
+
+            if ($projectId) {
+                $query->where('project_id', $projectId);
+            }
+
+            if ($jabatanId) {
+                $query->whereHas('karyawan', function($q) use ($jabatanId) {
+                    $q->where('jabatan_id', $jabatanId);
+                });
+            }
+
+            if ($status != 'all') {
+                $query->where('status', $status);
+            }
+
+            if ($search) {
+                $query->whereHas('karyawan', function($q) use ($search) {
+                    $q->where('nama_lengkap', 'ilike', "%{$search}%")
+                      ->orWhere('nik_karyawan', 'ilike', "%{$search}%");
+                });
+            }
+
+            $payrolls = $query->orderBy('created_at', 'desc')->get();
+            
+            // Transform to array for Excel
+            $data = $payrolls->map(function($payroll) {
+                return [
+                    $payroll->karyawan->nik_karyawan ?? '-',
+                    $payroll->karyawan->nama_lengkap ?? '-',
+                    $payroll->project->nama ?? '-',
+                    $payroll->karyawan->nama_bank ?? '-',
+                    $payroll->karyawan->nomor_rekening ?? '-',
+                    $payroll->karyawan->nama_pemilik_rekening ?? '-',
+                    $payroll->gaji_netto ?? 0
+                ];
+            });
+            
+            // Generate filename
+            $periodeFormatted = \Carbon\Carbon::createFromFormat('Y-m', $periode)->format('F_Y');
+            $timestamp = now()->format('Y-m-d_H-i-s');
+            $filename = "Payroll_Export_{$periodeFormatted}_{$timestamp}.xlsx";
+            
+            // Create Excel export
+            $export = new class($data) implements FromCollection, WithHeadings {
+                private $data;
+                
+                public function __construct($data) {
+                    $this->data = $data;
+                }
+                
+                public function collection() {
+                    return $this->data;
+                }
+                
+                public function headings(): array {
+                    return [
+                        'No Badge',
+                        'Nama Karyawan',
+                        'Nama Project',
+                        'Nama Bank',
+                        'No Rekening',
+                        'Nama Pemilik Rekening',
+                        'Jumlah Gaji Netto (Take Home Pay)'
+                    ];
+                }
+            };
+            
+            return Excel::download($export, $filename);
+            
+        } catch (\Exception $e) {
+            \Log::error('Export Payroll Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+            
+            return response()->json(['error' => 'Gagal export payroll: ' . $e->getMessage()]);
+        }
+    }
+    
     public function updateComponent(Request $request, Payroll $payroll)
     {
         try {
@@ -379,65 +638,14 @@ class DaftarPayrollController extends Controller
                 ], 404);
             }
             
-            // Recalculate totals
+            // Recalculate totals from detail arrays
             $newTotal = array_sum(array_column($currentDetails, 'nilai_hitung'));
-            $totalDifference = $newValue - $oldValue;
             
-            // Update payroll data
+            // Update payroll data - only update the detail and total fields
             $updateData = [
                 $detailField => $currentDetails,
                 $totalField => $newTotal,
             ];
-            
-            // Recalculate gaji_bruto and gaji_netto using upah tetap calculation
-            if ($componentType === 'tunjangan') {
-                // Get fixed allowances for upah tetap calculation
-                $fixedAllowances = $this->getEmployeeFixedAllowances($payroll->karyawan);
-                $totalFixedAllowances = array_sum(array_column($fixedAllowances, 'nilai'));
-                $upahTetap = $payroll->gaji_pokok + $totalFixedAllowances;
-                
-                // Get payroll setting for BPJS calculation
-                $payrollSetting = \App\Models\PayrollSetting::first();
-                
-                // Calculate BPJS based on upah tetap
-                $bpjsKesehatanCalculated = $payrollSetting ? ($upahTetap * $payrollSetting->bpjs_kesehatan_perusahaan) / 100 : $payroll->bpjs_kesehatan;
-                $bpjsKetenagakerjaanCalculated = $payrollSetting ? 
-                    ($upahTetap * ($payrollSetting->bpjs_jht_perusahaan + $payrollSetting->bpjs_jp_perusahaan + $payrollSetting->bpjs_jkk_perusahaan + $payrollSetting->bpjs_jkm_perusahaan)) / 100 : 
-                    $payroll->bpjs_ketenagakerjaan;
-                
-                // Recalculate gaji_bruto: upah_tetap + total_tunjangan_variable + bpjs_calculated
-                $updateData['gaji_bruto'] = $upahTetap + $newTotal + $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
-                
-                // Calculate total potongan including BPJS employee + BPJS perusahaan
-                $bpjsKaryawanKesehatan = $payrollSetting ? ($upahTetap * $payrollSetting->bpjs_kesehatan_karyawan) / 100 : 0;
-                $bpjsKaryawanKetenagakerjaan = $payrollSetting ? ($upahTetap * ($payrollSetting->bpjs_jht_karyawan + $payrollSetting->bpjs_jp_karyawan)) / 100 : 0;
-                $totalPotonganRecalculated = $payroll->total_potongan + $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated - ($payroll->bpjs_kesehatan + $payroll->bpjs_ketenagakerjaan);
-                
-                // Recalculate gaji_netto: gaji_bruto - total_potongan_recalculated - pajak
-                $updateData['gaji_netto'] = $updateData['gaji_bruto'] - $totalPotonganRecalculated - $payroll->pajak_pph21;
-            } else { // potongan
-                // For potongan changes, gaji bruto stays the same but recalculate with upah tetap
-                $fixedAllowances = $this->getEmployeeFixedAllowances($payroll->karyawan);
-                $totalFixedAllowances = array_sum(array_column($fixedAllowances, 'nilai'));
-                $upahTetap = $payroll->gaji_pokok + $totalFixedAllowances;
-                
-                $payrollSetting = \App\Models\PayrollSetting::first();
-                $bpjsKesehatanCalculated = $payrollSetting ? ($upahTetap * $payrollSetting->bpjs_kesehatan_perusahaan) / 100 : $payroll->bpjs_kesehatan;
-                $bpjsKetenagakerjaanCalculated = $payrollSetting ? 
-                    ($upahTetap * ($payrollSetting->bpjs_jht_perusahaan + $payrollSetting->bpjs_jp_perusahaan + $payrollSetting->bpjs_jkk_perusahaan + $payrollSetting->bpjs_jkm_perusahaan)) / 100 : 
-                    $payroll->bpjs_ketenagakerjaan;
-                
-                // Gaji bruto with upah tetap calculation
-                $totalTunjangan = $payroll->total_tunjangan;
-                $gajiBrutoRecalculated = $upahTetap + $totalTunjangan + $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
-                
-                // Total potongan includes BPJS perusahaan
-                $totalPotonganRecalculated = $newTotal + $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
-                
-                // Only recalculate gaji_netto: gaji_bruto - total_potongan_recalculated - pajak
-                $updateData['gaji_netto'] = $gajiBrutoRecalculated - $totalPotonganRecalculated - $payroll->pajak_pph21;
-                $updateData['gaji_bruto'] = $gajiBrutoRecalculated; // Update gaji bruto to show correct value
-            }
             
             $payroll->update($updateData);
             
@@ -449,10 +657,8 @@ class DaftarPayrollController extends Controller
                     'new_value_formatted' => 'Rp ' . number_format($newValue, 0, ',', '.'),
                     'new_total' => $newTotal,
                     'new_total_formatted' => 'Rp ' . number_format($newTotal, 0, ',', '.'),
-                    'new_gaji_bruto' => $updateData['gaji_bruto'] ?? $payroll->gaji_bruto,
-                    'new_gaji_bruto_formatted' => 'Rp ' . number_format($updateData['gaji_bruto'] ?? $payroll->gaji_bruto, 0, ',', '.'),
-                    'new_gaji_netto' => $updateData['gaji_netto'],
-                    'new_gaji_netto_formatted' => 'Rp ' . number_format($updateData['gaji_netto'], 0, ',', '.'),
+                    // Add recalculated totals for auto-update
+                    'recalculated_totals' => $this->getRecalculatedTotals($payroll)
                 ]
             ]);
             
@@ -763,5 +969,133 @@ class DaftarPayrollController extends Controller
         }
         
         return $components;
+    }
+    
+    /**
+     * Get recalculated totals for auto-update functionality
+     * Just return the current calculated values from the view logic
+     */
+    private function getRecalculatedTotals($payroll)
+    {
+        // Reload the payroll to get fresh data
+        $payroll->refresh();
+        
+        // Get the same variables that are calculated in the view
+        $payrollSetting = \App\Models\PayrollSetting::first();
+        $fixedAllowances = $this->getEmployeeFixedAllowances($payroll->karyawan);
+        $totalFixedAllowances = array_sum(array_column($fixedAllowances, 'nilai'));
+        $upahTetap = $payroll->gaji_pokok + $totalFixedAllowances;
+        
+        // Get variable tunjangan (same logic as in view)
+        $variableTunjangan = [];
+        $totalVariableTunjangan = 0;
+        
+        // Get Variable components from templates
+        $expectedVariableComponents = $this->getExpectedVariableComponents($payroll->karyawan);
+        
+        // Calculate overtime allowance
+        $overtimeData = $this->calculateOvertimeAllowance($payroll->karyawan, $payroll->periode);
+        
+        // Add Upah Lembur as variable component
+        $expectedVariableComponents['upah_lembur'] = [
+            'id' => 'upah_lembur',
+            'nama' => 'Upah Lembur',
+            'kode' => 'UPAH_LEMBUR',
+            'nilai' => $overtimeData['total_upah'],
+            'tipe' => 'Otomatis',
+            'source' => 'overtime_calculation'
+        ];
+        
+        // Process existing tunjangan_detail for Variable category
+        if ($payroll->tunjangan_detail && count($payroll->tunjangan_detail) > 0) {
+            foreach ($payroll->tunjangan_detail as $tunjangan) {
+                $componentCode = $tunjangan['kode'] ?? $tunjangan['nama'];
+                $komponenPayroll = \App\Models\KomponenPayroll::where(function($q) use ($componentCode, $tunjangan) {
+                    $q->where('kode', $componentCode)
+                      ->orWhere('nama_komponen', $componentCode)
+                      ->orWhere('nama_komponen', $tunjangan['nama']);
+                })->first();
+                
+                $isVariable = false;
+                if ($komponenPayroll) {
+                    $isVariable = ($komponenPayroll->kategori === 'Variable');
+                } else {
+                    // Fallback pattern matching
+                    $tunjanganNameLower = strtolower(trim($tunjangan['nama']));
+                    $variablePatterns = ['uang makan', 'transport', 'insentif', 'bonus', 'komisi', 'makan'];
+                    foreach ($variablePatterns as $pattern) {
+                        if (strpos($tunjanganNameLower, $pattern) !== false) {
+                            $isVariable = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if ($isVariable) {
+                    $totalVariableTunjangan += $tunjangan['nilai_hitung'];
+                }
+            }
+        }
+        
+        // Add missing Variable components from templates
+        foreach ($expectedVariableComponents as $expectedComponent) {
+            $alreadyExists = false;
+            if ($payroll->tunjangan_detail) {
+                foreach ($payroll->tunjangan_detail as $existing) {
+                    if (strtolower(trim($existing['nama'])) === strtolower(trim($expectedComponent['nama']))) {
+                        $alreadyExists = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!$alreadyExists) {
+                $totalVariableTunjangan += $expectedComponent['nilai'];
+            }
+        }
+        
+        // Calculate BPJS (same as in view)
+        $bpjsKesehatanCalculated = $payrollSetting ? ($upahTetap * $payrollSetting->bpjs_kesehatan_perusahaan) / 100 : $payroll->bpjs_kesehatan;
+        $bpjsKetenagakerjaanCalculated = $payrollSetting ? 
+            ($upahTetap * ($payrollSetting->bpjs_jht_perusahaan + $payrollSetting->bpjs_jp_perusahaan + $payrollSetting->bpjs_jkk_perusahaan + $payrollSetting->bpjs_jkm_perusahaan)) / 100 : 
+            $payroll->bpjs_ketenagakerjaan;
+        
+        // Calculate Gaji Bruto (same as in view)
+        $gajiBrutoRecalculated = $upahTetap + $totalVariableTunjangan + $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
+        
+        // Calculate total potongan (same logic as in view)
+        $totalPotonganRecalculated = 0;
+        if ($payroll->potongan_detail && count($payroll->potongan_detail) > 0) {
+            foreach ($payroll->potongan_detail as $potongan) {
+                $displayValue = $potongan['nilai_hitung'];
+                $potonganName = strtolower(trim($potongan['nama']));
+                
+                // Recalculate BPJS employee deductions based on upah tetap
+                if (strpos($potonganName, 'bpjs kesehatan') !== false && $payrollSetting) {
+                    $displayValue = ($upahTetap * $payrollSetting->bpjs_kesehatan_karyawan) / 100;
+                } elseif (strpos($potonganName, 'bpjs ketenagakerjaan') !== false && $payrollSetting) {
+                    $displayValue = ($upahTetap * ($payrollSetting->bpjs_jht_karyawan + $payrollSetting->bpjs_jp_karyawan)) / 100;
+                }
+                
+                $totalPotonganRecalculated += $displayValue;
+            }
+        }
+        
+        // Add BPJS perusahaan to total potongan (same as in view)
+        $totalPotonganRecalculated += $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
+        
+        // Calculate Gaji Netto (same as in view)
+        $gajiNettoRecalculated = $gajiBrutoRecalculated - $totalPotonganRecalculated - $payroll->pajak_pph21;
+        
+        return [
+            'total_variable_tunjangan' => $totalVariableTunjangan,
+            'total_variable_tunjangan_formatted' => 'Rp ' . number_format($totalVariableTunjangan, 0, ',', '.'),
+            'gaji_bruto' => $gajiBrutoRecalculated,
+            'gaji_bruto_formatted' => 'Rp ' . number_format($gajiBrutoRecalculated, 0, ',', '.'),
+            'total_potongan' => $totalPotonganRecalculated,
+            'total_potongan_formatted' => 'Rp ' . number_format($totalPotonganRecalculated, 0, ',', '.'),
+            'gaji_netto' => $gajiNettoRecalculated,
+            'gaji_netto_formatted' => 'Rp ' . number_format($gajiNettoRecalculated, 0, ',', '.')
+        ];
     }
 }

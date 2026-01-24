@@ -328,14 +328,14 @@
 
                 <!-- Karyawan Menu (Collapsible) -->
                 <div class="mb-1">
-                    <button onclick="toggleSubmenu('karyawan')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.karyawans.*') || request()->routeIs('perusahaan.jabatans.*') || request()->routeIs('perusahaan.status-karyawan.*') || request()->routeIs('perusahaan.kontrak-resign.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                    <button onclick="toggleSubmenu('karyawan')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.karyawans.*') || request()->routeIs('perusahaan.jabatans.*') || request()->routeIs('perusahaan.status-karyawan.*') || request()->routeIs('perusahaan.kontrak-resign.*') || request()->routeIs('perusahaan.medical-checkup.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
                         <div class="flex items-center">
                             <i class="fas fa-users w-5 text-center mr-3"></i>
                             <span class="font-medium">HR Management</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-karyawan"></i>
                     </button>
-                    <div id="submenu-karyawan" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.karyawans.*') || request()->routeIs('perusahaan.jabatans.*') || request()->routeIs('perusahaan.status-karyawan.*') || request()->routeIs('perusahaan.kontrak-resign.*') ? '' : 'hidden' }}">
+                    <div id="submenu-karyawan" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.karyawans.*') || request()->routeIs('perusahaan.jabatans.*') || request()->routeIs('perusahaan.status-karyawan.*') || request()->routeIs('perusahaan.kontrak-resign.*') || request()->routeIs('perusahaan.medical-checkup.*') ? '' : 'hidden' }}">
                         <a href="{{ route('perusahaan.karyawans.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.karyawans.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-user w-5 text-center mr-3 text-xs"></i>
                             <span>Karyawan</span>
@@ -351,6 +351,10 @@
                         <a href="{{ route('perusahaan.kontrak-resign.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.kontrak-resign.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-file-contract w-5 text-center mr-3 text-xs"></i>
                             <span>Kontrak & Resign</span>
+                        </a>
+                        <a href="{{ route('perusahaan.medical-checkup.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.medical-checkup.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-user-md w-5 text-center mr-3 text-xs"></i>
+                            <span>Medical Checkup</span>
                         </a>
                     </div>
                 </div>
@@ -492,17 +496,21 @@
 
                 <!-- Regu Patroli Menu (Collapsible) -->
                 <div class="mb-1">
-                    <button onclick="toggleSubmenu('tim-patroli')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.tim-patroli.*') || request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                    <button onclick="toggleSubmenu('tim-patroli')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.tim-patroli.*') || request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') || request()->routeIs('perusahaan.kru-change.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
                         <div class="flex items-center">
                             <i class="fas fa-users w-5 text-center mr-3"></i>
                             <span class="font-medium">Regu Patroli</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-tim-patroli"></i>
                     </button>
-                    <div id="submenu-tim-patroli" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.tim-patroli.*') || request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') ? '' : 'hidden' }}">
+                    <div id="submenu-tim-patroli" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.tim-patroli.*') || request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') || request()->routeIs('perusahaan.kru-change.*') ? '' : 'hidden' }}">
                         <a href="{{ route('perusahaan.tim-patroli.master') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.tim-patroli.master') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-users-cog w-5 text-center mr-3 text-xs"></i>
                             <span>Regu Patroli</span>
+                        </a>
+                        <a href="{{ route('perusahaan.kru-change.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.kru-change.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-exchange-alt w-5 text-center mr-3 text-xs"></i>
+                            <span>Kru Change</span>
                         </a>
                         <a href="{{ route('perusahaan.patrol.inventaris-patroli') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.patrol.inventaris-patroli*') || request()->routeIs('perusahaan.patrol.kuesioner-patroli*') || request()->routeIs('perusahaan.patrol.pemeriksaan-patroli*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-clipboard-list w-5 text-center mr-3 text-xs"></i>
@@ -523,7 +531,7 @@
                     <div id="submenu-laporan-patroli" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.laporan-patroli.*') ? '' : 'hidden' }}">
                         <a href="{{ route('perusahaan.laporan-patroli.insiden') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.laporan-patroli.insiden') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-exclamation-circle w-5 text-center mr-3 text-xs"></i>
-                            <span>Laporan Insiden</span>
+                            <span>Laporan Patroli Mandiri</span>
                         </a>
                         <a href="{{ route('perusahaan.laporan-patroli.kawasan') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.laporan-patroli.kawasan') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-map-marked-alt w-5 text-center mr-3 text-xs"></i>
@@ -533,11 +541,7 @@
                             <i class="fas fa-exclamation-triangle w-5 text-center mr-3 text-xs"></i>
                             <span>Aset Bermasalah</span>
                         </a>
-                        <a href="{{ route('perusahaan.laporan-patroli.inventaris') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.laporan-patroli.inventaris') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
-                            <i class="fas fa-boxes w-5 text-center mr-3 text-xs"></i>
-                            <span>Inventaris Patroli</span>
-                        </a>
-                        <a href="{{ route('perusahaan.laporan-patroli.kru-change') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.laporan-patroli.kru-change') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                        <a href="{{ route('perusahaan.laporan-patroli.kru-change.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.laporan-patroli.kru-change*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
                             <i class="fas fa-exchange-alt w-5 text-center mr-3 text-xs"></i>
                             <span>Kru Change</span>
                         </a>

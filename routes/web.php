@@ -248,6 +248,37 @@ Route::middleware('auth')->group(function () {
         
         Route::get('karyawans/download-template', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'downloadTemplate'])->name('karyawans.download-template');
         Route::post('karyawans/import-excel', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'importExcel'])->name('karyawans.import-excel');
+
+        // Kru Change Routes
+        Route::resource('kru-change', \App\Http\Controllers\Perusahaan\KruChangeController::class);
+        Route::get('kru-change-projects/{project}/data', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'getDataByProject'])->name('kru-change.data-by-project');
+        Route::get('kru-change-tim/{tim}/kuesioner', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'getKuesionerByTim'])->name('kru-change.kuesioner-by-tim');
+        Route::post('kru-change/{kruChange}/start', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'startHandover'])->name('kru-change.start');
+        Route::post('kru-change/{kruChange}/complete', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'completeHandover'])->name('kru-change.complete');
+        Route::post('kru-change/{kruChange}/cancel', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'cancelHandover'])->name('kru-change.cancel');
+        Route::post('kru-change/{kruChange}/approve', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'approve'])->name('kru-change.approve');
+        
+        // Kru Change Tracking Routes
+        Route::post('kru-change/{kruChange}/inventaris', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'updateInventaris'])->name('kru-change.update-inventaris');
+        Route::get('kru-change/{kruChange}/kuesioner-tracking', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'showKuesionerTracking'])->name('kru-change.kuesioner-tracking');
+        Route::post('kru-change/{kruChange}/kuesioner-tracking', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'submitKuesionerTracking'])->name('kru-change.submit-kuesioner-tracking');
+        Route::get('kru-change/{kruChange}/pemeriksaan-tracking', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'showPemeriksaanTracking'])->name('kru-change.pemeriksaan-tracking');
+        Route::post('kru-change/{kruChange}/pemeriksaan-tracking', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'submitPemeriksaanTracking'])->name('kru-change.submit-pemeriksaan-tracking');
+        Route::post('kru-change/{kruChange}/kuesioner', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'updateKuesioner'])->name('kru-change.update-kuesioner');
+        Route::post('kru-change/{kruChange}/pemeriksaan', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'updatePemeriksaan'])->name('kru-change.update-pemeriksaan');
+        
+        // Kru Change Photo Routes
+        Route::post('kru-change/{kruChange}/upload-foto-tim-keluar', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'uploadFotoTimKeluar'])->name('kru-change.upload-foto-tim-keluar');
+        Route::post('kru-change/{kruChange}/upload-foto-tim-masuk', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'uploadFotoTimMasuk'])->name('kru-change.upload-foto-tim-masuk');
+        Route::delete('kru-change/{kruChange}/delete-foto-tim-keluar', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'deleteFotoTimKeluar'])->name('kru-change.delete-foto-tim-keluar');
+        Route::delete('kru-change/{kruChange}/delete-foto-tim-masuk', [\App\Http\Controllers\Perusahaan\KruChangeController::class, 'deleteFotoTimMasuk'])->name('kru-change.delete-foto-tim-masuk');
+        
+        // Kru Change Questionnaire Routes
+        Route::get('kru-change/{kruChange}/questionnaire/{tipeJawaban}', [\App\Http\Controllers\Perusahaan\KruChangeQuestionnaireController::class, 'showQuestionnaire'])->name('kru-change.questionnaire.show');
+        Route::post('kru-change/{kruChange}/questionnaire/{tipeJawaban}', [\App\Http\Controllers\Perusahaan\KruChangeQuestionnaireController::class, 'submitQuestionnaire'])->name('kru-change.questionnaire.submit');
+        Route::get('kru-change/{kruChange}/questionnaire/{tipeJawaban}/edit', [\App\Http\Controllers\Perusahaan\KruChangeQuestionnaireController::class, 'editQuestionnaire'])->name('kru-change.questionnaire.edit');
+        Route::put('kru-change/{kruChange}/questionnaire/{tipeJawaban}', [\App\Http\Controllers\Perusahaan\KruChangeQuestionnaireController::class, 'updateQuestionnaire'])->name('kru-change.questionnaire.update');
+        Route::delete('kru-change/{kruChange}/questionnaire/{tipeJawaban}/{pertanyaanId}', [\App\Http\Controllers\Perusahaan\KruChangeQuestionnaireController::class, 'deleteAnswer'])->name('kru-change.questionnaire.delete-answer');
         Route::get('karyawans/import-progress', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'importProgress'])->name('karyawans.import-progress');
         Route::get('karyawans/export-page', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'exportPage'])->name('karyawans.export-page');
         Route::post('karyawans/export-excel', [\App\Http\Controllers\Perusahaan\KaryawanController::class, 'exportExcel'])->name('karyawans.export-excel');
@@ -278,6 +309,9 @@ Route::middleware('auth')->group(function () {
         Route::get('payroll/generate', [\App\Http\Controllers\Perusahaan\PayrollController::class, 'generate'])->name('payroll.generate');
         Route::post('payroll/generate', [\App\Http\Controllers\Perusahaan\PayrollController::class, 'store'])->name('payroll.store');
         Route::get('daftar-payroll', [\App\Http\Controllers\Perusahaan\DaftarPayrollController::class, 'index'])->name('daftar-payroll.index');
+        Route::get('daftar-payroll/export-page', [\App\Http\Controllers\Perusahaan\PayrollExportController::class, 'showExportPage'])->name('daftar-payroll.export-page');
+        Route::get('daftar-payroll/export', [\App\Http\Controllers\Perusahaan\PayrollExportController::class, 'export'])->name('daftar-payroll.export');
+        Route::get('daftar-payroll/test-export', [\App\Http\Controllers\Perusahaan\DaftarPayrollController::class, 'testExport'])->name('daftar-payroll.test-export');
         Route::get('daftar-payroll/{payroll}', [\App\Http\Controllers\Perusahaan\DaftarPayrollController::class, 'show'])->name('daftar-payroll.show');
         Route::put('daftar-payroll/{payroll}/update-component', [\App\Http\Controllers\Perusahaan\DaftarPayrollController::class, 'updateComponent'])->name('daftar-payroll.update-component');
         Route::post('daftar-payroll/{payroll}/approve', [\App\Http\Controllers\Perusahaan\DaftarPayrollController::class, 'approve'])->name('daftar-payroll.approve');
@@ -367,6 +401,11 @@ Route::middleware('auth')->group(function () {
         Route::post('kontrak-resign/resign/{resign}/approve', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'approveResign'])->name('kontrak-resign.approve-resign');
         Route::post('kontrak-resign/resign/{resign}/reject', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'rejectResign'])->name('kontrak-resign.reject-resign');
         Route::get('kontrak-resign-karyawans/{project}', [\App\Http\Controllers\Perusahaan\KontrakResignController::class, 'getKaryawansByProject'])->name('kontrak-resign.karyawans');
+        
+        // Medical Checkup Routes
+        Route::get('medical-checkup', [\App\Http\Controllers\Perusahaan\MedicalCheckupController::class, 'index'])->name('medical-checkup.index');
+        Route::post('medical-checkup/send-reminder', [\App\Http\Controllers\Perusahaan\MedicalCheckupController::class, 'sendReminder'])->name('medical-checkup.send-reminder');
+        Route::get('medical-checkup/export', [\App\Http\Controllers\Perusahaan\MedicalCheckupController::class, 'export'])->name('medical-checkup.export');
         
         Route::resource('checkpoints', \App\Http\Controllers\Perusahaan\CheckpointController::class);
         Route::resource('patrolis', \App\Http\Controllers\Perusahaan\PatroliController::class)->only(['index', 'show']);
@@ -485,8 +524,12 @@ Route::middleware('auth')->group(function () {
             Route::get('kawasan', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'kawasan'])->name('kawasan');
             Route::get('kawasan/{area}/detail', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'kawasanDetail'])->name('kawasan.detail');
             Route::get('aset-bermasalah', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'asetBermasalah'])->name('aset-bermasalah');
-            Route::get('inventaris', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'inventaris'])->name('inventaris');
-            Route::get('kru-change', [\App\Http\Controllers\Perusahaan\LaporanPatroliController::class, 'kruChange'])->name('kru-change');
+            
+            // Kru Change Reports
+            Route::get('kru-change', [\App\Http\Controllers\Perusahaan\LaporanKruChangeController::class, 'index'])->name('kru-change.index');
+            Route::get('kru-change/{kruChange}', [\App\Http\Controllers\Perusahaan\LaporanKruChangeController::class, 'show'])->name('kru-change.show');
+            Route::get('kru-change/{kruChange}/pdf', [\App\Http\Controllers\Perusahaan\LaporanKruChangeController::class, 'exportPdf'])->name('kru-change.pdf');
+            Route::post('kru-change/export-multiple', [\App\Http\Controllers\Perusahaan\LaporanKruChangeController::class, 'exportMultiplePdf'])->name('kru-change.export-multiple');
         });
     });
 });

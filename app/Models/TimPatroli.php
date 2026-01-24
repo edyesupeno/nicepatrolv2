@@ -98,4 +98,14 @@ class TimPatroli extends Model
     {
         return $this->hasMany(AnggotaTimPatroli::class)->where('is_active', true);
     }
+
+    public function kruChangesKeluar(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(KruChange::class, 'tim_keluar_id');
+    }
+
+    public function kruChangesMasuk(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(KruChange::class, 'tim_masuk_id');
+    }
 }

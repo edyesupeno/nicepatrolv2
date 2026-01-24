@@ -351,12 +351,13 @@
                 </div>
 
                 <!-- Potongan -->
+                @php
+                    // Initialize total potongan (always needed for calculations)
+                    $totalPotonganRecalculated = 0;
+                @endphp
                 @if($payroll->potongan_detail && count($payroll->potongan_detail) > 0)
                     <div class="bg-red-50 rounded-lg p-4">
                         <p class="text-sm font-semibold text-red-900 mb-2">Potongan</p>
-                        @php
-                            $totalPotonganRecalculated = 0;
-                        @endphp
                         @foreach($payroll->potongan_detail as $index => $potongan)
                             @php
                                 // For existing payrolls without kode, use nama as fallback
@@ -451,6 +452,47 @@
                             // Add BPJS perusahaan to total potongan
                             $totalPotonganRecalculated += $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
                         @endphp
+                        
+                        <div class="flex items-center justify-between pt-2 mt-2 border-t border-red-200">
+                            <span class="text-sm font-semibold text-red-900">Total Potongan</span>
+                            <span class="text-sm font-bold text-red-700" id="total-potongan">Rp {{ number_format($totalPotonganRecalculated, 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                @else
+                    <!-- No potongan details, but still need to calculate BPJS deductions -->
+                    @php
+                        // Add BPJS perusahaan to total potongan even when no other deductions exist
+                        $totalPotonganRecalculated = $bpjsKesehatanCalculated + $bpjsKetenagakerjaanCalculated;
+                    @endphp
+                    <div class="bg-red-50 rounded-lg p-4">
+                        <p class="text-sm font-semibold text-red-900 mb-2">Potongan</p>
+                        
+                        <!-- BPJS Perusahaan as deductions (dipotong dari gaji karyawan) -->
+                        <div class="py-2">
+                            <p class="text-xs text-red-800 mb-2 font-medium">BPJS Ditanggung Perusahaan (Dipotong dari Gaji)</p>
+                            
+                            <!-- BPJS Kesehatan Perusahaan -->
+                            <div class="flex items-center justify-between py-2 text-xs">
+                                <span class="text-gray-700">
+                                    BPJS Kesehatan Perusahaan (4% dari upah tetap)
+                                    <span class="text-xs text-red-600 ml-1" title="Dipotong dari gaji untuk bayar ke perusahaan">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                </span>
+                                <span class="font-medium text-red-700">- Rp {{ number_format($bpjsKesehatanCalculated, 0, ',', '.') }}</span>
+                            </div>
+                            
+                            <!-- BPJS Ketenagakerjaan Perusahaan -->
+                            <div class="flex items-center justify-between py-2 text-xs">
+                                <span class="text-gray-700">
+                                    BPJS Ketenagakerjaan Perusahaan (6.24% dari upah tetap)
+                                    <span class="text-xs text-red-600 ml-1" title="Dipotong dari gaji untuk bayar ke perusahaan">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                </span>
+                                <span class="font-medium text-red-700">- Rp {{ number_format($bpjsKetenagakerjaanCalculated, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
                         
                         <div class="flex items-center justify-between pt-2 mt-2 border-t border-red-200">
                             <span class="text-sm font-semibold text-red-900">Total Potongan</span>
@@ -920,16 +962,64 @@ function saveEdit(input) {
                 totalElement.textContent = data.data.new_total_formatted;
             }
             
-            // Update gaji bruto and netto
-            const gajiBrutoElement = document.getElementById('gaji-bruto');
-            const gajiNettoElement = document.getElementById('gaji-netto');
-            
-            if (gajiBrutoElement) {
-                gajiBrutoElement.textContent = data.data.new_gaji_bruto_formatted;
+            // Update higher-level totals from server response
+            if (data.data.recalculated_totals) {
+                const totals = data.data.recalculated_totals;
+                
+                // Update Total Upah Tidak Tetap
+                const totalVariableElement = document.getElementById('total-tunjangan');
+                if (totalVariableElement && totals.total_variable_tunjangan_formatted) {
+                    totalVariableElement.textContent = totals.total_variable_tunjangan_formatted;
+                }
+                
+                // Update Gaji Bruto
+                const gajiBrutoElement = document.getElementById('gaji-bruto');
+                if (gajiBrutoElement && totals.gaji_bruto_formatted) {
+                    gajiBrutoElement.textContent = totals.gaji_bruto_formatted;
+                }
+                
+                // Update Total Potongan (always update, regardless of component type)
+                const totalPotonganElement = document.getElementById('total-potongan');
+                if (totalPotonganElement && totals.total_potongan_formatted) {
+                    totalPotonganElement.textContent = totals.total_potongan_formatted;
+                }
+                
+                // ALWAYS Update Gaji Netto (Take Home Pay) - karena ini 1 kesatuan
+                const gajiNettoElement = document.getElementById('gaji-netto');
+                if (gajiNettoElement && totals.gaji_netto_formatted) {
+                    gajiNettoElement.textContent = totals.gaji_netto_formatted;
+                }
             }
             
-            if (gajiNettoElement) {
-                gajiNettoElement.textContent = data.data.new_gaji_netto_formatted;
+            // Update higher-level totals using server-calculated values
+            if (data.data.recalculated_totals) {
+                const totals = data.data.recalculated_totals;
+                
+                // Update Total Upah Tidak Tetap
+                const totalVariableElement = document.getElementById('total-tunjangan');
+                if (totalVariableElement) {
+                    totalVariableElement.textContent = totals.total_variable_tunjangan_formatted;
+                }
+                
+                // Update Gaji Bruto
+                const gajiBrutoElement = document.getElementById('gaji-bruto');
+                if (gajiBrutoElement) {
+                    gajiBrutoElement.textContent = totals.gaji_bruto_formatted;
+                }
+                
+                // Update Total Potongan (if editing potongan)
+                if (componentType === 'potongan') {
+                    const totalPotonganElement = document.getElementById('total-potongan');
+                    if (totalPotonganElement) {
+                        totalPotonganElement.textContent = totals.total_potongan_formatted;
+                    }
+                }
+                
+                // Update Gaji Netto
+                const gajiNettoElement = document.getElementById('gaji-netto');
+                if (gajiNettoElement) {
+                    gajiNettoElement.textContent = totals.gaji_netto_formatted;
+                }
             }
             
             // Reset edit mode
