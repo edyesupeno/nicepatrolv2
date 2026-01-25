@@ -77,6 +77,7 @@ Route::middleware('auth')->group(function () {
             // New HR Dashboard endpoints
             Route::get('/employee-division-stats', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getEmployeeDivisionStats'])->name('employee-division-stats');
             Route::get('/employee-age-stats', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getEmployeeAgeStats'])->name('employee-age-stats');
+            Route::get('/attendance-radius-stats', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getAttendanceRadiusStats'])->name('attendance-radius-stats');
             Route::get('/new-submissions', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getNewSubmissions'])->name('new-submissions');
             Route::get('/attendance-issues', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getAttendanceIssues'])->name('attendance-issues');
             Route::get('/duty-stats', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getDutyStats'])->name('duty-stats');

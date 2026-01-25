@@ -70,6 +70,11 @@ class DashboardController extends Controller
             'resign_pending' => Resign::where('perusahaan_id', $perusahaanId)
                 ->where('status', 'pending')->count(),
             'total_projects' => Project::where('perusahaan_id', $perusahaanId)->count(),
+            
+            // Additional stats (set to 0 if no data)
+            'early_tapout' => 0, // Can be implemented later
+            'overtime_count' => 0, // Can be implemented later  
+            'new_employees' => 0, // Can be implemented later
         ];
 
         return response()->json($stats);
@@ -84,32 +89,64 @@ class DashboardController extends Controller
             $perusahaanId = auth()->user()->perusahaan_id;
             $projectFilter = $request->get('project', 'all');
             
-            // Always return sample data for now to ensure chart works
-            $divisions = collect([
-                ['division' => 'Security', 'men' => 45, 'women' => 12],
-                ['division' => 'Head Security', 'men' => 8, 'women' => 3],
-                ['division' => 'Finance', 'men' => 15, 'women' => 25],
-                ['division' => 'HR', 'men' => 10, 'women' => 18],
-                ['division' => 'Admin', 'men' => 12, 'women' => 15],
-                ['division' => 'Office', 'men' => 6, 'women' => 4],
-            ]);
+            // Build base query
+            $query = DB::table('karyawans')
+                ->join('jabatans', 'karyawans.jabatan_id', '=', 'jabatans.id')
+                ->where('karyawans.perusahaan_id', $perusahaanId)
+                ->where('karyawans.is_active', true)
+                ->whereNotNull('karyawans.jabatan_id')
+                ->whereNotNull('karyawans.jenis_kelamin');
+            
+            // Apply project filter if not 'all'
+            if ($projectFilter !== 'all' && is_numeric($projectFilter)) {
+                $query->where('karyawans.project_id', $projectFilter);
+            }
+            
+            // Get karyawan grouped by jabatan and gender
+            $divisions = $query
+                ->select(
+                    'jabatans.nama as division',
+                    'karyawans.jenis_kelamin',
+                    DB::raw('COUNT(*) as count')
+                )
+                ->groupBy('jabatans.nama', 'karyawans.jenis_kelamin')
+                ->get();
+            
+            // Transform data to required format
+            $divisionStats = [];
+            $divisionGroups = $divisions->groupBy('division');
+            
+            foreach ($divisionGroups as $divisionName => $genderGroups) {
+                $men = 0;
+                $women = 0;
+                
+                foreach ($genderGroups as $group) {
+                    if ($group->jenis_kelamin === 'Laki-laki') {
+                        $men = $group->count;
+                    } elseif ($group->jenis_kelamin === 'Perempuan') {
+                        $women = $group->count;
+                    }
+                }
+                
+                $divisionStats[] = [
+                    'division' => $divisionName,
+                    'men' => $men,
+                    'women' => $women
+                ];
+            }
+            
+            // Sort by total employees (descending)
+            usort($divisionStats, function($a, $b) {
+                return ($b['men'] + $b['women']) - ($a['men'] + $a['women']);
+            });
 
-            return response()->json($divisions);
+            return response()->json($divisionStats);
             
         } catch (\Exception $e) {
             \Log::error('Error in getEmployeeDivisionStats: ' . $e->getMessage());
             
-            // Return sample data as fallback
-            $divisions = collect([
-                ['division' => 'Security', 'men' => 45, 'women' => 12],
-                ['division' => 'Head Security', 'men' => 8, 'women' => 3],
-                ['division' => 'Finance', 'men' => 15, 'women' => 25],
-                ['division' => 'HR', 'men' => 10, 'women' => 18],
-                ['division' => 'Admin', 'men' => 12, 'women' => 15],
-                ['division' => 'Office', 'men' => 6, 'women' => 4],
-            ]);
-
-            return response()->json($divisions);
+            // Return empty data as fallback
+            return response()->json([]);
         }
     }
 
@@ -122,17 +159,60 @@ class DashboardController extends Controller
             $perusahaanId = auth()->user()->perusahaan_id;
             $projectFilter = $request->get('project', 'all');
             
-            // Return sample data for now
-            $ageStats = [
-                ['group' => '20-25', 'men' => 44, 'women' => 78],
-                ['group' => '26-29', 'men' => 56, 'women' => 78],
-                ['group' => '30-35', 'men' => 67, 'women' => 53],
-                ['group' => '36-39', 'men' => 47, 'women' => 0],
-                ['group' => '40-45', 'men' => 27, 'women' => 39],
-                ['group' => '46-49', 'men' => 32, 'women' => 50],
-                ['group' => '50-55', 'men' => 24, 'women' => 19],
-                ['group' => '56-60', 'men' => 23, 'women' => 30],
+            // Base query for karyawan
+            $karyawanQuery = Karyawan::where('perusahaan_id', $perusahaanId)
+                ->where('is_active', true)
+                ->whereNotNull('tanggal_lahir')
+                ->whereNotNull('jenis_kelamin');
+            
+            // Apply project filter if not 'all'
+            if ($projectFilter !== 'all' && is_numeric($projectFilter)) {
+                $karyawanQuery->where('project_id', $projectFilter);
+            }
+            
+            // Get all karyawan with birth date and gender
+            $karyawans = $karyawanQuery->select('tanggal_lahir', 'jenis_kelamin')->get();
+            
+            // Define age groups
+            $ageGroups = [
+                '20-25' => ['min' => 20, 'max' => 25],
+                '26-29' => ['min' => 26, 'max' => 29],
+                '30-35' => ['min' => 30, 'max' => 35],
+                '36-39' => ['min' => 36, 'max' => 39],
+                '40-45' => ['min' => 40, 'max' => 45],
+                '46-49' => ['min' => 46, 'max' => 49],
+                '50-55' => ['min' => 50, 'max' => 55],
+                '56-60' => ['min' => 56, 'max' => 60],
             ];
+            
+            // Initialize result array
+            $ageStats = [];
+            
+            foreach ($ageGroups as $groupName => $range) {
+                $men = 0;
+                $women = 0;
+                
+                foreach ($karyawans as $karyawan) {
+                    // Calculate age from tanggal_lahir
+                    $age = Carbon::parse($karyawan->tanggal_lahir)->age;
+                    
+                    // Check if age falls in current group range
+                    if ($age >= $range['min'] && $age <= $range['max']) {
+                        // Count by gender (jenis_kelamin: Laki-laki, Perempuan)
+                        if ($karyawan->jenis_kelamin === 'Laki-laki') {
+                            $men++;
+                        } elseif ($karyawan->jenis_kelamin === 'Perempuan') {
+                            $women++;
+                        }
+                    }
+                }
+                
+                $ageStats[] = [
+                    'group' => $groupName,
+                    'men' => $men,
+                    'women' => $women
+                ];
+            }
 
             return response()->json($ageStats);
             
@@ -141,14 +221,14 @@ class DashboardController extends Controller
             
             // Return sample data as fallback
             $ageStats = [
-                ['group' => '20-25', 'men' => 44, 'women' => 78],
-                ['group' => '26-29', 'men' => 56, 'women' => 78],
-                ['group' => '30-35', 'men' => 67, 'women' => 53],
-                ['group' => '36-39', 'men' => 47, 'women' => 0],
-                ['group' => '40-45', 'men' => 27, 'women' => 39],
-                ['group' => '46-49', 'men' => 32, 'women' => 50],
-                ['group' => '50-55', 'men' => 24, 'women' => 19],
-                ['group' => '56-60', 'men' => 23, 'women' => 30],
+                ['group' => '20-25', 'men' => 0, 'women' => 0],
+                ['group' => '26-29', 'men' => 0, 'women' => 0],
+                ['group' => '30-35', 'men' => 0, 'women' => 0],
+                ['group' => '36-39', 'men' => 0, 'women' => 0],
+                ['group' => '40-45', 'men' => 0, 'women' => 0],
+                ['group' => '46-49', 'men' => 0, 'women' => 0],
+                ['group' => '50-55', 'men' => 0, 'women' => 0],
+                ['group' => '56-60', 'men' => 0, 'women' => 0],
             ];
 
             return response()->json($ageStats);
@@ -404,6 +484,69 @@ class DashboardController extends Controller
     }
 
     /**
+     * Get attendance radius statistics (On Radius vs Off Radius)
+     */
+    public function getAttendanceRadiusStats(Request $request)
+    {
+        try {
+            $perusahaanId = auth()->user()->perusahaan_id;
+            $projectFilter = $request->get('project', 'all');
+            $today = today();
+            
+            // Base query for kehadiran today
+            $kehadiranQuery = Kehadiran::where('perusahaan_id', $perusahaanId)
+                ->whereDate('tanggal', $today);
+            
+            // Apply project filter if not 'all'
+            if ($projectFilter !== 'all' && is_numeric($projectFilter)) {
+                $kehadiranQuery->whereHas('karyawan', function($q) use ($projectFilter) {
+                    $q->where('project_id', $projectFilter);
+                });
+            }
+            
+            // Count attendance based on radius status
+            // On Radius = both masuk and keluar dalam radius (or only masuk if keluar is null)
+            $onRadius = $kehadiranQuery->clone()
+                ->where(function($q) {
+                    $q->where(function($subQ) {
+                        // Both masuk and keluar on radius
+                        $subQ->where('on_radius_masuk', true)
+                             ->where('on_radius_keluar', true);
+                    })->orWhere(function($subQ) {
+                        // Only masuk on radius (keluar is null)
+                        $subQ->where('on_radius_masuk', true)
+                             ->whereNull('on_radius_keluar');
+                    });
+                })
+                ->count();
+            
+            // Off Radius = either masuk or keluar off radius
+            $offRadius = $kehadiranQuery->clone()
+                ->where(function($q) {
+                    $q->where('on_radius_masuk', false)
+                      ->orWhere('on_radius_keluar', false);
+                })
+                ->count();
+            
+            return response()->json([
+                'on_radius' => $onRadius,
+                'off_radius' => $offRadius,
+                'total' => $onRadius + $offRadius
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in getAttendanceRadiusStats: ' . $e->getMessage());
+            
+            // Return empty data as fallback
+            return response()->json([
+                'on_radius' => 0,
+                'off_radius' => 0,
+                'total' => 0
+            ]);
+        }
+    }
+
+    /**
      * Get duty statistics (On Duty vs Off Duty)
      */
     public function getDutyStats(Request $request)
@@ -447,11 +590,11 @@ class DashboardController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error in getDutyStats: ' . $e->getMessage());
             
-            // Return sample data as fallback
+            // Return empty data as fallback
             return response()->json([
-                'on_duty' => 13,
-                'off_duty' => 10,
-                'total' => 23
+                'on_duty' => 0,
+                'off_duty' => 0,
+                'total' => 0
             ]);
         }
     }

@@ -56,9 +56,7 @@
                     <i class="fas fa-users text-lg mr-2"></i>
                     <span class="text-sm opacity-90">TOTAL KARYAWAN</span>
                 </div>
-                <p class="text-4xl font-bold mb-2" id="total-karyawan">
-                    <span class="animate-pulse bg-white bg-opacity-30 rounded w-12 h-8 inline-block"></span>
-                </p>
+                <p class="text-4xl font-bold mb-2" id="total-karyawan">0</p>
             </div>
             <div class="bg-white bg-opacity-20 rounded-xl p-3">
                 <i class="fas fa-users text-2xl"></i>
@@ -74,9 +72,7 @@
                     <i class="fas fa-user-check text-lg mr-2"></i>
                     <span class="text-sm opacity-90">HADIR</span>
                 </div>
-                <p class="text-4xl font-bold mb-2" id="kehadiran-hari-ini">
-                    <span class="animate-pulse bg-white bg-opacity-30 rounded w-12 h-8 inline-block"></span>
-                </p>
+                <p class="text-4xl font-bold mb-2" id="kehadiran-hari-ini">0</p>
             </div>
             <div class="bg-white bg-opacity-20 rounded-xl p-3">
                 <i class="fas fa-user-check text-2xl"></i>
@@ -92,9 +88,7 @@
                     <i class="fas fa-user-times text-lg mr-2"></i>
                     <span class="text-sm opacity-90">ALPHA</span>
                 </div>
-                <p class="text-4xl font-bold mb-2" id="absent-count">
-                    <span class="animate-pulse bg-white bg-opacity-30 rounded w-8 h-8 inline-block"></span>
-                </p>
+                <p class="text-4xl font-bold mb-2" id="absent-count">0</p>
             </div>
             <div class="bg-white bg-opacity-20 rounded-xl p-3">
                 <i class="fas fa-user-times text-2xl"></i>
@@ -110,9 +104,7 @@
                     <i class="fas fa-clock text-lg mr-2"></i>
                     <span class="text-sm opacity-90">PULANG CEPAT</span>
                 </div>
-                <p class="text-4xl font-bold mb-2" id="early-tapout">
-                    <span class="animate-pulse bg-white bg-opacity-30 rounded w-8 h-8 inline-block"></span>
-                </p>
+                <p class="text-4xl font-bold mb-2" id="early-tapout">0</p>
             </div>
             <div class="bg-white bg-opacity-20 rounded-xl p-3">
                 <i class="fas fa-clock text-2xl"></i>
@@ -128,9 +120,7 @@
                     <i class="fas fa-business-time text-lg mr-2"></i>
                     <span class="text-sm opacity-90">LEMBUR</span>
                 </div>
-                <p class="text-4xl font-bold mb-2" id="overtime-count">
-                    <span class="animate-pulse bg-white bg-opacity-30 rounded w-8 h-8 inline-block"></span>
-                </p>
+                <p class="text-4xl font-bold mb-2" id="overtime-count">0</p>
             </div>
             <div class="bg-white bg-opacity-20 rounded-xl p-3">
                 <i class="fas fa-business-time text-2xl"></i>
@@ -146,9 +136,7 @@
                     <i class="fas fa-calendar-times text-lg mr-2"></i>
                     <span class="text-sm opacity-90">CUTI</span>
                 </div>
-                <p class="text-4xl font-bold mb-2" id="leave-count">
-                    <span class="animate-pulse bg-white bg-opacity-30 rounded w-8 h-8 inline-block"></span>
-                </p>
+                <p class="text-4xl font-bold mb-2" id="leave-count">0</p>
             </div>
             <div class="bg-white bg-opacity-20 rounded-xl p-3">
                 <i class="fas fa-calendar-times text-2xl"></i>
@@ -159,26 +147,26 @@
 
 <!-- Main Content Grid -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-    <!-- Employee Statistics Chart -->
+    <!-- Employee Attendance Radius Chart -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100">
             <div class="flex items-center justify-between">
-                <h3 class="text-lg font-bold text-gray-900">Karyawan Per-Divisi</h3>
+                <h3 class="text-lg font-bold text-gray-900">Absensi Radius</h3>
                 <div class="flex items-center space-x-4">
                     <div class="flex items-center space-x-2">
-                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <span class="text-sm text-gray-600">Laki-Laki</span>
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span class="text-sm text-gray-600">On Radius</span>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <div class="w-3 h-3 bg-pink-400 rounded-full"></div>
-                        <span class="text-sm text-gray-600">Perempuan</span>
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span class="text-sm text-gray-600">Off Radius</span>
                     </div>
                 </div>
             </div>
         </div>
         <div class="p-6">
             <div style="position: relative; height: 300px;">
-                <canvas id="employeeChart"></canvas>
+                <canvas id="radiusChart"></canvas>
             </div>
         </div>
     </div>
@@ -228,7 +216,7 @@
                     <div class="absolute inset-0 flex items-center justify-center">
                         <div class="text-center">
                             <div class="text-xs text-gray-500 mb-1">Total Employee</div>
-                            <div class="text-4xl font-bold text-gray-900" id="total-employee-duty">23</div>
+                            <div class="text-4xl font-bold text-gray-900" id="total-employee-duty">0</div>
                         </div>
                     </div>
                     
@@ -237,8 +225,8 @@
                         <div class="text-left">
                             <div class="text-sm font-medium text-gray-700">Off Duty</div>
                             <div class="text-lg font-bold text-gray-900">
-                                <span id="off-duty-count">10</span>
-                                <span class="text-sm text-gray-500 ml-1" id="off-duty-percentage">43.48%</span>
+                                <span id="off-duty-count">0</span>
+                                <span class="text-sm text-gray-500 ml-1" id="off-duty-percentage">0%</span>
                             </div>
                         </div>
                         <!-- Line pointing to chart - positioned to align with left edge of "Off Duty" text -->
@@ -250,8 +238,8 @@
                         <div class="text-right">
                             <div class="text-sm font-medium text-gray-700">On Duty</div>
                             <div class="text-lg font-bold text-gray-900">
-                                <span id="on-duty-count">13</span>
-                                <span class="text-sm text-blue-500 ml-1" id="on-duty-percentage">56.52%</span>
+                                <span id="on-duty-count">0</span>
+                                <span class="text-sm text-blue-500 ml-1" id="on-duty-percentage">0%</span>
                             </div>
                         </div>
                         <!-- Line pointing to chart - positioned to align with right edge of "On Duty" text -->
@@ -287,19 +275,10 @@
         </div>
         <div class="p-6">
             <div id="new-submissions" class="space-y-4">
-                <!-- Loading skeleton -->
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div class="flex items-center space-x-3">
-                        <div class="animate-pulse bg-gray-200 w-10 h-10 rounded-full"></div>
-                        <div>
-                            <div class="animate-pulse bg-gray-200 h-4 rounded mb-2 w-32"></div>
-                            <div class="animate-pulse bg-gray-200 h-3 rounded w-20"></div>
-                        </div>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs">Accept</button>
-                        <button class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs">Decline</button>
-                    </div>
+                <!-- Loading state -->
+                <div class="text-center py-8 text-gray-500">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                    <p class="text-sm">Loading submissions...</p>
                 </div>
             </div>
         </div>
@@ -315,19 +294,10 @@
         </div>
         <div class="p-6">
             <div id="attendance-issues" class="space-y-4">
-                <!-- Loading skeleton -->
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div class="flex items-center space-x-3">
-                        <div class="animate-pulse bg-gray-200 w-10 h-10 rounded-full"></div>
-                        <div>
-                            <div class="animate-pulse bg-gray-200 h-4 rounded mb-2 w-32"></div>
-                            <div class="animate-pulse bg-gray-200 h-3 rounded w-20"></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">Leave</span>
-                        <span class="text-xs text-gray-500">11 Nov 2024, 8:47 AM</span>
-                    </div>
+                <!-- Loading state -->
+                <div class="text-center py-8 text-gray-500">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                    <p class="text-sm">Loading attendance issues...</p>
                 </div>
             </div>
         </div>
@@ -343,19 +313,10 @@
         </div>
         <div class="p-6">
             <div id="attention-items" class="space-y-4">
-                <!-- Loading skeleton -->
-                <div class="p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
-                    <div class="flex items-start space-x-3">
-                        <div class="animate-pulse bg-gray-200 w-10 h-10 rounded-full"></div>
-                        <div class="flex-1">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="animate-pulse bg-gray-200 h-4 rounded w-24"></div>
-                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">High</span>
-                            </div>
-                            <div class="animate-pulse bg-gray-200 h-3 rounded mb-2"></div>
-                            <div class="animate-pulse bg-gray-200 h-3 rounded w-32"></div>
-                        </div>
-                    </div>
+                <!-- Loading state -->
+                <div class="text-center py-8 text-gray-500">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                    <p class="text-sm">Loading attention items...</p>
                 </div>
             </div>
         </div>
@@ -371,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Dashboard loading...');
     
     // Initialize charts
-    let employeeChart, ageChart, dutyChart;
+    let radiusChart, ageChart, dutyChart;
     
     // Tab functionality
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -428,15 +389,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Initialize empty charts first
+    setTimeout(() => {
+        initializeEmptyCharts();
+    }, 100);
+    
     // Load dashboard data
-    loadDashboardStats();
-    loadEmployeeChart();
-    loadAgeChart();
-    loadDutyChart();
-    loadNewSubmissions();
-    loadOvertimeSubmissions();
-    loadAttendanceIssues();
-    loadAttentionItems();
+    setTimeout(() => {
+        loadDashboardStats();
+        loadRadiusChart();
+        loadAgeChart();
+        loadDutyChart();
+        loadNewSubmissions();
+        loadOvertimeSubmissions();
+        loadAttendanceIssues();
+        loadAttentionItems();
+    }, 200);
     
     // Refresh data every 5 minutes
     setInterval(() => {
@@ -446,6 +414,128 @@ document.addEventListener('DOMContentLoaded', function() {
         loadAttendanceIssues();
         loadAttentionItems();
     }, 300000);
+    
+    // Initialize empty charts with loading state
+    function initializeEmptyCharts() {
+        try {
+            // Initialize Radius Chart with empty data
+            const radiusCanvas = document.getElementById('radiusChart');
+            if (radiusCanvas && !radiusChart) {
+                const radiusCtx = radiusCanvas.getContext('2d');
+                radiusChart = new Chart(radiusCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['On Radius', 'Off Radius'],
+                        datasets: [{
+                            data: [0, 0],
+                            backgroundColor: ['#10B981', '#EF4444'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label;
+                                        const value = context.parsed;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Initialize Age Chart with empty data
+            const ageCanvas = document.getElementById('ageChart');
+            if (ageCanvas && !ageChart) {
+                const ageCtx = ageCanvas.getContext('2d');
+                ageChart = new Chart(ageCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Laki-Laki',
+                            data: [],
+                            backgroundColor: '#3B82F6',
+                            borderRadius: 4,
+                            barThickness: 15
+                        }, {
+                            label: 'Perempuan',
+                            data: [],
+                            backgroundColor: '#F472B6',
+                            borderRadius: 4,
+                            barThickness: 15
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Initialize Duty Chart with empty data
+            const dutyCanvas = document.getElementById('dutyChart');
+            if (dutyCanvas && !dutyChart) {
+                const dutyCtx = dutyCanvas.getContext('2d');
+                dutyChart = new Chart(dutyCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['On Duty', 'Off Duty'],
+                        datasets: [{
+                            data: [0, 0],
+                            backgroundColor: ['#3B82F6', '#E5E7EB'],
+                            borderWidth: 0,
+                            cutout: '75%'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error initializing charts:', error);
+        }
+            }
+        });
+    }
     
     async function loadDashboardStats(projectFilter = 'all') {
         try {
@@ -470,20 +560,27 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update leave count
             updateStatCard('leave-count', stats.cuti_pending || 0);
             
-            // Mock data for other cards (you can implement these in the controller)
-            updateStatCard('early-tapout', 2);
-            updateStatCard('overtime-count', 4);
+            // Update other cards with real data or 0
+            updateStatCard('early-tapout', stats.early_tapout || 0);
+            updateStatCard('overtime-count', stats.overtime_count || 0);
             
-            // Update additional info
-            document.getElementById('new-employees').textContent = '5';
-            document.getElementById('present-employees').textContent = stats.kehadiran_hari_ini;
-            document.getElementById('absent-employees').textContent = absentCount;
-            document.getElementById('early-employees').textContent = '2';
-            document.getElementById('overtime-employees').textContent = '4';
-            document.getElementById('leave-employees').textContent = stats.cuti_pending || 0;
+            // Update additional info (with null checks)
+            const newEmployeesEl = document.getElementById('new-employees');
+            const presentEmployeesEl = document.getElementById('present-employees');
+            const absentEmployeesEl = document.getElementById('absent-employees');
+            const earlyEmployeesEl = document.getElementById('early-employees');
+            const overtimeEmployeesEl = document.getElementById('overtime-employees');
+            const leaveEmployeesEl = document.getElementById('leave-employees');
+            
+            if (newEmployeesEl) newEmployeesEl.textContent = stats.new_employees || 0;
+            if (presentEmployeesEl) presentEmployeesEl.textContent = stats.kehadiran_hari_ini || 0;
+            if (absentEmployeesEl) absentEmployeesEl.textContent = absentCount || 0;
+            if (earlyEmployeesEl) earlyEmployeesEl.textContent = stats.early_tapout || 0;
+            if (overtimeEmployeesEl) overtimeEmployeesEl.textContent = stats.overtime_count || 0;
+            if (leaveEmployeesEl) leaveEmployeesEl.textContent = stats.cuti_pending || 0;
             
             // Also reload charts when project filter changes
-            loadEmployeeChart(projectFilter);
+            loadRadiusChart(projectFilter);
             loadAgeChart(projectFilter);
             loadDutyChart(projectFilter);
             
@@ -497,17 +594,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (element) {
             // Add animation
             element.style.transform = 'scale(1.1)';
-            element.innerHTML = value.toLocaleString();
+            element.innerHTML = (value || 0).toLocaleString();
             setTimeout(() => {
                 element.style.transform = 'scale(1)';
             }, 200);
+        } else {
+            console.warn(`Element with ID '${elementId}' not found`);
         }
     }
     
-    async function loadEmployeeChart(projectFilter = 'all') {
+    async function loadRadiusChart(projectFilter = 'all') {
         try {
-            console.log('Loading employee chart...');
-            const url = new URL('{{ route("perusahaan.dashboard.api.employee-division-stats") }}');
+            console.log('Loading radius chart...');
+            const url = new URL('{{ route("perusahaan.dashboard.api.attendance-radius-stats") }}');
             if (projectFilter !== 'all') {
                 url.searchParams.append('project', projectFilter);
             }
@@ -518,34 +617,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const data = await response.json();
-            console.log('Employee chart data:', data);
-            
-            const labels = data.map(item => item.division);
-            const menData = data.map(item => item.men);
-            const womenData = data.map(item => item.women);
+            console.log('Radius chart data:', data);
             
             // Destroy existing chart if it exists
-            if (employeeChart) {
-                employeeChart.destroy();
+            if (radiusChart) {
+                radiusChart.destroy();
+                radiusChart = null;
             }
             
-            const ctx = document.getElementById('employeeChart').getContext('2d');
-            employeeChart = new Chart(ctx, {
-                type: 'bar',
+            const radiusCanvas = document.getElementById('radiusChart');
+            if (!radiusCanvas) {
+                console.error('Radius chart canvas not found');
+                return;
+            }
+            
+            const ctx = radiusCanvas.getContext('2d');
+            radiusChart = new Chart(ctx, {
+                type: 'pie',
                 data: {
-                    labels: labels,
+                    labels: ['On Radius', 'Off Radius'],
                     datasets: [{
-                        label: 'Laki-Laki',
-                        data: menData,
-                        backgroundColor: '#3B82F6',
-                        borderRadius: 4,
-                        barThickness: 20
-                    }, {
-                        label: 'Perempuan',
-                        data: womenData,
-                        backgroundColor: '#F472B6',
-                        borderRadius: 4,
-                        barThickness: 20
+                        data: [data.on_radius || 0, data.off_radius || 0],
+                        backgroundColor: ['#10B981', '#EF4444'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
                     }]
                 },
                 options: {
@@ -557,37 +652,52 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         tooltip: {
                             callbacks: {
-                                title: function(context) {
-                                    return context[0].label;
-                                },
                                 label: function(context) {
-                                    const label = context.dataset.label; // Sudah dalam bahasa Indonesia
-                                    const value = context.parsed.y;
-                                    return `${label}: ${value} karyawan`;
+                                    const label = context.label;
+                                    const value = context.parsed;
+                                    const total = (data.on_radius || 0) + (data.off_radius || 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
                                 }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                stepSize: 10
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
                             }
                         }
                     }
                 }
             });
         } catch (error) {
-            console.error('Error loading employee chart:', error);
+            console.error('Error loading radius chart:', error);
+            
+            // Create fallback chart with empty data
+            if (radiusChart) {
+                radiusChart.destroy();
+                radiusChart = null;
+            }
+            
+            const radiusCanvas = document.getElementById('radiusChart');
+            if (radiusCanvas) {
+                const ctx = radiusCanvas.getContext('2d');
+                radiusChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['On Radius', 'Off Radius'],
+                        datasets: [{
+                            data: [0, 0],
+                            backgroundColor: ['#10B981', '#EF4444'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
         }
     }
     
@@ -741,16 +851,16 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error loading duty chart:', error);
             
-            // Fallback to sample data if API fails
-            const onDuty = 13;
-            const offDuty = 10;
+            // Fallback to empty data if API fails
+            const onDuty = 0;
+            const offDuty = 0;
             const total = onDuty + offDuty;
             
             document.getElementById('total-employee-duty').textContent = total;
             document.getElementById('on-duty-count').textContent = onDuty;
             document.getElementById('off-duty-count').textContent = offDuty;
-            document.getElementById('on-duty-percentage').textContent = ((onDuty / total) * 100).toFixed(2) + '%';
-            document.getElementById('off-duty-percentage').textContent = ((offDuty / total) * 100).toFixed(2) + '%';
+            document.getElementById('on-duty-percentage').textContent = '0%';
+            document.getElementById('off-duty-percentage').textContent = '0%';
             
             const ctx = document.getElementById('dutyChart').getContext('2d');
             dutyChart = new Chart(ctx, {
