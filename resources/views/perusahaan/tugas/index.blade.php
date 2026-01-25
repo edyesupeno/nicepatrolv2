@@ -265,12 +265,12 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center justify-center gap-2">
-                            <a href="{{ route('perusahaan.tugas.show', $task->hash_id) }}" 
+                            <a href="{{ route('perusahaan.tugas.show', ['tugas' => $task->hash_id]) }}" 
                                class="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
                                title="Lihat Detail">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="{{ route('perusahaan.tugas.edit', $task->hash_id) }}" 
+                            <a href="{{ route('perusahaan.tugas.edit', ['tugas' => $task->hash_id]) }}" 
                                class="px-3 py-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition text-sm font-medium"
                                title="Edit Tugas">
                                 <i class="fas fa-edit"></i>
@@ -353,7 +353,7 @@ function confirmDelete(hashId) {
     }).then((result) => {
         if (result.isConfirmed) {
             const form = document.getElementById('deleteForm');
-            form.action = `/perusahaan/tugas/${hashId}`;
+            form.action = `{{ route('perusahaan.tugas.destroy', ['tugas' => '__HASH_ID__']) }}`.replace('__HASH_ID__', hashId);
             form.submit();
         }
     });

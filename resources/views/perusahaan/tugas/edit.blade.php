@@ -7,7 +7,7 @@
 @section('content')
 <div class="max-w-4xl mx-auto">
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-        <form action="{{ route('perusahaan.tugas.update', $tugas->hash_id) }}" method="POST" id="formTugas">
+        <form action="{{ route('perusahaan.tugas.update', ['tugas' => $tugas->hash_id]) }}" method="POST" id="formTugas">
             @csrf
             @method('PUT')
             <div class="p-6">

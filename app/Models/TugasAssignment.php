@@ -50,7 +50,7 @@ class TugasAssignment extends Model
             'rejected' => 'Ditolak',
         ];
 
-        return $labels[$this->status] ?? $this->status;
+        return $labels[$this->status] ?? ($this->status ?? 'Tidak Ditentukan');
     }
 
     /**

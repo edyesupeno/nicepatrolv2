@@ -2,253 +2,359 @@
 
 @section('title', 'Dashboard')
 @section('page-title', 'Dashboard')
-@section('page-subtitle', 'Selamat datang di panel admin ' . auth()->user()->perusahaan->nama)
+@section('page-subtitle', 'Welcome Back!')
 
 @section('content')
-<!-- Welcome Section -->
-<div class="mb-8">
-    <div class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl p-8 text-white relative overflow-hidden">
-        <div class="absolute inset-0 bg-black opacity-10"></div>
-        <div class="relative z-10">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold mb-2">Selamat Datang, {{ auth()->user()->name }}! 👋</h1>
-                    <p class="text-lg opacity-90">{{ auth()->user()->perusahaan->nama }}</p>
-                    <p class="text-sm opacity-75 mt-1">{{ now()->format('l, d F Y') }}</p>
-                </div>
-                <div class="hidden md:block">
-                    <div class="w-32 h-32 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                        <i class="fas fa-chart-line text-4xl"></i>
-                    </div>
+<!-- Tab Navigation with Date -->
+<div class="flex items-center justify-between mb-6">
+    <div class="flex space-x-2 bg-gray-100 p-2 rounded-lg">
+        <button class="tab-btn active px-6 py-3 rounded-md text-base font-medium transition-colors" data-tab="hr">
+            <i class="fas fa-users mr-2"></i>Human Resource
+        </button>
+        <button class="tab-btn px-6 py-3 rounded-md text-base font-medium transition-colors" data-tab="patrol">
+            <i class="fas fa-shield-alt mr-2"></i>Patrol
+        </button>
+        <button class="tab-btn px-6 py-3 rounded-md text-base font-medium transition-colors" data-tab="payroll">
+            <i class="fas fa-money-bill-wave mr-2"></i>Payroll
+        </button>
+    </div>
+    
+    <div class="text-right">
+        <p class="text-sm text-gray-500 mb-2">{{ now()->format('l, d F Y') }}</p>
+        
+        <!-- Overall Dropdown -->
+        <div class="relative">
+            <button id="project-dropdown-btn" class="flex items-center justify-between w-64 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <span id="selected-project">Overall</span>
+                <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200 ml-2" id="dropdown-arrow"></i>
+            </button>
+            
+            <!-- Dropdown Menu -->
+            <div id="project-dropdown" class="hidden absolute top-full right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                <div class="py-2">
+                    <button class="project-option w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50" data-value="all">
+                        Overall
+                    </button>
+                    @foreach($projects as $project)
+                    <button class="project-option w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50" data-value="{{ $project->id }}">
+                        {{ $project->nama }}
+                    </button>
+                    @endforeach
                 </div>
             </div>
         </div>
-        <!-- Decorative elements -->
-        <div class="absolute -top-4 -right-4 w-24 h-24 bg-white bg-opacity-10 rounded-full"></div>
-        <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-white bg-opacity-5 rounded-full"></div>
     </div>
 </div>
 
 <!-- Stats Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <!-- Total Patroli -->
-    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm opacity-90 mb-1">Total Patroli</p>
-                <p class="text-4xl font-bold" id="total-patroli">
-                    <span class="animate-pulse bg-white bg-opacity-30 rounded w-16 h-8 inline-block"></span>
-                </p>
-            </div>
-            <div class="bg-white bg-opacity-20 rounded-xl p-4">
-                <i class="fas fa-shield-alt text-3xl"></i>
-            </div>
-        </div>
-    </div>
-
-    <!-- Patroli Hari Ini -->
-    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm opacity-90 mb-1">Patroli Hari Ini</p>
-                <p class="text-4xl font-bold" id="patroli-hari-ini">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
+    <!-- Total Employee -->
+    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-6 text-white">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-users text-lg mr-2"></i>
+                    <span class="text-sm opacity-90">TOTAL KARYAWAN</span>
+                </div>
+                <p class="text-4xl font-bold mb-2" id="total-karyawan">
                     <span class="animate-pulse bg-white bg-opacity-30 rounded w-12 h-8 inline-block"></span>
                 </p>
             </div>
-            <div class="bg-white bg-opacity-20 rounded-xl p-4">
-                <i class="fas fa-calendar-day text-3xl"></i>
+            <div class="bg-white bg-opacity-20 rounded-xl p-3">
+                <i class="fas fa-users text-2xl"></i>
             </div>
         </div>
     </div>
 
-    <!-- Patroli Berlangsung -->
-    <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm opacity-90 mb-1">Sedang Berlangsung</p>
-                <p class="text-4xl font-bold" id="patroli-berlangsung">
+    <!-- Present -->
+    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg p-6 text-white">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-user-check text-lg mr-2"></i>
+                    <span class="text-sm opacity-90">HADIR</span>
+                </div>
+                <p class="text-4xl font-bold mb-2" id="kehadiran-hari-ini">
+                    <span class="animate-pulse bg-white bg-opacity-30 rounded w-12 h-8 inline-block"></span>
+                </p>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-xl p-3">
+                <i class="fas fa-user-check text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Absent -->
+    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-6 text-white">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-user-times text-lg mr-2"></i>
+                    <span class="text-sm opacity-90">ALPHA</span>
+                </div>
+                <p class="text-4xl font-bold mb-2" id="absent-count">
                     <span class="animate-pulse bg-white bg-opacity-30 rounded w-8 h-8 inline-block"></span>
                 </p>
             </div>
-            <div class="bg-white bg-opacity-20 rounded-xl p-4">
-                <i class="fas fa-running text-3xl"></i>
+            <div class="bg-white bg-opacity-20 rounded-xl p-3">
+                <i class="fas fa-user-times text-2xl"></i>
             </div>
         </div>
     </div>
 
-    <!-- Total Karyawan -->
-    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm opacity-90 mb-1">Total Karyawan</p>
-                <p class="text-4xl font-bold" id="total-karyawan">
-                    <span class="animate-pulse bg-white bg-opacity-30 rounded w-12 h-8 inline-block"></span>
-                </p>
-            </div>
-            <div class="bg-white bg-opacity-20 rounded-xl p-4">
-                <i class="fas fa-users text-3xl"></i>
-            </div>
-        </div>
-    </div>
-
-    <!-- Kehadiran Hari Ini -->
-    <div class="bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm opacity-90 mb-1">Kehadiran Hari Ini</p>
-                <p class="text-4xl font-bold" id="kehadiran-hari-ini">
-                    <span class="animate-pulse bg-white bg-opacity-30 rounded w-12 h-8 inline-block"></span>
-                </p>
-            </div>
-            <div class="bg-white bg-opacity-20 rounded-xl p-4">
-                <i class="fas fa-user-check text-3xl"></i>
-            </div>
-        </div>
-    </div>
-
-    <!-- Cuti Pending -->
-    <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm opacity-90 mb-1">Cuti Pending</p>
-                <p class="text-4xl font-bold" id="cuti-pending">
+    <!-- Early Tap Out -->
+    <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl shadow-lg p-6 text-white">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-clock text-lg mr-2"></i>
+                    <span class="text-sm opacity-90">PULANG CEPAT</span>
+                </div>
+                <p class="text-4xl font-bold mb-2" id="early-tapout">
                     <span class="animate-pulse bg-white bg-opacity-30 rounded w-8 h-8 inline-block"></span>
                 </p>
             </div>
-            <div class="bg-white bg-opacity-20 rounded-xl p-4">
-                <i class="fas fa-calendar-times text-3xl"></i>
+            <div class="bg-white bg-opacity-20 rounded-xl p-3">
+                <i class="fas fa-clock text-2xl"></i>
             </div>
         </div>
     </div>
 
-    <!-- Total Projects -->
-    <div class="bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm opacity-90 mb-1">Total Projects</p>
-                <p class="text-4xl font-bold" id="total-projects">
+    <!-- Overtime -->
+    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-business-time text-lg mr-2"></i>
+                    <span class="text-sm opacity-90">LEMBUR</span>
+                </div>
+                <p class="text-4xl font-bold mb-2" id="overtime-count">
                     <span class="animate-pulse bg-white bg-opacity-30 rounded w-8 h-8 inline-block"></span>
                 </p>
             </div>
-            <div class="bg-white bg-opacity-20 rounded-xl p-4">
-                <i class="fas fa-project-diagram text-3xl"></i>
+            <div class="bg-white bg-opacity-20 rounded-xl p-3">
+                <i class="fas fa-business-time text-2xl"></i>
             </div>
         </div>
     </div>
 
-    <!-- Total Checkpoint -->
-    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm opacity-90 mb-1">Total Checkpoint</p>
-                <p class="text-4xl font-bold" id="total-checkpoint">
-                    <span class="animate-pulse bg-white bg-opacity-30 rounded w-12 h-8 inline-block"></span>
+    <!-- Leave -->
+    <div class="bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl shadow-lg p-6 text-white">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-calendar-times text-lg mr-2"></i>
+                    <span class="text-sm opacity-90">CUTI</span>
+                </div>
+                <p class="text-4xl font-bold mb-2" id="leave-count">
+                    <span class="animate-pulse bg-white bg-opacity-30 rounded w-8 h-8 inline-block"></span>
                 </p>
             </div>
-            <div class="bg-white bg-opacity-20 rounded-xl p-4">
-                <i class="fas fa-map-marker-alt text-3xl"></i>
+            <div class="bg-white bg-opacity-20 rounded-xl p-3">
+                <i class="fas fa-calendar-times text-2xl"></i>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Charts Section -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-    <!-- Patrol Trend Chart -->
+<!-- Main Content Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+    <!-- Employee Statistics Chart -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100">
             <div class="flex items-center justify-between">
-                <h3 class="text-lg font-bold text-gray-900">Tren Patroli (7 Hari Terakhir)</h3>
-                <div class="flex items-center space-x-2">
-                    <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span class="text-sm text-gray-600">Patroli</span>
+                <h3 class="text-lg font-bold text-gray-900">Karyawan Per-Divisi</h3>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span class="text-sm text-gray-600">Laki-Laki</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-pink-400 rounded-full"></div>
+                        <span class="text-sm text-gray-600">Perempuan</span>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="p-6">
             <div style="position: relative; height: 300px;">
-                <canvas id="patrolChart"></canvas>
+                <canvas id="employeeChart"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- Attendance Chart -->
+    <!-- Employee Age Statistics -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100">
             <div class="flex items-center justify-between">
-                <h3 class="text-lg font-bold text-gray-900">Kehadiran (7 Hari Terakhir)</h3>
-                <div class="flex items-center space-x-2">
-                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span class="text-sm text-gray-600">Kehadiran</span>
+                <h3 class="text-lg font-bold text-gray-900">Umur Karyawan</h3>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span class="text-sm text-gray-600">Laki-Laki</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-pink-400 rounded-full"></div>
+                        <span class="text-sm text-gray-600">Perempuan</span>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="p-6">
             <div style="position: relative; height: 300px;">
-                <canvas id="attendanceChart"></canvas>
+                <canvas id="ageChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Employee Statistics -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900">Jadwal Karyawan</h3>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-600">Duty</span>
+                    <i class="fas fa-sync-alt text-gray-400 cursor-pointer"></i>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="relative flex items-center justify-center min-h-[280px]">
+                <!-- Chart Container -->
+                <div class="relative w-48 h-48">
+                    <canvas id="dutyChart"></canvas>
+                    
+                    <!-- Center Text -->
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="text-xs text-gray-500 mb-1">Total Employee</div>
+                            <div class="text-4xl font-bold text-gray-900" id="total-employee-duty">23</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Off Duty Label with Line (Top Left) -->
+                    <div class="absolute -top-8 -left-20">
+                        <div class="text-left">
+                            <div class="text-sm font-medium text-gray-700">Off Duty</div>
+                            <div class="text-lg font-bold text-gray-900">
+                                <span id="off-duty-count">10</span>
+                                <span class="text-sm text-gray-500 ml-1" id="off-duty-percentage">43.48%</span>
+                            </div>
+                        </div>
+                        <!-- Line pointing to chart - positioned to align with left edge of "Off Duty" text -->
+                        <div class="absolute top-6 left-0 w-16 h-px bg-gray-400"></div>
+                    </div>
+                    
+                    <!-- On Duty Label with Line (Bottom Right) -->
+                    <div class="absolute -bottom-8 -right-20">
+                        <div class="text-right">
+                            <div class="text-sm font-medium text-gray-700">On Duty</div>
+                            <div class="text-lg font-bold text-gray-900">
+                                <span id="on-duty-count">13</span>
+                                <span class="text-sm text-blue-500 ml-1" id="on-duty-percentage">56.52%</span>
+                            </div>
+                        </div>
+                        <!-- Line pointing to chart - positioned to align with right edge of "On Duty" text -->
+                        <div class="absolute top-6 right-0 w-16 h-px bg-blue-400"></div>
+                    </div>
+                </div>
+                
+                <!-- Legend (Right Side) -->
+                <div class="absolute top-0 right-0 space-y-2">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span class="text-sm text-gray-600">On Duty</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-gray-300 rounded-full"></div>
+                        <span class="text-sm text-gray-600">Off Duty</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Bottom Section -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <!-- Today's Attendance Summary -->
+<!-- Secondary Charts Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+    <!-- New Submission -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100">
-            <h3 class="text-lg font-bold text-gray-900">Ringkasan Kehadiran Hari Ini</h3>
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900">New Submission</h3>
+                <a href="#" class="text-blue-600 hover:text-blue-700 text-sm font-medium">View All</a>
+            </div>
         </div>
         <div class="p-6">
-            <div id="attendance-summary">
+            <div id="new-submissions" class="space-y-4">
                 <!-- Loading skeleton -->
-                <div class="space-y-4">
-                    <div class="animate-pulse bg-gray-200 h-4 rounded"></div>
-                    <div class="animate-pulse bg-gray-200 h-4 rounded w-3/4"></div>
-                    <div class="animate-pulse bg-gray-200 h-4 rounded w-1/2"></div>
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="animate-pulse bg-gray-200 w-10 h-10 rounded-full"></div>
+                        <div>
+                            <div class="animate-pulse bg-gray-200 h-4 rounded mb-2 w-32"></div>
+                            <div class="animate-pulse bg-gray-200 h-3 rounded w-20"></div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs">Accept</button>
+                        <button class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs">Decline</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Project Distribution -->
+    <!-- Attendance Issue -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100">
-            <h3 class="text-lg font-bold text-gray-900">Distribusi Karyawan per Project</h3>
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900">Attendance Issue</h3>
+                <a href="#" class="text-blue-600 hover:text-blue-700 text-sm font-medium">See Details</a>
+            </div>
         </div>
         <div class="p-6">
-            <div style="position: relative; height: 300px;">
-                <canvas id="projectChart"></canvas>
+            <div id="attendance-issues" class="space-y-4">
+                <!-- Loading skeleton -->
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="animate-pulse bg-gray-200 w-10 h-10 rounded-full"></div>
+                        <div>
+                            <div class="animate-pulse bg-gray-200 h-4 rounded mb-2 w-32"></div>
+                            <div class="animate-pulse bg-gray-200 h-3 rounded w-20"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">Leave</span>
+                        <span class="text-xs text-gray-500">11 Nov 2024, 8:47 AM</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Activities -->
+    <!-- Attention Section -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100">
-            <h3 class="text-lg font-bold text-gray-900">Aktivitas Terbaru</h3>
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900">Attention</h3>
+                <a href="#" class="text-blue-600 hover:text-blue-700 text-sm font-medium">Lihat Lengkap</a>
+            </div>
         </div>
         <div class="p-6">
-            <div id="recent-activities" class="space-y-3">
+            <div id="attention-items" class="space-y-4">
                 <!-- Loading skeleton -->
-                <div class="flex items-center space-x-3">
-                    <div class="animate-pulse bg-gray-200 w-10 h-10 rounded-full"></div>
-                    <div class="flex-1">
-                        <div class="animate-pulse bg-gray-200 h-4 rounded mb-2"></div>
-                        <div class="animate-pulse bg-gray-200 h-3 rounded w-2/3"></div>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <div class="animate-pulse bg-gray-200 w-10 h-10 rounded-full"></div>
-                    <div class="flex-1">
-                        <div class="animate-pulse bg-gray-200 h-4 rounded mb-2"></div>
-                        <div class="animate-pulse bg-gray-200 h-3 rounded w-2/3"></div>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <div class="animate-pulse bg-gray-200 w-10 h-10 rounded-full"></div>
-                    <div class="flex-1">
-                        <div class="animate-pulse bg-gray-200 h-4 rounded mb-2"></div>
-                        <div class="animate-pulse bg-gray-200 h-3 rounded w-2/3"></div>
+                <div class="p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
+                    <div class="flex items-start space-x-3">
+                        <div class="animate-pulse bg-gray-200 w-10 h-10 rounded-full"></div>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="animate-pulse bg-gray-200 h-4 rounded w-24"></div>
+                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">High</span>
+                            </div>
+                            <div class="animate-pulse bg-gray-200 h-3 rounded mb-2"></div>
+                            <div class="animate-pulse bg-gray-200 h-3 rounded w-32"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -265,39 +371,121 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Dashboard loading...');
     
     // Initialize charts
-    let patrolChart, attendanceChart, projectChart;
+    let employeeChart, ageChart, dutyChart;
+    
+    // Tab functionality
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all tabs
+            tabBtns.forEach(tab => tab.classList.remove('active'));
+            // Add active class to clicked tab
+            this.classList.add('active');
+            
+            // Here you can add logic to show/hide different content based on tab
+            const tabType = this.dataset.tab;
+            console.log('Switched to tab:', tabType);
+        });
+    });
+    
+    // Project dropdown functionality
+    const dropdownBtn = document.getElementById('project-dropdown-btn');
+    const dropdown = document.getElementById('project-dropdown');
+    const dropdownArrow = document.getElementById('dropdown-arrow');
+    const selectedProject = document.getElementById('selected-project');
+    const projectOptions = document.querySelectorAll('.project-option');
+    
+    // Toggle dropdown
+    dropdownBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+        dropdownArrow.classList.toggle('rotate-180');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target) && !dropdownBtn.contains(e.target)) {
+            dropdown.classList.add('hidden');
+            dropdownArrow.classList.remove('rotate-180');
+        }
+    });
+    
+    // Handle project selection
+    projectOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const value = this.dataset.value;
+            const text = this.textContent.trim();
+            
+            selectedProject.textContent = text;
+            dropdown.classList.add('hidden');
+            dropdownArrow.classList.remove('rotate-180');
+            
+            // Here you can add logic to filter data based on selected project
+            console.log('Selected project:', value, text);
+            
+            // Reload dashboard data with selected project filter
+            loadDashboardStats(value);
+        });
+    });
     
     // Load dashboard data
     loadDashboardStats();
-    loadPatrolChart();
-    loadAttendanceChart();
-    loadProjectChart();
-    loadRecentActivities();
-    loadTodayAttendanceSummary();
+    loadEmployeeChart();
+    loadAgeChart();
+    loadDutyChart();
+    loadNewSubmissions();
+    loadOvertimeSubmissions();
+    loadAttendanceIssues();
+    loadAttentionItems();
     
     // Refresh data every 5 minutes
     setInterval(() => {
         loadDashboardStats();
-        loadRecentActivities();
-        loadTodayAttendanceSummary();
+        loadNewSubmissions();
+        loadOvertimeSubmissions();
+        loadAttendanceIssues();
+        loadAttentionItems();
     }, 300000);
     
-    async function loadDashboardStats() {
+    async function loadDashboardStats(projectFilter = 'all') {
         try {
             console.log('Loading dashboard stats...');
-            const response = await fetch('{{ route("perusahaan.dashboard.api.stats") }}');
+            const url = new URL('{{ route("perusahaan.dashboard.api.stats") }}');
+            if (projectFilter !== 'all') {
+                url.searchParams.append('project', projectFilter);
+            }
+            
+            const response = await fetch(url);
             const stats = await response.json();
             console.log('Stats loaded:', stats);
             
             // Update stat cards with animation
-            updateStatCard('total-patroli', stats.total_patroli);
-            updateStatCard('patroli-hari-ini', stats.patroli_hari_ini);
-            updateStatCard('patroli-berlangsung', stats.patroli_berlangsung);
             updateStatCard('total-karyawan', stats.total_karyawan);
             updateStatCard('kehadiran-hari-ini', stats.kehadiran_hari_ini);
-            updateStatCard('cuti-pending', stats.cuti_pending);
-            updateStatCard('total-projects', stats.total_projects);
-            updateStatCard('total-checkpoint', stats.total_checkpoint);
+            
+            // Calculate absent count
+            const absentCount = stats.total_karyawan - stats.kehadiran_hari_ini;
+            updateStatCard('absent-count', absentCount);
+            
+            // Update leave count
+            updateStatCard('leave-count', stats.cuti_pending || 0);
+            
+            // Mock data for other cards (you can implement these in the controller)
+            updateStatCard('early-tapout', 2);
+            updateStatCard('overtime-count', 4);
+            
+            // Update additional info
+            document.getElementById('new-employees').textContent = '5';
+            document.getElementById('present-employees').textContent = stats.kehadiran_hari_ini;
+            document.getElementById('absent-employees').textContent = absentCount;
+            document.getElementById('early-employees').textContent = '2';
+            document.getElementById('overtime-employees').textContent = '4';
+            document.getElementById('leave-employees').textContent = stats.cuti_pending || 0;
+            
+            // Also reload charts when project filter changes
+            loadEmployeeChart(projectFilter);
+            loadAgeChart(projectFilter);
+            loadDutyChart(projectFilter);
             
         } catch (error) {
             console.error('Error loading dashboard stats:', error);
@@ -316,137 +504,48 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    async function loadPatrolChart() {
+    async function loadEmployeeChart(projectFilter = 'all') {
         try {
-            console.log('Loading patrol chart...');
-            const response = await fetch('{{ route("perusahaan.dashboard.api.patrol-chart") }}');
-            const data = await response.json();
-            console.log('Patrol chart data:', data);
-            
-            const ctx = document.getElementById('patrolChart').getContext('2d');
-            patrolChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        label: 'Patroli',
-                        data: data.data,
-                        borderColor: '#3B82F6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#3B82F6',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error loading patrol chart:', error);
-        }
-    }
-    
-    async function loadAttendanceChart() {
-        try {
-            console.log('Loading attendance chart...');
-            const response = await fetch('{{ route("perusahaan.dashboard.api.attendance-chart") }}');
-            const data = await response.json();
-            console.log('Attendance chart data:', data);
-            
-            const ctx = document.getElementById('attendanceChart').getContext('2d');
-            attendanceChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        label: 'Kehadiran',
-                        data: data.data,
-                        backgroundColor: 'rgba(34, 197, 94, 0.8)',
-                        borderColor: '#22C55E',
-                        borderWidth: 2,
-                        borderRadius: 8,
-                        borderSkipped: false,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error loading attendance chart:', error);
-        }
-    }
-    
-    async function loadProjectChart() {
-        try {
-            console.log('Loading project chart...');
-            const response = await fetch('{{ route("perusahaan.dashboard.api.project-chart") }}');
-            const data = await response.json();
-            console.log('Project chart data:', data);
-            
-            if (data.length === 0) {
-                document.getElementById('projectChart').parentElement.innerHTML = 
-                    '<div class="flex items-center justify-center h-full text-gray-500"><p>Belum ada data project</p></div>';
-                return;
+            console.log('Loading employee chart...');
+            const url = new URL('{{ route("perusahaan.dashboard.api.employee-division-stats") }}');
+            if (projectFilter !== 'all') {
+                url.searchParams.append('project', projectFilter);
             }
             
-            const ctx = document.getElementById('projectChart').getContext('2d');
-            projectChart = new Chart(ctx, {
-                type: 'doughnut',
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Employee chart data:', data);
+            
+            const labels = data.map(item => item.division);
+            const menData = data.map(item => item.men);
+            const womenData = data.map(item => item.women);
+            
+            // Destroy existing chart if it exists
+            if (employeeChart) {
+                employeeChart.destroy();
+            }
+            
+            const ctx = document.getElementById('employeeChart').getContext('2d');
+            employeeChart = new Chart(ctx, {
+                type: 'bar',
                 data: {
-                    labels: data.map(item => item.name),
+                    labels: labels,
                     datasets: [{
-                        data: data.map(item => item.value),
-                        backgroundColor: [
-                            '#3B82F6', '#EF4444', '#10B981', '#F59E0B', 
-                            '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'
-                        ],
-                        borderWidth: 0,
-                        hoverOffset: 4
+                        label: 'Laki-Laki',
+                        data: menData,
+                        backgroundColor: '#3B82F6',
+                        borderRadius: 4,
+                        barThickness: 20
+                    }, {
+                        label: 'Perempuan',
+                        data: womenData,
+                        backgroundColor: '#F472B6',
+                        borderRadius: 4,
+                        barThickness: 20
                     }]
                 },
                 options: {
@@ -454,12 +553,185 @@ document.addEventListener('DOMContentLoaded', function() {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true,
-                                font: {
-                                    size: 12
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    const label = context.dataset.label; // Sudah dalam bahasa Indonesia
+                                    const value = context.parsed.y;
+                                    return `${label}: ${value} karyawan`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                stepSize: 10
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error loading employee chart:', error);
+        }
+    }
+    
+    async function loadAgeChart(projectFilter = 'all') {
+        try {
+            console.log('Loading age chart...');
+            const url = new URL('{{ route("perusahaan.dashboard.api.employee-age-stats") }}');
+            if (projectFilter !== 'all') {
+                url.searchParams.append('project', projectFilter);
+            }
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Age chart data:', data);
+            
+            const labels = data.map(item => item.group);
+            const menData = data.map(item => item.men);
+            const womenData = data.map(item => item.women);
+            
+            // Destroy existing chart if it exists
+            if (ageChart) {
+                ageChart.destroy();
+            }
+            
+            const ctx = document.getElementById('ageChart').getContext('2d');
+            ageChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Laki-Laki',
+                        data: menData,
+                        backgroundColor: '#3B82F6',
+                        borderRadius: 4,
+                        barThickness: 15
+                    }, {
+                        label: 'Perempuan',
+                        data: womenData,
+                        backgroundColor: '#F472B6',
+                        borderRadius: 4,
+                        barThickness: 15
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return 'Umur ' + context[0].label;
+                                },
+                                label: function(context) {
+                                    const label = context.dataset.label; // Sudah dalam bahasa Indonesia
+                                    const value = context.parsed.x;
+                                    return `${label}: ${value} karyawan`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error loading age chart:', error);
+        }
+    }
+    
+    async function loadDutyChart(projectFilter = 'all') {
+        try {
+            console.log('Loading duty chart...');
+            
+            // Fetch real duty data from API with project filter
+            const url = new URL('{{ route("perusahaan.dashboard.api.duty-stats") }}');
+            if (projectFilter !== 'all') {
+                url.searchParams.append('project', projectFilter);
+            }
+            
+            const response = await fetch(url);
+            const dutyData = await response.json();
+            
+            const onDuty = dutyData.on_duty || 0;
+            const offDuty = dutyData.off_duty || 0;
+            const total = onDuty + offDuty;
+            
+            // Update display values
+            document.getElementById('total-employee-duty').textContent = total;
+            document.getElementById('on-duty-count').textContent = onDuty;
+            document.getElementById('off-duty-count').textContent = offDuty;
+            
+            if (total > 0) {
+                document.getElementById('on-duty-percentage').textContent = ((onDuty / total) * 100).toFixed(2) + '%';
+                document.getElementById('off-duty-percentage').textContent = ((offDuty / total) * 100).toFixed(2) + '%';
+            } else {
+                document.getElementById('on-duty-percentage').textContent = '0%';
+                document.getElementById('off-duty-percentage').textContent = '0%';
+            }
+            
+            const ctx = document.getElementById('dutyChart').getContext('2d');
+            dutyChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['On Duty', 'Off Duty'],
+                    datasets: [{
+                        data: [onDuty, offDuty],
+                        backgroundColor: ['#3B82F6', '#E5E7EB'],
+                        borderWidth: 0,
+                        cutout: '75%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label;
+                                    const value = context.parsed;
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
                                 }
                             }
                         }
@@ -467,97 +739,210 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } catch (error) {
-            console.error('Error loading project chart:', error);
+            console.error('Error loading duty chart:', error);
+            
+            // Fallback to sample data if API fails
+            const onDuty = 13;
+            const offDuty = 10;
+            const total = onDuty + offDuty;
+            
+            document.getElementById('total-employee-duty').textContent = total;
+            document.getElementById('on-duty-count').textContent = onDuty;
+            document.getElementById('off-duty-count').textContent = offDuty;
+            document.getElementById('on-duty-percentage').textContent = ((onDuty / total) * 100).toFixed(2) + '%';
+            document.getElementById('off-duty-percentage').textContent = ((offDuty / total) * 100).toFixed(2) + '%';
+            
+            const ctx = document.getElementById('dutyChart').getContext('2d');
+            dutyChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['On Duty', 'Off Duty'],
+                    datasets: [{
+                        data: [onDuty, offDuty],
+                        backgroundColor: ['#3B82F6', '#E5E7EB'],
+                        borderWidth: 0,
+                        cutout: '75%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
         }
     }
     
-    async function loadRecentActivities() {
+    async function loadNewSubmissions() {
         try {
-            console.log('Loading recent activities...');
-            const response = await fetch('{{ route("perusahaan.dashboard.api.recent-activities") }}');
-            const activities = await response.json();
-            console.log('Recent activities:', activities);
+            console.log('Loading new submissions...');
+            const response = await fetch('{{ route("perusahaan.dashboard.api.new-submissions") }}');
+            const submissions = await response.json();
+            console.log('New submissions:', submissions);
             
-            const container = document.getElementById('recent-activities');
+            const container = document.getElementById('new-submissions');
             
-            if (activities.length === 0) {
+            if (submissions.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-8 text-gray-500">
                         <i class="fas fa-inbox text-3xl mb-2"></i>
-                        <p>Belum ada aktivitas</p>
+                        <p>Tidak ada submission baru</p>
                     </div>
                 `;
                 return;
             }
             
-            container.innerHTML = activities.map(activity => `
-                <div class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div class="w-10 h-10 bg-${activity.color}-100 rounded-full flex items-center justify-center">
-                        <i class="${activity.icon} text-${activity.color}-600"></i>
+            container.innerHTML = submissions.map(submission => `
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                            ${submission.avatar}
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-900">${submission.name}</div>
+                            <div class="text-sm text-gray-500">${submission.description}</div>
+                        </div>
                     </div>
-                    <div class="flex-1">
-                        <p class="font-medium text-gray-900 text-sm">${activity.title}</p>
-                        <p class="text-xs text-gray-500">${activity.user} • ${activity.time}</p>
-                    </div>
-                    <div class="text-xs">
-                        <span class="px-2 py-1 bg-${activity.color}-100 text-${activity.color}-700 rounded-full">
-                            ${activity.status}
-                        </span>
+                    <div class="flex space-x-2">
+                        <button class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Accept</button>
+                        <button class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Decline</button>
                     </div>
                 </div>
             `).join('');
-            
         } catch (error) {
-            console.error('Error loading recent activities:', error);
+            console.error('Error loading new submissions:', error);
         }
     }
     
-    async function loadTodayAttendanceSummary() {
+    async function loadOvertimeSubmissions() {
         try {
-            console.log('Loading attendance summary...');
-            const response = await fetch('{{ route("perusahaan.dashboard.api.today-attendance-summary") }}');
-            const data = await response.json();
-            console.log('Attendance summary:', data);
-            
-            const container = document.getElementById('attendance-summary');
+            // For now, use the same endpoint as new submissions but filter for overtime
+            // You can create a separate endpoint later if needed
+            const container = document.getElementById('overtime-submissions');
             container.innerHTML = `
-                <div class="space-y-4">
-                    <div class="text-center">
-                        <div class="text-3xl font-bold text-gray-900">${data.percentage}%</div>
-                        <div class="text-sm text-gray-600">Tingkat Kehadiran</div>
-                    </div>
-                    
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Hadir</span>
-                            <span class="font-semibold text-green-600">${data.hadir}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Terlambat</span>
-                            <span class="font-semibold text-yellow-600">${data.terlambat}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Alpha</span>
-                            <span class="font-semibold text-red-600">${data.alpha}</span>
-                        </div>
-                        <hr>
-                        <div class="flex justify-between items-center font-semibold">
-                            <span class="text-gray-900">Total</span>
-                            <span class="text-gray-900">${data.total}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500" 
-                             style="width: ${data.percentage}%"></div>
-                    </div>
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-clock text-3xl mb-2"></i>
+                    <p>Tidak ada overtime submission</p>
                 </div>
             `;
-            
         } catch (error) {
-            console.error('Error loading attendance summary:', error);
+            console.error('Error loading overtime submissions:', error);
+        }
+    }
+    
+    async function loadAttendanceIssues() {
+        try {
+            console.log('Loading attendance issues...');
+            const response = await fetch('{{ route("perusahaan.dashboard.api.attendance-issues") }}');
+            const issues = await response.json();
+            console.log('Attendance issues:', issues);
+            
+            const container = document.getElementById('attendance-issues');
+            
+            if (issues.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-check-circle text-3xl mb-2"></i>
+                        <p>Tidak ada masalah kehadiran</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = issues.map(issue => `
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                            ${issue.avatar}
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-900">${issue.name}</div>
+                            <div class="text-sm text-gray-500">
+                                ${issue.status === 'terlambat' ? `Terlambat ${issue.late_duration} menit` : 'Alpha'}
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                ${issue.status === 'terlambat' ? `Masuk: ${issue.time}` : 'Tidak hadir'}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="px-2 py-1 ${issue.status === 'terlambat' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'} rounded-full text-xs font-medium">
+                            ${issue.status === 'terlambat' ? 'Late' : 'Absent'}
+                        </span>
+                        <span class="text-xs text-gray-500">${issue.date}</span>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading attendance issues:', error);
+        }
+    }
+    
+    async function loadAttentionItems() {
+        try {
+            // Mock data - implement in controller
+            const items = [
+                {
+                    name: 'Admin Rudi',
+                    message: 'Pengumuman',
+                    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+                    time: '11 Nov 2024, 9:24 AM',
+                    priority: 'High',
+                    avatar: 'AR'
+                },
+                {
+                    name: 'Admin Rudi',
+                    message: 'Pengumuman',
+                    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+                    time: '11 Nov 2024, 8:00 AM',
+                    priority: 'High',
+                    avatar: 'AR'
+                }
+            ];
+            
+            const container = document.getElementById('attention-items');
+            container.innerHTML = items.map(item => `
+                <div class="p-4 bg-red-50 border-l-4 border-red-400 rounded-lg mb-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                            ${item.avatar}
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="font-medium text-gray-900">${item.name}</div>
+                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">${item.priority}</span>
+                            </div>
+                            <div class="font-semibold text-gray-900 mb-1">${item.message}</div>
+                            <div class="text-sm text-gray-600 mb-2">${item.description}</div>
+                            <div class="text-xs text-gray-500">${item.time}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading attention items:', error);
         }
     }
 });
 </script>
+
+<style>
+.tab-btn.active {
+    background-color: white;
+    color: #1f2937;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.tab-btn {
+    color: #6b7280;
+}
+
+.tab-btn:hover {
+    color: #374151;
+}
+</style>
 @endpush

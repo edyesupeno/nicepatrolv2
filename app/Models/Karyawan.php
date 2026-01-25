@@ -137,6 +137,11 @@ class Karyawan extends Model
         return $this->hasMany(MedicalCheckup::class);
     }
 
+    public function jadwalShifts()
+    {
+        return $this->hasMany(JadwalShift::class);
+    }
+
     /**
      * Get status PTKP lengkap (TK/0, K/1, dll)
      */

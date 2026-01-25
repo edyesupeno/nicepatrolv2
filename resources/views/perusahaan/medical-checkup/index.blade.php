@@ -247,15 +247,10 @@
                                             <i class="fas fa-paper-plane"></i>
                                         </button>
                                     @endif
-                                    <a href="{{ route('perusahaan.karyawans.show', $karyawan->hash_id) }}" 
+                                    <a href="{{ route('perusahaan.karyawans.show', $karyawan->hash_id) }}#medical-checkup" 
                                        class="text-blue-600 hover:text-blue-900" 
                                        title="Lihat Detail">
                                         <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ route('perusahaan.karyawans.edit', $karyawan->hash_id) }}" 
-                                       class="text-green-600 hover:text-green-900" 
-                                       title="Edit Data">
-                                        <i class="fas fa-edit"></i>
                                     </a>
                                 </div>
                             </td>

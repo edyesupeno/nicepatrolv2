@@ -66,7 +66,7 @@
                         
                         <!-- Actions -->
                         <div class="flex items-center gap-2">
-                            <a href="{{ route('perusahaan.tugas.edit', $tugas->hash_id) }}" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition font-medium">
+                            <a href="{{ route('perusahaan.tugas.edit', ['tugas' => $tugas->hash_id]) }}" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition font-medium">
                                 <i class="fas fa-edit mr-2"></i>Edit
                             </a>
                             <button onclick="confirmDelete('{{ $tugas->hash_id }}')" class="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition font-medium">
@@ -410,7 +410,7 @@ async function loadAssignments(page = 1) {
             status: status
         });
         
-        const response = await fetch(`{{ route('perusahaan.tugas.assignments', $tugas->hash_id) }}?${params}`);
+        const response = await fetch(`{{ route('perusahaan.tugas.assignments', ['tugas' => $tugas->hash_id]) }}?${params}`);
         const data = await response.json();
         
         if (data.success) {
@@ -656,7 +656,7 @@ function confirmDelete(hashId) {
     }).then((result) => {
         if (result.isConfirmed) {
             const form = document.getElementById('deleteForm');
-            form.action = `/perusahaan/tugas/${hashId}`;
+            form.action = `{{ route('perusahaan.tugas.destroy', ['tugas' => '__HASH_ID__']) }}`.replace('__HASH_ID__', hashId);
             form.submit();
         }
     });

@@ -97,7 +97,7 @@ class Tugas extends Model
             'high' => 'Tinggi',
         ];
 
-        return $labels[$this->prioritas] ?? $this->prioritas;
+        return $labels[$this->prioritas] ?? ($this->prioritas ?? 'Tidak Ditentukan');
     }
 
     /**
@@ -140,7 +140,7 @@ class Tugas extends Model
             'specific_users' => 'Orang Tertentu',
         ];
 
-        return $labels[$this->target_type] ?? $this->target_type;
+        return $labels[$this->target_type] ?? ($this->target_type ?? 'Tidak Ditentukan');
     }
 
     /**
@@ -155,7 +155,7 @@ class Tugas extends Model
             'cancelled' => 'Dibatalkan',
         ];
 
-        return $labels[$this->status] ?? $this->status;
+        return $labels[$this->status] ?? ($this->status ?? 'Tidak Ditentukan');
     }
 
     /**

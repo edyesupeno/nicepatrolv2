@@ -8,6 +8,35 @@
     <span id="pageSubtitle">Kelola profil karyawan</span>
 @endsection
 
+@push('styles')
+<style>
+/* Fix focus outline issues */
+.nav-link:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid #3B82F6;
+    outline-offset: 2px;
+}
+
+.nav-link:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid #3B82F6;
+    outline-offset: 2px;
+}
+
+/* Remove default focus for mouse users */
+.nav-link:focus:not(:focus-visible),
+button:focus:not(:focus-visible) {
+    outline: none;
+}
+</style>
+@endpush
+
 @section('content')
 <div class="max-w-7xl mx-auto">
     <!-- Back Button -->
@@ -2438,22 +2467,69 @@ document.querySelectorAll('.nav-link').forEach(link => {
     });
 });
 
+// Function to handle tab switching based on hash
+function handleHashChange() {
+    const hash = window.location.hash.substring(1);
+    if (hash && hash.trim() !== '') {
+        const targetLink = document.querySelector(`.nav-link[data-target="${hash}"]`);
+        if (targetLink) {
+            // Remove active class from all links
+            document.querySelectorAll('.nav-link').forEach(l => {
+                l.classList.remove('active');
+                l.classList.add('text-gray-600', 'hover:bg-gray-50');
+                l.classList.remove('text-white');
+                l.style.background = '';
+            });
+            
+            // Set target link as active
+            targetLink.style.background = 'linear-gradient(135deg, #3B82C8 0%, #2563A8 100%)';
+            targetLink.classList.add('text-white', 'active');
+            targetLink.classList.remove('text-gray-600');
+            
+            // Update title and show section
+            updatePageTitle(hash);
+            showSection(hash);
+            return true;
+        }
+    }
+    return false;
+}
+
 // Set initial active state
 document.addEventListener('DOMContentLoaded', function() {
-    // Set active tab from session or default to informasi
-    const activeLink = document.querySelector(`.nav-link[data-target="${activeTabFromSession}"]`) || 
-                      document.querySelector('.nav-link[data-target="informasi"]');
-    
-    if (activeLink) {
-        activeLink.style.background = 'linear-gradient(135deg, #3B82C8 0%, #2563A8 100%)';
-        activeLink.classList.add('text-white', 'active');
-        activeLink.classList.remove('text-gray-600');
-        
-        // Update title and show section
-        updatePageTitle(activeTabFromSession);
-        showSection(activeTabFromSession);
-    }
+    // Add small delay to ensure all elements are rendered
+    setTimeout(function() {
+        // Try to handle hash first
+        if (!handleHashChange()) {
+            // If no hash or hash not found, use session or default
+            let targetTab = activeTabFromSession || 'informasi';
+            
+            const activeLink = document.querySelector(`.nav-link[data-target="${targetTab}"]`) ||
+                              document.querySelector('.nav-link[data-target="informasi"]');
+            
+            if (activeLink) {
+                // Remove active class from all links first
+                document.querySelectorAll('.nav-link').forEach(l => {
+                    l.classList.remove('active');
+                    l.classList.add('text-gray-600', 'hover:bg-gray-50');
+                    l.classList.remove('text-white');
+                    l.style.background = '';
+                });
+                
+                activeLink.style.background = 'linear-gradient(135deg, #3B82C8 0%, #2563A8 100%)';
+                activeLink.classList.add('text-white', 'active');
+                activeLink.classList.remove('text-gray-600');
+                
+                const finalTarget = activeLink.getAttribute('data-target');
+                updatePageTitle(finalTarget);
+                showSection(finalTarget);
+            }
+        }
+    }, 100);
 });
+
+// Listen for hash changes
+window.addEventListener('hashchange', handleHashChange);
 
 // Modal functions
 function openEditNamaModal() {

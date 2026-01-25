@@ -73,7 +73,7 @@ class KartuTamu extends Model
             'hilang' => 'Hilang',
         ];
 
-        return $labels[$this->status] ?? $this->status;
+        return $labels[$this->status] ?? ($this->status ?? 'Tidak Ditentukan');
     }
 
     /**

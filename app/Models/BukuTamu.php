@@ -125,7 +125,7 @@ class BukuTamu extends Model
             'sudah_keluar' => 'Sudah Keluar',
         ];
 
-        return $labels[$this->status] ?? $this->status;
+        return $labels[$this->status] ?? ($this->status ?? 'Tidak Ditentukan');
     }
 
     /**

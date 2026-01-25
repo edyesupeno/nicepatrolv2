@@ -66,7 +66,7 @@ class ProjectContact extends Model
             'lainnya' => 'Lainnya',
         ];
 
-        return $labels[$this->jenis_kontak] ?? $this->jenis_kontak;
+        return $labels[$this->jenis_kontak] ?? ($this->jenis_kontak ?? 'Tidak Ditentukan');
     }
 
     /**

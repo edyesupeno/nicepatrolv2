@@ -95,7 +95,7 @@ class Atensi extends Model
             'high' => 'Tinggi',
         ];
 
-        return $labels[$this->prioritas] ?? $this->prioritas;
+        return $labels[$this->prioritas] ?? ($this->prioritas ?? 'Tidak Ditentukan');
     }
 
     /**
@@ -138,7 +138,7 @@ class Atensi extends Model
             'specific_users' => 'Orang Tertentu',
         ];
 
-        return $labels[$this->target_type] ?? $this->target_type;
+        return $labels[$this->target_type] ?? ($this->target_type ?? 'Tidak Ditentukan');
     }
 
     /**

@@ -239,4 +239,114 @@ class MedicalCheckupController extends Controller
             'message' => 'Export functionality will be implemented soon'
         ]);
     }
+
+    /**
+     * Store a new medical checkup for a karyawan
+     */
+    public function store(Request $request, $karyawanHashId)
+    {
+        // Decode hash_id to get real id
+        $karyawanId = \Vinkla\Hashids\Facades\Hashids::decode($karyawanHashId)[0] ?? null;
+        
+        if (!$karyawanId) {
+            return response()->json(['error' => 'Invalid karyawan ID'], 404);
+        }
+
+        $karyawan = Karyawan::findOrFail($karyawanId);
+
+        $validated = $request->validate([
+            'jenis_checkup' => 'required|string|max:255',
+            'tanggal_checkup' => 'required|date',
+            'status_kesehatan' => 'required|in:Sehat,Perlu Perhatian,Tidak Sehat',
+            'tinggi_badan' => 'nullable|numeric|min:0',
+            'berat_badan' => 'nullable|numeric|min:0',
+            'golongan_darah' => 'nullable|in:A,B,AB,O',
+            'tekanan_darah' => 'nullable|string|max:20',
+            'gula_darah' => 'nullable|numeric|min:0',
+            'kolesterol' => 'nullable|numeric|min:0',
+            'rumah_sakit' => 'nullable|string|max:255',
+            'nama_dokter' => 'nullable|string|max:255',
+            'diagnosis' => 'nullable|string',
+            'catatan_tambahan' => 'nullable|string',
+        ], [
+            'jenis_checkup.required' => 'Jenis checkup wajib diisi',
+            'tanggal_checkup.required' => 'Tanggal checkup wajib diisi',
+            'status_kesehatan.required' => 'Status kesehatan wajib dipilih',
+        ]);
+
+        $validated['karyawan_id'] = $karyawan->id;
+
+        $medicalCheckup = MedicalCheckup::create($validated);
+
+        // Clear cache statistik
+        $this->clearStatsCache();
+
+        return redirect()->back()->with('success', 'Data medical checkup berhasil ditambahkan');
+    }
+
+    /**
+     * Update medical checkup
+     */
+    public function update(Request $request, $karyawanHashId, $checkupHashId)
+    {
+        // Decode hash_id to get real id
+        $karyawanId = \Vinkla\Hashids\Facades\Hashids::decode($karyawanHashId)[0] ?? null;
+        $checkupId = \Vinkla\Hashids\Facades\Hashids::decode($checkupHashId)[0] ?? null;
+        
+        if (!$karyawanId || !$checkupId) {
+            return response()->json(['error' => 'Invalid ID'], 404);
+        }
+
+        $karyawan = Karyawan::findOrFail($karyawanId);
+        $medicalCheckup = MedicalCheckup::where('karyawan_id', $karyawan->id)
+                                      ->findOrFail($checkupId);
+
+        $validated = $request->validate([
+            'jenis_checkup' => 'required|string|max:255',
+            'tanggal_checkup' => 'required|date',
+            'status_kesehatan' => 'required|in:Sehat,Perlu Perhatian,Tidak Sehat',
+            'tinggi_badan' => 'nullable|numeric|min:0',
+            'berat_badan' => 'nullable|numeric|min:0',
+            'golongan_darah' => 'nullable|in:A,B,AB,O',
+            'tekanan_darah' => 'nullable|string|max:20',
+            'gula_darah' => 'nullable|numeric|min:0',
+            'kolesterol' => 'nullable|numeric|min:0',
+            'rumah_sakit' => 'nullable|string|max:255',
+            'nama_dokter' => 'nullable|string|max:255',
+            'diagnosis' => 'nullable|string',
+            'catatan_tambahan' => 'nullable|string',
+        ]);
+
+        $medicalCheckup->update($validated);
+
+        // Clear cache statistik
+        $this->clearStatsCache();
+
+        return redirect()->back()->with('success', 'Data medical checkup berhasil diperbarui');
+    }
+
+    /**
+     * Delete medical checkup
+     */
+    public function destroy($karyawanHashId, $checkupHashId)
+    {
+        // Decode hash_id to get real id
+        $karyawanId = \Vinkla\Hashids\Facades\Hashids::decode($karyawanHashId)[0] ?? null;
+        $checkupId = \Vinkla\Hashids\Facades\Hashids::decode($checkupHashId)[0] ?? null;
+        
+        if (!$karyawanId || !$checkupId) {
+            return response()->json(['error' => 'Invalid ID'], 404);
+        }
+
+        $karyawan = Karyawan::findOrFail($karyawanId);
+        $medicalCheckup = MedicalCheckup::where('karyawan_id', $karyawan->id)
+                                      ->findOrFail($checkupId);
+
+        $medicalCheckup->delete();
+
+        // Clear cache statistik
+        $this->clearStatsCache();
+
+        return redirect()->back()->with('success', 'Data medical checkup berhasil dihapus');
+    }
 }

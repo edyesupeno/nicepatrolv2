@@ -73,6 +73,13 @@ Route::middleware('auth')->group(function () {
             Route::get('/monthly-patrol-trend', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getMonthlyPatrolTrend'])->name('monthly-patrol-trend');
             Route::get('/recent-activities', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getRecentActivities'])->name('recent-activities');
             Route::get('/today-attendance-summary', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getTodayAttendanceSummary'])->name('today-attendance-summary');
+            
+            // New HR Dashboard endpoints
+            Route::get('/employee-division-stats', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getEmployeeDivisionStats'])->name('employee-division-stats');
+            Route::get('/employee-age-stats', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getEmployeeAgeStats'])->name('employee-age-stats');
+            Route::get('/new-submissions', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getNewSubmissions'])->name('new-submissions');
+            Route::get('/attendance-issues', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getAttendanceIssues'])->name('attendance-issues');
+            Route::get('/duty-stats', [\App\Http\Controllers\Perusahaan\DashboardController::class, 'getDutyStats'])->name('duty-stats');
         });
         
         // Profil Perusahaan
@@ -198,7 +205,7 @@ Route::middleware('auth')->group(function () {
         Route::get('kartu-tamu-available', [\App\Http\Controllers\Perusahaan\KartuTamuController::class, 'getAvailableCards'])->name('kartu-tamu.available');
 
         // Tugas Routes
-        Route::resource('tugas', \App\Http\Controllers\Perusahaan\TugasController::class);
+        Route::resource('tugas', \App\Http\Controllers\Perusahaan\TugasController::class)->parameters(['tugas' => 'tugas']);
         Route::get('tugas/{tugas}/assignments', [\App\Http\Controllers\Perusahaan\TugasController::class, 'getAssignments'])->name('tugas.assignments');
         Route::get('tugas-projects/{project}/areas', [\App\Http\Controllers\Perusahaan\TugasController::class, 'getAreasByProject'])->name('tugas.areas-by-project');
 
