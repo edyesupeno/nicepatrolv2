@@ -42,19 +42,31 @@ class KontrakResignController extends Controller
         $today = now()->toDateString();
         
         if ($contractFilter === 'expired') {
-            // Karyawan yang sudah resign (tanggal_keluar sudah ada)
-            $query->whereNotNull('tanggal_keluar');
+            // Karyawan yang sudah resign (tanggal_keluar sudah lewat)
+            $query->whereNotNull('tanggal_keluar')
+                  ->where('tanggal_keluar', '<', $today);
         } elseif ($contractFilter === 'expiring_soon') {
-            // Karyawan aktif yang sudah bekerja lebih dari 2 tahun (simulasi kontrak akan habis)
-            $query->where('is_active', true)
-                  ->whereNull('tanggal_keluar')
-                  ->where('tanggal_masuk', '<=', now()->subYears(2)->toDateString());
+            // Karyawan dengan tanggal_keluar di masa depan (kontrak akan habis)
+            // ATAU karyawan aktif yang sudah bekerja lebih dari 2 tahun
+            $query->where(function($q) use ($today) {
+                $q->where(function($subQ) use ($today) {
+                    // Tanggal keluar di masa depan
+                    $subQ->whereNotNull('tanggal_keluar')
+                         ->where('tanggal_keluar', '>=', $today);
+                })->orWhere(function($subQ) {
+                    // Atau karyawan aktif yang sudah bekerja lebih dari 2 tahun
+                    $subQ->where('is_active', true)
+                         ->whereNull('tanggal_keluar')
+                         ->where('tanggal_masuk', '<=', now()->subYears(2)->toDateString());
+                });
+            });
         } elseif ($contractFilter === 'all') {
             // Semua karyawan (aktif dan tidak aktif)
             // No additional filter needed
         } else {
-            // Default: tampilkan karyawan yang sudah resign
-            $query->whereNotNull('tanggal_keluar');
+            // Default: tampilkan karyawan yang sudah resign (tanggal_keluar sudah lewat)
+            $query->whereNotNull('tanggal_keluar')
+                  ->where('tanggal_keluar', '<', $today);
         }
 
         // Search by karyawan name
@@ -72,10 +84,18 @@ class KontrakResignController extends Controller
         // Add contract status to each karyawan
         foreach ($karyawans as $karyawan) {
             if ($karyawan->tanggal_keluar) {
-                // Karyawan sudah resign
-                $daysAgo = (int) now()->diffInDays($karyawan->tanggal_keluar, false);
-                $karyawan->contract_status = 'expired';
-                $karyawan->days_info = abs($daysAgo) . ' hari yang lalu resign';
+                // Check if tanggal_keluar is in the past or future
+                $daysFromNow = (int) now()->diffInDays($karyawan->tanggal_keluar, false);
+                
+                if ($daysFromNow < 0) {
+                    // Tanggal keluar sudah lewat - karyawan sudah resign
+                    $karyawan->contract_status = 'expired';
+                    $karyawan->days_info = abs($daysFromNow) . ' hari yang lalu resign';
+                } else {
+                    // Tanggal keluar masih di masa depan - kontrak akan habis
+                    $karyawan->contract_status = 'expiring_soon';
+                    $karyawan->days_info = $daysFromNow . ' hari lagi kontrak habis';
+                }
                 $karyawan->display_date = $karyawan->tanggal_keluar;
             } else {
                 // Karyawan masih aktif, hitung berdasarkan tanggal masuk
@@ -95,11 +115,21 @@ class KontrakResignController extends Controller
 
         // Statistics
         $stats = [
-            'expired' => Karyawan::whereNotNull('tanggal_keluar')->count(),
-            'expiring_soon' => Karyawan::where('is_active', true)
-                ->whereNull('tanggal_keluar')
-                ->where('tanggal_masuk', '<=', now()->subYears(2)->toDateString())
+            'expired' => Karyawan::whereNotNull('tanggal_keluar')
+                ->where('tanggal_keluar', '<', $today)
                 ->count(),
+            'expiring_soon' => Karyawan::where(function($q) use ($today) {
+                $q->where(function($subQ) use ($today) {
+                    // Tanggal keluar di masa depan
+                    $subQ->whereNotNull('tanggal_keluar')
+                         ->where('tanggal_keluar', '>=', $today);
+                })->orWhere(function($subQ) {
+                    // Atau karyawan aktif yang sudah bekerja lebih dari 2 tahun
+                    $subQ->where('is_active', true)
+                         ->whereNull('tanggal_keluar')
+                         ->where('tanggal_masuk', '<=', now()->subYears(2)->toDateString());
+                });
+            })->count(),
             'total_contract' => Karyawan::count(),
         ];
 

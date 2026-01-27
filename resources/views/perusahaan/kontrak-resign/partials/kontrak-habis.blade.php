@@ -22,7 +22,7 @@
                 </div>
             </div>
             <div class="ml-3">
-                <p class="text-sm font-medium text-gray-500">Lama Bekerja (2+ Tahun)</p>
+                <p class="text-sm font-medium text-gray-500">Kontrak Akan Habis / Lama Bekerja</p>
                 <p class="text-lg font-semibold text-gray-900">{{ $stats['expiring_soon'] ?? 0 }}</p>
             </div>
         </div>
@@ -64,7 +64,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">Status Karyawan</label>
             <select name="contract_filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                 <option value="expired" {{ request('contract_filter', 'expired') == 'expired' ? 'selected' : '' }}>Sudah Resign</option>
-                <option value="expiring_soon" {{ request('contract_filter') == 'expiring_soon' ? 'selected' : '' }}>Lama Bekerja (2+ Tahun)</option>
+                <option value="expiring_soon" {{ request('contract_filter') == 'expiring_soon' ? 'selected' : '' }}>Kontrak Akan Habis / Lama Bekerja</option>
                 <option value="all" {{ request('contract_filter') == 'all' ? 'selected' : '' }}>Semua Karyawan</option>
             </select>
         </div>
