@@ -77,6 +77,9 @@ class PenerimaanBarangController extends Controller
             $validated['perusahaan_id'] = auth()->user()->perusahaan_id;
         }
 
+        // Auto-assign created_by (WAJIB untuk audit trail)
+        $validated['created_by'] = auth()->id();
+
         // Generate nomor penerimaan
         $validated['nomor_penerimaan'] = $this->generateNomorPenerimaan();
 
