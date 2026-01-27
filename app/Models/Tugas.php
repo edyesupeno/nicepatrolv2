@@ -238,7 +238,7 @@ class Tugas extends Model
             return 0;
         }
         
-        return now()->diffInDays($this->batas_pengerjaan, false);
+        return (int) now()->diffInDays($this->batas_pengerjaan, false);
     }
 
     /**

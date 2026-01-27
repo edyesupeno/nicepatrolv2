@@ -163,7 +163,7 @@
                             if ($hasCheckup) {
                                 $checkupDate = \Carbon\Carbon::parse($latestCheckup->tanggal_checkup);
                                 $expiredDate = $checkupDate->copy()->addYear();
-                                $daysLeft = \Carbon\Carbon::now()->diffInDays($expiredDate, false);
+                                $daysLeft = (int) \Carbon\Carbon::now()->diffInDays($expiredDate, false);
                                 $isExpired = $daysLeft < 0;
                                 $isExpiringSoon = $daysLeft >= 0 && $daysLeft <= 30;
                             } else {

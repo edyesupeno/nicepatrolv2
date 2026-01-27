@@ -219,7 +219,7 @@ class MedicalCheckupController extends Controller
             case 'expiring_soon':
                 $latestCheckup = $karyawan->medicalCheckups()->latest('tanggal_checkup')->first();
                 $expiredDate = Carbon::parse($latestCheckup->tanggal_checkup)->addYear();
-                $daysLeft = Carbon::now()->diffInDays($expiredDate, false);
+                $daysLeft = (int) Carbon::now()->diffInDays($expiredDate, false);
                 
                 return "Halo {$karyawan->nama_lengkap},\n\nMedical checkup Anda akan expired dalam {$daysLeft} hari (tanggal {$expiredDate->format('d/m/Y')}). Mohon segera jadwalkan medical checkup terbaru.\n\nTerima kasih,\n{$perusahaan}";
                 
