@@ -1486,22 +1486,40 @@ class PatrolController extends Controller
 
     public function getAreasByProject(Request $request)
     {
-        $projectId = $request->get('project_id');
-        $kuesionerTamuId = $request->get('kuesioner_tamu_id'); // For edit mode
-        
-        $query = Area::select('id', 'nama')
-            ->where('project_id', $projectId);
-        
-        // Exclude areas that already have kuesioner tamu
-        $query->whereDoesntHave('kuesionerTamus', function($q) use ($kuesionerTamuId) {
-            if ($kuesionerTamuId) {
-                // In edit mode, allow current kuesioner's area
-                $q->where('id', '!=', $kuesionerTamuId);
+        try {
+            $projectId = $request->get('project_id');
+            $kuesionerTamuHashId = $request->get('kuesioner_tamu_id'); // For edit mode
+            
+            if (!$projectId) {
+                return response()->json(['error' => 'Project ID is required'], 400);
             }
-        });
-        
-        $areas = $query->orderBy('nama')->get();
+            
+            $query = Area::select('id', 'nama')
+                ->where('project_id', $projectId);
+            
+            // Exclude areas that already have kuesioner tamu
+            $query->whereDoesntHave('kuesionerTamus', function($q) use ($kuesionerTamuHashId) {
+                if ($kuesionerTamuHashId) {
+                    // In edit mode, allow current kuesioner's area
+                    // Convert hash_id to actual ID
+                    try {
+                        $kuesionerTamuId = \Vinkla\Hashids\Facades\Hashids::decode($kuesionerTamuHashId)[0] ?? null;
+                        if ($kuesionerTamuId) {
+                            $q->where('id', '!=', $kuesionerTamuId);
+                        }
+                    } catch (\Exception $e) {
+                        // If hash_id is invalid, just ignore the exclusion
+                        \Log::warning('Invalid kuesioner_tamu hash_id: ' . $kuesionerTamuHashId);
+                    }
+                }
+            });
+            
+            $areas = $query->orderBy('nama')->get();
 
-        return response()->json($areas);
+            return response()->json($areas);
+        } catch (\Exception $e) {
+            \Log::error('Error in getAreasByProject: ' . $e->getMessage());
+            return response()->json(['error' => 'Internal server error'], 500);
+        }
     }
 }

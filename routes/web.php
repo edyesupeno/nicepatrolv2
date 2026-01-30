@@ -559,6 +559,166 @@ Route::middleware('auth')->group(function () {
             Route::get('kru-change/{kruChange}/pdf', [\App\Http\Controllers\Perusahaan\LaporanKruChangeController::class, 'exportPdf'])->name('kru-change.pdf');
             Route::post('kru-change/export-multiple', [\App\Http\Controllers\Perusahaan\LaporanKruChangeController::class, 'exportMultiplePdf'])->name('kru-change.export-multiple');
         });
+        
+        // Perlengkapan Routes
+        Route::resource('perlengkapan', \App\Http\Controllers\Perusahaan\PerlengkapanController::class);
+        
+        // Item Management Routes
+        Route::post('perlengkapan/{kategori}/items', [\App\Http\Controllers\Perusahaan\PerlengkapanController::class, 'storeItem'])->name('perlengkapan.items.store');
+        Route::get('perlengkapan/{kategori}/items/{item}', [\App\Http\Controllers\Perusahaan\PerlengkapanController::class, 'getItem'])->name('perlengkapan.items.get');
+        Route::put('perlengkapan/{kategori}/items/{item}', [\App\Http\Controllers\Perusahaan\PerlengkapanController::class, 'updateItem'])->name('perlengkapan.items.update');
+        Route::delete('perlengkapan/{kategori}/items/{item}', [\App\Http\Controllers\Perusahaan\PerlengkapanController::class, 'destroyItem'])->name('perlengkapan.items.destroy');
+        Route::patch('perlengkapan/{kategori}/items/{item}/stok', [\App\Http\Controllers\Perusahaan\PerlengkapanController::class, 'updateStok'])->name('perlengkapan.items.update-stok');
+        Route::get('perlengkapan/{kategori}/items/{item}/stock-history', [\App\Http\Controllers\Perusahaan\PerlengkapanController::class, 'getStockHistory'])->name('perlengkapan.items.stock-history');
+        
+        // Penyerahan Perlengkapan API Routes (must be before resource routes)
+        Route::get('penyerahan-perlengkapan/jabatan-by-project', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'getJabatanByProject'])->name('penyerahan-perlengkapan.jabatan-by-project');
+        Route::get('penyerahan-perlengkapan/karyawan-by-jabatan', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'getKaryawanByJabatan'])->name('penyerahan-perlengkapan.karyawan-by-jabatan');
+        Route::get('penyerahan-perlengkapan/kategori-by-project', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'getKategoriByProject'])->name('penyerahan-perlengkapan.kategori-by-project');
+        Route::get('penyerahan-perlengkapan/items-by-kategori', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'getItemsByKategori'])->name('penyerahan-perlengkapan.items-by-kategori');
+        
+        // Penyerahan Perlengkapan Routes
+        Route::resource('penyerahan-perlengkapan', \App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class);
+        Route::get('penyerahan-perlengkapan/{penyerahan}/pilih-karyawan', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'pilihKaryawanPage'])->name('penyerahan-perlengkapan.pilih-karyawan-page');
+        Route::get('penyerahan-perlengkapan/{penyerahan}/pilih-item', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'pilihItemPage'])->name('penyerahan-perlengkapan.pilih-item-page');
+        Route::get('penyerahan-perlengkapan/{penyerahan}/serahkan-item', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'serahkanItemPage'])->name('penyerahan-perlengkapan.serahkan-item-page');
+        Route::get('penyerahan-perlengkapan/{penyerahan}/karyawan-selection', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'getKaryawanForSelection'])->name('penyerahan-perlengkapan.karyawan-selection');
+        Route::get('penyerahan-perlengkapan/{penyerahan}/selected-karyawan', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'getSelectedKaryawan'])->name('penyerahan-perlengkapan.selected-karyawan');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/add-karyawan', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'addKaryawan'])->name('penyerahan-perlengkapan.add-karyawan');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/remove-karyawan', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'removeKaryawan'])->name('penyerahan-perlengkapan.remove-karyawan');
+        
+        // Item management routes
+        Route::get('penyerahan-perlengkapan/{penyerahan}/selected-items', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'getSelectedItems'])->name('penyerahan-perlengkapan.selected-items');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/add-items', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'addItems'])->name('penyerahan-perlengkapan.add-items');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/remove-item', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'removeItem'])->name('penyerahan-perlengkapan.remove-item');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/update-item-quantity', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'updateItemQuantity'])->name('penyerahan-perlengkapan.update-item-quantity');
+        Route::get('penyerahan-perlengkapan/{penyerahan}/items-by-karyawan', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'getItemsByKaryawan'])->name('penyerahan-perlengkapan.items-by-karyawan');
+        Route::get('penyerahan-perlengkapan/{penyerahan}/serahkan-items-data', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'getSerahkanItemsData'])->name('penyerahan-perlengkapan.serahkan-items-data');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/serahkan-single-item', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'serahkanSingleItem'])->name('penyerahan-perlengkapan.serahkan-single-item');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/serahkan-multiple-items', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'serahkanMultipleItems'])->name('penyerahan-perlengkapan.serahkan-multiple-items');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/pilih-karyawan', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'pilihKaryawan'])->name('penyerahan-perlengkapan.pilih-karyawan');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/pilih-item', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'pilihItem'])->name('penyerahan-perlengkapan.pilih-item');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/serahkan-item', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'serahkanItem'])->name('penyerahan-perlengkapan.serahkan-item');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/set-diserahkan', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'setDiserahkan'])->name('penyerahan-perlengkapan.set-diserahkan');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/serahkan', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'serahkan'])->name('penyerahan-perlengkapan.serahkan');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/kembalikan', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'kembalikan'])->name('penyerahan-perlengkapan.kembalikan');
+        
+        // New employee-centric serahkan item API routes
+        Route::get('penyerahan-perlengkapan/{penyerahan}/karyawan-data', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'getKaryawanData'])->name('penyerahan-perlengkapan.karyawan-data');
+        Route::get('penyerahan-perlengkapan/{penyerahan}/karyawan-items/{karyawanId}', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'getKaryawanItems'])->name('penyerahan-perlengkapan.karyawan-items');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/serahkan-karyawan-items', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'serahkanKaryawanItems'])->name('penyerahan-perlengkapan.serahkan-karyawan-items');
+        Route::get('penyerahan-perlengkapan/{penyerahan}/print-bukti/{karyawanId}', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'getPrintBukti'])->name('penyerahan-perlengkapan.print-bukti');
+        
+        // Debug routes
+        Route::get('/debug-session', function() {
+            return response()->json([
+                'session_id' => session()->getId(),
+                'csrf_token' => csrf_token(),
+                'auth_check' => auth()->check(),
+                'user_id' => auth()->id(),
+                'session_driver' => config('session.driver'),
+                'session_domain' => config('session.domain'),
+                'session_lifetime' => config('session.lifetime'),
+                'cookies' => request()->cookies->all()
+            ]);
+        });
+        
+        Route::post('/debug-login', function(Request $request) {
+            $credentials = $request->only('email', 'password');
+            
+            $user = \App\Models\User::where('email', $credentials['email'])->first();
+            
+            return response()->json([
+                'user_exists' => $user ? true : false,
+                'user_active' => $user ? $user->is_active : false,
+                'password_check' => $user ? Hash::check($credentials['password'], $user->password) : false,
+                'auth_attempt' => Auth::attempt($credentials),
+                'session_id' => session()->getId(),
+                'csrf_token' => csrf_token()
+            ]);
+        });
+        
+        // Bypass login for testing
+        Route::get('/bypass-login/{email}', function($email) {
+            $user = \App\Models\User::where('email', $email)->first();
+            if ($user) {
+                Auth::login($user);
+                return redirect()->route('perusahaan.dashboard');
+            }
+            return 'User not found';
+        });
+        
+        // CSRF Token refresh route
+        Route::get('/csrf-token', function() {
+            return response()->json(['csrf_token' => csrf_token()]);
+        })->name('csrf-token');
+        
+        // Data Aset Routes
+        Route::resource('data-aset', \App\Http\Controllers\Perusahaan\DataAsetController::class);
+        Route::get('data-aset-kategori-suggestions', [\App\Http\Controllers\Perusahaan\DataAsetController::class, 'getKategoriSuggestions'])->name('data-aset.kategori-suggestions');
+        Route::post('data-aset-create-kategori', [\App\Http\Controllers\Perusahaan\DataAsetController::class, 'createKategori'])->name('data-aset.create-kategori');
+        
+        // Export Label Routes
+        Route::get('data-aset/{dataAset}/export-label', [\App\Http\Controllers\Perusahaan\DataAsetController::class, 'exportLabel'])->name('data-aset.export-label');
+        Route::post('data-aset-export-labels', [\App\Http\Controllers\Perusahaan\DataAsetController::class, 'exportLabels'])->name('data-aset.export-labels');
+        Route::post('data-aset-export-all-labels', [\App\Http\Controllers\Perusahaan\DataAsetController::class, 'exportAllLabels'])->name('data-aset.export-all-labels');
+        
+        // Peminjaman Aset Routes
+        Route::resource('peminjaman-aset', \App\Http\Controllers\Perusahaan\PeminjamanAsetController::class);
+        Route::get('peminjaman-aset-jatuh-tempo', [\App\Http\Controllers\Perusahaan\PeminjamanAsetController::class, 'jatuhTempo'])->name('peminjaman-aset.jatuh-tempo');
+        Route::get('peminjaman-aset-export-laporan', [\App\Http\Controllers\Perusahaan\PeminjamanAsetController::class, 'exportLaporan'])->name('peminjaman-aset.export-laporan');
+        Route::get('peminjaman-aset-search-asets', [\App\Http\Controllers\Perusahaan\PeminjamanAsetController::class, 'searchAsets'])->name('peminjaman-aset.search-asets');
+        Route::get('peminjaman-aset-search-karyawan', [\App\Http\Controllers\Perusahaan\PeminjamanAsetController::class, 'searchKaryawan'])->name('peminjaman-aset.search-karyawan');
+        Route::post('peminjaman-aset/{peminjamanAset}/approve', [\App\Http\Controllers\Perusahaan\PeminjamanAsetController::class, 'approve'])->name('peminjaman-aset.approve');
+        Route::post('peminjaman-aset/{peminjamanAset}/reject', [\App\Http\Controllers\Perusahaan\PeminjamanAsetController::class, 'reject'])->name('peminjaman-aset.reject');
+        Route::post('peminjaman-aset/{peminjamanAset}/borrow', [\App\Http\Controllers\Perusahaan\PeminjamanAsetController::class, 'borrow'])->name('peminjaman-aset.borrow');
+        Route::get('peminjaman-aset/{peminjamanAset}/return-form', [\App\Http\Controllers\Perusahaan\PeminjamanAsetController::class, 'returnForm'])->name('peminjaman-aset.return-form');
+        Route::post('peminjaman-aset/{peminjamanAset}/return', [\App\Http\Controllers\Perusahaan\PeminjamanAsetController::class, 'returnAsset'])->name('peminjaman-aset.return');
+        Route::get('peminjaman-aset/{peminjamanAset}/export-bukti', [\App\Http\Controllers\Perusahaan\PeminjamanAsetController::class, 'exportBuktiPeminjaman'])->name('peminjaman-aset.export-bukti');
+        
+        // Mutasi Aset Routes
+        Route::resource('mutasi-aset', \App\Http\Controllers\Perusahaan\MutasiAsetController::class);
+        Route::post('mutasi-aset/{mutasiAset}/approve', [\App\Http\Controllers\Perusahaan\MutasiAsetController::class, 'approve'])->name('mutasi-aset.approve');
+        Route::post('mutasi-aset/{mutasiAset}/complete', [\App\Http\Controllers\Perusahaan\MutasiAsetController::class, 'complete'])->name('mutasi-aset.complete');
+        Route::get('mutasi-aset/{mutasiAset}/print', [\App\Http\Controllers\Perusahaan\MutasiAsetController::class, 'printMutasi'])->name('mutasi-aset.print');
+        Route::get('mutasi-aset-laporan', [\App\Http\Controllers\Perusahaan\MutasiAsetController::class, 'laporan'])->name('mutasi-aset.laporan');
+        Route::get('mutasi-aset-assets-by-project', [\App\Http\Controllers\Perusahaan\MutasiAsetController::class, 'getAssetsByProject'])->name('mutasi-aset.assets-by-project');
+        Route::get('mutasi-aset-search-karyawan', [\App\Http\Controllers\Perusahaan\MutasiAsetController::class, 'searchKaryawan'])->name('mutasi-aset.search-karyawan');
+        
+        // Maintenance Aset Routes
+        Route::get('maintenance-aset/dashboard', [\App\Http\Controllers\Perusahaan\MaintenanceAsetController::class, 'dashboard'])->name('maintenance-aset.dashboard');
+        Route::get('maintenance-aset/laporan', [\App\Http\Controllers\Perusahaan\MaintenanceAsetController::class, 'laporan'])->name('maintenance-aset.laporan');
+        Route::get('maintenance-aset/get-assets', [\App\Http\Controllers\Perusahaan\MaintenanceAsetController::class, 'getAssetsByProject'])->name('maintenance-aset.get-assets');
+        Route::post('maintenance-aset/{maintenanceAset}/update-status', [\App\Http\Controllers\Perusahaan\MaintenanceAsetController::class, 'updateStatus'])->name('maintenance-aset.update-status');
+        Route::resource('maintenance-aset', \App\Http\Controllers\Perusahaan\MaintenanceAsetController::class);
+        
+        // Kondisi Aset Routes
+        Route::get('kondisi-aset', [\App\Http\Controllers\Perusahaan\KondisiAsetController::class, 'index'])->name('kondisi-aset.index');
+        Route::get('kondisi-aset/export-pdf', [\App\Http\Controllers\Perusahaan\KondisiAsetController::class, 'exportPdf'])->name('kondisi-aset.export-pdf');
+        
+        // Disposal Aset Routes
+        Route::get('disposal-aset/get-assets', [\App\Http\Controllers\Perusahaan\DisposalAsetController::class, 'getAssetsByProject'])->name('disposal-aset.get-assets');
+        Route::get('disposal-aset/export-pdf', [\App\Http\Controllers\Perusahaan\DisposalAsetController::class, 'exportPdf'])->name('disposal-aset.export-pdf');
+        Route::post('disposal-aset/{disposalAset}/approve', [\App\Http\Controllers\Perusahaan\DisposalAsetController::class, 'approve'])->name('disposal-aset.approve');
+        Route::post('disposal-aset/{disposalAset}/complete', [\App\Http\Controllers\Perusahaan\DisposalAsetController::class, 'complete'])->name('disposal-aset.complete');
+        Route::resource('disposal-aset', \App\Http\Controllers\Perusahaan\DisposalAsetController::class);
+        
+        // Aset Kendaraan Routes
+        Route::resource('aset-kendaraan', \App\Http\Controllers\Perusahaan\AsetKendaraanController::class);
+        Route::get('aset-kendaraan-merk-suggestions', [\App\Http\Controllers\Perusahaan\AsetKendaraanController::class, 'getMerkSuggestions'])->name('aset-kendaraan.merk-suggestions');
+        Route::get('aset-kendaraan-expiring-documents', [\App\Http\Controllers\Perusahaan\AsetKendaraanController::class, 'expiringDocuments'])->name('aset-kendaraan.expiring-documents');
+        
+        // Export Barcode Routes
+        Route::get('aset-kendaraan/{asetKendaraan}/export-label', [\App\Http\Controllers\Perusahaan\AsetKendaraanController::class, 'exportLabel'])->name('aset-kendaraan.export-label');
+        Route::post('aset-kendaraan-export-labels', [\App\Http\Controllers\Perusahaan\AsetKendaraanController::class, 'exportLabels'])->name('aset-kendaraan.export-labels');
+        Route::get('aset-kendaraan-export-all-labels', [\App\Http\Controllers\Perusahaan\AsetKendaraanController::class, 'exportAllLabels'])->name('aset-kendaraan.export-all-labels');
+        Route::post('penyerahan-perlengkapan/{penyerahan}/send-whatsapp/{karyawanId}', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'sendWhatsApp'])->name('penyerahan-perlengkapan.send-whatsapp');
+        
+        // New separate page for item handover per employee
+        Route::get('penyerahan-perlengkapan/{penyerahan}/serahkan-karyawan/{karyawanId}', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'serahkanKaryawanPage'])->name('penyerahan-perlengkapan.serahkan-karyawan-page');
+        
+        // New report page for handover progress
+        Route::get('penyerahan-perlengkapan/{penyerahan}/laporan', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'laporanPenyerahan'])->name('penyerahan-perlengkapan.laporan');
     });
 });
 

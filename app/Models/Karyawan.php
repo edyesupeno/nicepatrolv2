@@ -137,6 +137,16 @@ class Karyawan extends Model
         return $this->hasMany(MedicalCheckup::class);
     }
 
+    public function items()
+    {
+        return $this->hasMany(PenyerahanPerlengkapanItem::class);
+    }
+
+    public function penyerahanKaryawans()
+    {
+        return $this->hasMany(PenyerahanPerlengkapanKaryawan::class);
+    }
+
     public function jadwalShifts()
     {
         return $this->hasMany(JadwalShift::class);

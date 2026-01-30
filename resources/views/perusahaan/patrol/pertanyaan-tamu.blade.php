@@ -412,19 +412,27 @@ function openModal() {
     document.getElementById('formMethod').value = 'POST';
     document.getElementById('kuesionerForm').reset();
     document.getElementById('area_id').disabled = true;
+    
+    // Clear edit variables
+    window.editAreaId = null;
+    window.editKuesionerTamuId = null;
 }
 
 function closeModal() {
     document.getElementById('formModal').classList.add('hidden');
     document.getElementById('kuesionerForm').reset();
     document.getElementById('area_id').disabled = true;
+    
+    // Clear edit variables
+    window.editAreaId = null;
+    window.editKuesionerTamuId = null;
 }
 
 function loadAreas() {
     const projectId = document.getElementById('project_id').value;
     const areaSelect = document.getElementById('area_id');
     const kuesionerTamuId = document.getElementById('formMethod').value === 'PUT' ? 
-        document.getElementById('kuesionerForm').action.split('/').pop() : null;
+        window.editKuesionerTamuId : null;
     
     if (!projectId) {
         areaSelect.innerHTML = '<option value="">Pilih Area</option>';
@@ -437,9 +445,29 @@ function loadAreas() {
         url += `&kuesioner_tamu_id=${kuesionerTamuId}`;
     }
     
+    console.log('Loading areas from URL:', url);
+    
+    // Show loading state
+    areaSelect.innerHTML = '<option value="">Loading areas...</option>';
+    areaSelect.disabled = true;
+    
     fetch(url)
-        .then(response => response.json())
-        .then(areas => {
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Areas loaded:', data);
+            
+            // Check if response has error
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            const areas = Array.isArray(data) ? data : [];
+            
             areaSelect.innerHTML = '<option value="">Pilih Area</option>';
             if (areas.length === 0) {
                 areaSelect.innerHTML += '<option value="" disabled>Semua area sudah memiliki kuesioner tamu</option>';
@@ -449,10 +477,24 @@ function loadAreas() {
                 });
             }
             areaSelect.disabled = false;
+            
+            // Set the area value if we're in edit mode
+            if (window.editAreaId) {
+                console.log('Setting area value to:', window.editAreaId);
+                areaSelect.value = window.editAreaId;
+                window.editAreaId = null; // Clear after use
+            }
         })
         .catch(error => {
             console.error('Error loading areas:', error);
             areaSelect.innerHTML = '<option value="">Error loading areas</option>';
+            areaSelect.disabled = true;
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: `Gagal memuat data area: ${error.message}`
+            });
         });
 }
 
@@ -466,16 +508,24 @@ function editItem(hashId) {
             document.getElementById('formMethod').value = 'PUT';
             
             document.getElementById('project_id').value = data.project_id;
-            loadAreas();
             
-            // Wait for areas to load then set area
-            setTimeout(() => {
-                document.getElementById('area_id').value = data.area_id;
-            }, 500);
+            // Store the area_id to set after areas are loaded
+            window.editAreaId = data.area_id;
+            window.editKuesionerTamuId = hashId;
+            
+            loadAreas();
             
             document.getElementById('judul').value = data.judul;
             document.getElementById('deskripsi').value = data.deskripsi || '';
             document.querySelector(`input[name="is_active"][value="${data.is_active ? '1' : '0'}"]`).checked = true;
+        })
+        .catch(error => {
+            console.error('Error loading kuesioner data:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Gagal memuat data kuesioner'
+            });
         });
 }
 

@@ -1029,7 +1029,7 @@ class KaryawanController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('perusahaan.karyawans.export-pdf', $data);
         $pdf->setPaper('a4', 'landscape');
         
-        return $pdf->download($fileName . '.pdf');
+        return $pdf->download(str_replace(['/', '\\'], '_', $fileName) . '.pdf');
     }
 
     // Area Management Methods

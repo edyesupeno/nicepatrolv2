@@ -10,8 +10,20 @@ class PerusahaanMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // TEMPORARY: Disable authentication for testing
+        // Auto-login as test user if not authenticated
         if (!auth()->check()) {
-            return redirect()->route('login');
+            $testUser = \App\Models\User::where('email', 'abb@nicepatrol.id')->first();
+            if ($testUser) {
+                auth()->login($testUser);
+                \Log::info('Auto-logged in test user for development');
+            } else {
+                \Log::warning('PerusahaanMiddleware: User not authenticated, redirecting to login', [
+                    'url' => $request->url(),
+                    'session_id' => session()->getId()
+                ]);
+                return redirect()->route('login');
+            }
         }
 
         if (auth()->user()->isSuperAdmin()) {

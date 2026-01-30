@@ -14,7 +14,7 @@ class KuesionerTamuSeeder extends Seeder
     public function run(): void
     {
         // Get first perusahaan that has projects and areas
-        $perusahaan = Perusahaan::whereHas('projects.areaPatrols')->first();
+        $perusahaan = Perusahaan::whereHas('projects.areas')->first();
         if (!$perusahaan) {
             $this->command->info('No perusahaan with projects and areas found.');
             return;
@@ -22,17 +22,17 @@ class KuesionerTamuSeeder extends Seeder
 
         // Get first project with areas
         $project = Project::where('perusahaan_id', $perusahaan->id)
-            ->whereHas('areaPatrols')
+            ->whereHas('areas')
             ->first();
         if (!$project) {
             $this->command->info('No project with areas found.');
             return;
         }
 
-        // Get first area
-        $area = AreaPatrol::where('project_id', $project->id)->first();
+        // Get first area (from areas table, not area_patrols)
+        $area = \App\Models\Area::where('project_id', $project->id)->first();
         if (!$area) {
-            $this->command->info('No area patrol found.');
+            $this->command->info('No area found.');
             return;
         }
 
@@ -40,7 +40,7 @@ class KuesionerTamuSeeder extends Seeder
         $kuesioner = KuesionerTamu::create([
             'perusahaan_id' => $perusahaan->id,
             'project_id' => $project->id,
-            'area_patrol_id' => $area->id,
+            'area_id' => $area->id,
             'judul' => 'Kuesioner Kepuasan Tamu',
             'deskripsi' => 'Kuesioner untuk mengukur tingkat kepuasan tamu terhadap layanan keamanan',
             'is_active' => true,

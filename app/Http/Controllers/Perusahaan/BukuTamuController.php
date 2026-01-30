@@ -803,10 +803,19 @@ class BukuTamuController extends Controller
                 'pertanyaans_count' => $kuesioner && $kuesioner->pertanyaans ? $kuesioner->pertanyaans->count() : 0
             ]);
 
-            if (!$kuesioner || !$kuesioner->pertanyaans || $kuesioner->pertanyaans->count() === 0) {
+            if (!$kuesioner) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kuesioner tidak ditemukan untuk project dan area ini'
+                    'message' => 'Project ini belum memiliki kuesioner. Harap segera membuat kuesioner untuk area ini.',
+                    'error_type' => 'no_questionnaire'
+                ]);
+            }
+
+            if (!$kuesioner->pertanyaans || $kuesioner->pertanyaans->count() === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kuesioner ditemukan tetapi belum memiliki pertanyaan. Harap tambahkan pertanyaan ke kuesioner.',
+                    'error_type' => 'no_questions'
                 ]);
             }
 
@@ -1032,6 +1041,20 @@ class BukuTamuController extends Controller
 
             // Parse answers
             $answers = $validated['kuesioner_answers'];
+            
+            // Validate that all question IDs exist
+            $questionIds = array_keys($answers);
+            $existingQuestionIds = \App\Models\PertanyaanTamu::whereIn('id', $questionIds)->pluck('id')->toArray();
+            $invalidQuestionIds = array_diff($questionIds, $existingQuestionIds);
+            
+            if (!empty($invalidQuestionIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pertanyaan dengan ID ' . implode(', ', $invalidQuestionIds) . ' tidak ditemukan. Harap pastikan kuesioner sudah dibuat dengan benar.',
+                    'error_type' => 'invalid_question_ids',
+                    'invalid_ids' => $invalidQuestionIds
+                ], 400);
+            }
             
             // Delete existing answers for this guest
             JawabanKuesionerTamu::where('buku_tamu_id', $bukuTamu->id)->delete();

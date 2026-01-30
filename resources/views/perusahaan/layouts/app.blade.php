@@ -558,6 +558,76 @@
 
                 <!-- Section Divider -->
                 <div class="section-divider my-4"></div>
+                <div class="flex items-center px-4 py-2">
+                    <div class="text-xs font-bold text-blue-200 uppercase tracking-wider">
+                        Aset Management
+                    </div>
+                </div>
+
+                <!-- Perlengkapan Menu (Collapsible) -->
+                <div class="mb-1">
+                    <button onclick="toggleSubmenu('perlengkapan')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.perlengkapan.*') || request()->routeIs('perusahaan.penyerahan-perlengkapan.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                        <div class="flex items-center">
+                            <i class="fas fa-boxes w-5 text-center mr-3"></i>
+                            <span class="font-medium">Perlengkapan</span>
+                        </div>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-perlengkapan"></i>
+                    </button>
+                    <div id="submenu-perlengkapan" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.perlengkapan.*') || request()->routeIs('perusahaan.penyerahan-perlengkapan.*') ? '' : 'hidden' }}">
+                        <a href="{{ route('perusahaan.perlengkapan.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.perlengkapan.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-toolbox w-5 text-center mr-3 text-xs"></i>
+                            <span>Master Perlengkapan</span>
+                        </a>
+                        <a href="{{ route('perusahaan.penyerahan-perlengkapan.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.penyerahan-perlengkapan.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-hand-holding w-5 text-center mr-3 text-xs"></i>
+                            <span>Penyerahan Perlengkapan</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Aset Operasional Menu (Collapsible) -->
+                <div class="mb-1">
+                    <button onclick="toggleSubmenu('aset-operasional')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.data-aset.*') || request()->routeIs('perusahaan.peminjaman-aset.*') || request()->routeIs('perusahaan.mutasi-aset.*') || request()->routeIs('perusahaan.aset-kendaraan.*') || request()->routeIs('perusahaan.maintenance-aset.*') || request()->routeIs('perusahaan.kondisi-aset.*') || request()->routeIs('perusahaan.disposal-aset.*') || request()->routeIs('perusahaan.aset-operasional.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                        <div class="flex items-center">
+                            <i class="fas fa-cube w-5 text-center mr-3"></i>
+                            <span class="font-medium">Aset Operasional</span>
+                        </div>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-aset-operasional"></i>
+                    </button>
+                    <div id="submenu-aset-operasional" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.data-aset.*') || request()->routeIs('perusahaan.peminjaman-aset.*') || request()->routeIs('perusahaan.aset-kendaraan.*') || request()->routeIs('perusahaan.maintenance-aset.*') || request()->routeIs('perusahaan.kondisi-aset.*') || request()->routeIs('perusahaan.disposal-aset.*') || request()->routeIs('perusahaan.aset-operasional.*') ? '' : 'hidden' }}">
+                        <a href="{{ route('perusahaan.data-aset.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.data-aset.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-clipboard-list w-5 text-center mr-3 text-xs"></i>
+                            <span>Data Aset</span>
+                        </a>
+                        <a href="{{ route('perusahaan.aset-kendaraan.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.aset-kendaraan.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-car w-5 text-center mr-3 text-xs"></i>
+                            <span>Aset Kendaraan</span>
+                        </a>
+                        <a href="{{ route('perusahaan.peminjaman-aset.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.peminjaman-aset.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-handshake w-5 text-center mr-3 text-xs"></i>
+                            <span>Peminjaman Aset</span>
+                        </a>
+                        <a href="{{ route('perusahaan.mutasi-aset.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.mutasi-aset.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-exchange-alt w-5 text-center mr-3 text-xs"></i>
+                            <span>Mutasi Aset</span>
+                        </a>
+                        <a href="{{ route('perusahaan.maintenance-aset.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.maintenance-aset.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-wrench w-5 text-center mr-3 text-xs"></i>
+                            <span>Maintenance & Servis</span>
+                        </a>
+                        <a href="{{ route('perusahaan.kondisi-aset.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.kondisi-aset.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-chart-pie w-5 text-center mr-3 text-xs"></i>
+                            <span>Kondisi Aset</span>
+                        </a>
+                        <a href="{{ route('perusahaan.disposal-aset.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.disposal-aset.*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-trash-alt w-5 text-center mr-3 text-xs"></i>
+                            <span>Disposal Aset</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Section Divider -->
+                <div class="section-divider my-4"></div>
 
                 <!-- Pengaturan -->
                 <a href="#" class="menu-item flex items-center px-4 py-3 rounded-xl text-white hover:bg-white hover:bg-opacity-10">

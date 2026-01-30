@@ -587,10 +587,27 @@ class BukuTamuController extends Controller
                 ->where('is_active', true)
                 ->first();
 
-            if (!$kuesioner || !$kuesioner->pertanyaans || $kuesioner->pertanyaans->count() === 0) {
+            \Log::info('API Questionnaire search', [
+                'project_id' => $projectId,
+                'area_id' => $areaId,
+                'found' => $kuesioner ? true : false,
+                'kuesioner_id' => $kuesioner ? $kuesioner->id : null,
+                'questions_count' => $kuesioner && $kuesioner->pertanyaans ? $kuesioner->pertanyaans->count() : 0
+            ]);
+
+            if (!$kuesioner) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kuesioner tidak ditemukan untuk project dan area ini'
+                    'message' => 'Project ini belum memiliki kuesioner. Harap segera membuat kuesioner untuk area ini.',
+                    'error_type' => 'no_questionnaire'
+                ], 404);
+            }
+
+            if (!$kuesioner->pertanyaans || $kuesioner->pertanyaans->count() === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kuesioner ditemukan tetapi belum memiliki pertanyaan. Harap tambahkan pertanyaan ke kuesioner.',
+                    'error_type' => 'no_questions'
                 ], 404);
             }
 
@@ -633,6 +650,20 @@ class BukuTamuController extends Controller
 
             // Parse answers
             $answers = $validated['kuesioner_answers'];
+            
+            // Validate that all question IDs exist
+            $questionIds = array_keys($answers);
+            $existingQuestionIds = \App\Models\PertanyaanTamu::whereIn('id', $questionIds)->pluck('id')->toArray();
+            $invalidQuestionIds = array_diff($questionIds, $existingQuestionIds);
+            
+            if (!empty($invalidQuestionIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pertanyaan dengan ID ' . implode(', ', $invalidQuestionIds) . ' tidak ditemukan. Harap pastikan kuesioner sudah dibuat dengan benar.',
+                    'error_type' => 'invalid_question_ids',
+                    'invalid_ids' => $invalidQuestionIds
+                ], 400);
+            }
             
             // Delete existing answers for this guest
             JawabanKuesionerTamu::where('buku_tamu_id', $bukuTamu->id)->delete();
@@ -715,13 +746,33 @@ class BukuTamuController extends Controller
 
             // Get available cards for the project
             $availableCards = \App\Models\KartuTamu::where('project_id', $projectId)
-                ->where('status', 'tersedia')
+                ->available()
+                ->select('id', 'no_kartu', 'nfc_kartu', 'keterangan')
                 ->orderBy('no_kartu')
-                ->get(['id', 'no_kartu', 'jenis_kartu', 'warna', 'keterangan']);
+                ->get();
+
+            // Check if no cards available
+            if ($availableCards->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Project ini belum memiliki kartu tamu atau semua kartu sedang terpakai. Harap tambahkan kartu tamu atau tunggu hingga ada kartu yang dikembalikan.',
+                    'error_type' => 'no_available_cards'
+                ], 404);
+            }
+
+            // Transform the response to use hash_id instead of id
+            $cardsData = $availableCards->map(function($card) {
+                return [
+                    'id' => $card->hash_id, // Use hash_id instead of numeric id
+                    'no_kartu' => $card->no_kartu,
+                    'nfc_kartu' => $card->nfc_kartu,
+                    'keterangan' => $card->keterangan
+                ];
+            });
 
             return response()->json([
                 'success' => true,
-                'data' => $availableCards,
+                'data' => $cardsData,
                 'meta' => [
                     'total_available' => $availableCards->count(),
                     'project_id' => $projectId
@@ -729,6 +780,12 @@ class BukuTamuController extends Controller
             ]);
             
         } catch (\Exception $e) {
+            \Log::error('Error getting available cards', [
+                'project_id' => $request->get('project_id'),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
