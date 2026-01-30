@@ -48,7 +48,12 @@
                 <div>
                     <p class="text-sm text-gray-600 mb-1">Total Nilai Aset</p>
                     <p class="text-2xl font-bold text-green-600">Rp {{ number_format($dataAsetValue['total_value'] + $asetKendaraanValue['total_value'], 0, ',', '.') }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Rata-rata: Rp {{ number_format(($dataAsetValue['avg_value'] + $asetKendaraanValue['avg_value']) / 2, 0, ',', '.') }}</p>
+                    @php
+                        $avgValue1 = $dataAsetValue['avg_value'] ?? 0;
+                        $avgValue2 = $asetKendaraanValue['avg_value'] ?? 0;
+                        $totalAvg = ($avgValue1 + $avgValue2) > 0 ? ($avgValue1 + $avgValue2) / 2 : 0;
+                    @endphp
+                    <p class="text-xs text-gray-500 mt-1">Rata-rata: Rp {{ number_format($totalAvg, 0, ',', '.') }}</p>
                 </div>
                 <div class="bg-green-100 p-3 rounded-full">
                     <i class="fas fa-money-bill-wave text-green-600 text-xl"></i>
@@ -62,7 +67,12 @@
                 <div>
                     <p class="text-sm text-gray-600 mb-1">Aset Aktif</p>
                     <p class="text-3xl font-bold text-green-600">{{ number_format($dataAsetStats['ada'] + $asetKendaraanStats['aktif']) }}</p>
-                    <p class="text-xs text-gray-500 mt-1">{{ number_format((($dataAsetStats['ada'] + $asetKendaraanStats['aktif']) / ($dataAsetStats['total'] + $asetKendaraanStats['total'])) * 100, 1) }}% dari total</p>
+                    @php
+                        $totalAssets = $dataAsetStats['total'] + $asetKendaraanStats['total'];
+                        $activeAssets = $dataAsetStats['ada'] + $asetKendaraanStats['aktif'];
+                        $percentage = $totalAssets > 0 ? ($activeAssets / $totalAssets) * 100 : 0;
+                    @endphp
+                    <p class="text-xs text-gray-500 mt-1">{{ number_format($percentage, 1) }}% dari total</p>
                 </div>
                 <div class="bg-green-100 p-3 rounded-full">
                     <i class="fas fa-check-circle text-green-600 text-xl"></i>
@@ -86,6 +96,7 @@
     </div>
 
     <!-- Charts Section -->
+    @if($dataAsetStats['total'] > 0 || $asetKendaraanStats['total'] > 0)
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <!-- Data Aset Status Chart -->
         <div class="bg-white rounded-lg shadow-sm border">
@@ -94,9 +105,18 @@
                     <i class="fas fa-clipboard-list text-blue-600"></i>
                     Status Data Aset
                 </h3>
+                @if($dataAsetStats['total'] > 0)
                 <div class="h-64">
                     <canvas id="dataAsetStatusChart"></canvas>
                 </div>
+                @else
+                <div class="h-64 flex items-center justify-center text-gray-500">
+                    <div class="text-center">
+                        <i class="fas fa-inbox text-4xl mb-4"></i>
+                        <p>Tidak ada data aset</p>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
 
@@ -107,14 +127,41 @@
                     <i class="fas fa-car text-green-600"></i>
                     Status Aset Kendaraan
                 </h3>
+                @if($asetKendaraanStats['total'] > 0)
                 <div class="h-64">
                     <canvas id="asetKendaraanStatusChart"></canvas>
                 </div>
+                @else
+                <div class="h-64 flex items-center justify-center text-gray-500">
+                    <div class="text-center">
+                        <i class="fas fa-inbox text-4xl mb-4"></i>
+                        <p>Tidak ada data kendaraan</p>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>
+    @else
+    <div class="bg-white rounded-lg shadow-sm border p-8 mb-8">
+        <div class="text-center text-gray-500">
+            <i class="fas fa-inbox text-6xl mb-4"></i>
+            <h3 class="text-xl font-semibold mb-2">Belum Ada Data Aset</h3>
+            <p class="mb-4">Silakan tambahkan data aset atau kendaraan terlebih dahulu untuk melihat statistik.</p>
+            <div class="flex gap-3 justify-center">
+                <a href="{{ route('perusahaan.data-aset.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i>Tambah Data Aset
+                </a>
+                <a href="{{ route('perusahaan.aset-kendaraan.create') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i>Tambah Kendaraan
+                </a>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- Category & Type Distribution -->
+    @if($dataAsetByCategory->count() > 0 || $asetKendaraanByType->count() > 0)
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <!-- Data Aset by Category -->
         <div class="bg-white rounded-lg shadow-sm border">
@@ -123,9 +170,18 @@
                     <i class="fas fa-tags text-purple-600"></i>
                     Data Aset per Kategori
                 </h3>
+                @if($dataAsetByCategory->count() > 0)
                 <div class="h-64">
                     <canvas id="dataAsetCategoryChart"></canvas>
                 </div>
+                @else
+                <div class="h-64 flex items-center justify-center text-gray-500">
+                    <div class="text-center">
+                        <i class="fas fa-tags text-4xl mb-4"></i>
+                        <p>Tidak ada data kategori</p>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
 
@@ -136,12 +192,22 @@
                     <i class="fas fa-truck text-orange-600"></i>
                     Kendaraan per Jenis
                 </h3>
+                @if($asetKendaraanByType->count() > 0)
                 <div class="h-64">
                     <canvas id="asetKendaraanTypeChart"></canvas>
                 </div>
+                @else
+                <div class="h-64 flex items-center justify-center text-gray-500">
+                    <div class="text-center">
+                        <i class="fas fa-truck text-4xl mb-4"></i>
+                        <p>Tidak ada data jenis kendaraan</p>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Project Distribution -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -254,6 +320,7 @@ function exportPDF() {
 
 document.addEventListener('DOMContentLoaded', function() {
     // Data Aset Status Chart
+    @if($dataAsetStats['total'] > 0)
     const dataAsetStatusCtx = document.getElementById('dataAsetStatusChart').getContext('2d');
     new Chart(dataAsetStatusCtx, {
         type: 'doughnut',
@@ -286,8 +353,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    @endif
 
     // Aset Kendaraan Status Chart
+    @if($asetKendaraanStats['total'] > 0)
     const asetKendaraanStatusCtx = document.getElementById('asetKendaraanStatusChart').getContext('2d');
     new Chart(asetKendaraanStatusCtx, {
         type: 'doughnut',
@@ -322,8 +391,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    @endif
 
     // Data Aset Category Chart
+    @if($dataAsetByCategory->count() > 0)
     const dataAsetCategoryCtx = document.getElementById('dataAsetCategoryChart').getContext('2d');
     new Chart(dataAsetCategoryCtx, {
         type: 'bar',
@@ -360,8 +431,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    @endif
 
     // Aset Kendaraan Type Chart
+    @if($asetKendaraanByType->count() > 0)
     const asetKendaraanTypeCtx = document.getElementById('asetKendaraanTypeChart').getContext('2d');
     new Chart(asetKendaraanTypeCtx, {
         type: 'bar',
@@ -398,6 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    @endif
 });
 </script>
 @endpush

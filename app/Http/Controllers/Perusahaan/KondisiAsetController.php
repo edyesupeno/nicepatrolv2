@@ -33,21 +33,21 @@ class KondisiAsetController extends Controller
 
             // Data Aset Statistics
             $dataAsetStats = [
-                'total' => (clone $dataAsetQuery)->count(),
-                'ada' => (clone $dataAsetQuery)->where('status', 'ada')->count(),
-                'rusak' => (clone $dataAsetQuery)->where('status', 'rusak')->count(),
-                'dijual' => (clone $dataAsetQuery)->where('status', 'dijual')->count(),
-                'dihapus' => (clone $dataAsetQuery)->where('status', 'dihapus')->count(),
+                'total' => (clone $dataAsetQuery)->count() ?: 0,
+                'ada' => (clone $dataAsetQuery)->where('status', 'ada')->count() ?: 0,
+                'rusak' => (clone $dataAsetQuery)->where('status', 'rusak')->count() ?: 0,
+                'dijual' => (clone $dataAsetQuery)->where('status', 'dijual')->count() ?: 0,
+                'dihapus' => (clone $dataAsetQuery)->where('status', 'dihapus')->count() ?: 0,
             ];
 
             // Aset Kendaraan Statistics
             $asetKendaraanStats = [
-                'total' => (clone $asetKendaraanQuery)->count(),
-                'aktif' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'aktif')->count(),
-                'maintenance' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'maintenance')->count(),
-                'rusak' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'rusak')->count(),
-                'dijual' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'dijual')->count(),
-                'hilang' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'hilang')->count(),
+                'total' => (clone $asetKendaraanQuery)->count() ?: 0,
+                'aktif' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'aktif')->count() ?: 0,
+                'maintenance' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'maintenance')->count() ?: 0,
+                'rusak' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'rusak')->count() ?: 0,
+                'dijual' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'dijual')->count() ?: 0,
+                'hilang' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'hilang')->count() ?: 0,
             ];
 
             \Log::info('Data Aset Stats: ', $dataAsetStats);
@@ -155,21 +155,21 @@ class KondisiAsetController extends Controller
 
             // Data Aset Statistics
             $dataAsetStats = [
-                'total' => (clone $dataAsetQuery)->count(),
-                'ada' => (clone $dataAsetQuery)->where('status', 'ada')->count(),
-                'rusak' => (clone $dataAsetQuery)->where('status', 'rusak')->count(),
-                'dijual' => (clone $dataAsetQuery)->where('status', 'dijual')->count(),
-                'dihapus' => (clone $dataAsetQuery)->where('status', 'dihapus')->count(),
+                'total' => (clone $dataAsetQuery)->count() ?: 0,
+                'ada' => (clone $dataAsetQuery)->where('status', 'ada')->count() ?: 0,
+                'rusak' => (clone $dataAsetQuery)->where('status', 'rusak')->count() ?: 0,
+                'dijual' => (clone $dataAsetQuery)->where('status', 'dijual')->count() ?: 0,
+                'dihapus' => (clone $dataAsetQuery)->where('status', 'dihapus')->count() ?: 0,
             ];
 
             // Aset Kendaraan Statistics
             $asetKendaraanStats = [
-                'total' => (clone $asetKendaraanQuery)->count(),
-                'aktif' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'aktif')->count(),
-                'maintenance' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'maintenance')->count(),
-                'rusak' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'rusak')->count(),
-                'dijual' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'dijual')->count(),
-                'hilang' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'hilang')->count(),
+                'total' => (clone $asetKendaraanQuery)->count() ?: 0,
+                'aktif' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'aktif')->count() ?: 0,
+                'maintenance' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'maintenance')->count() ?: 0,
+                'rusak' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'rusak')->count() ?: 0,
+                'dijual' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'dijual')->count() ?: 0,
+                'hilang' => (clone $asetKendaraanQuery)->where('status_kendaraan', 'hilang')->count() ?: 0,
             ];
 
             // Data Aset by Category
