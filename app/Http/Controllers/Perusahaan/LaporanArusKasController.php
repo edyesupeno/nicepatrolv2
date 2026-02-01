@@ -7,6 +7,7 @@ use App\Models\Rekening;
 use App\Models\TransaksiRekening;
 use App\Models\Project;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
 
 class LaporanArusKasController extends Controller
@@ -32,10 +33,22 @@ class LaporanArusKasController extends Controller
 
         // Check if no rekening exists
         if ($rekenings->isEmpty()) {
+            // Create empty paginated result
+            $emptyPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                collect(), // items
+                0, // total
+                50, // per page
+                1, // current page
+                [
+                    'path' => request()->url(),
+                    'pageName' => 'page',
+                ]
+            );
+            
             return view('perusahaan.laporan-arus-kas.index', [
                 'projects' => $projects,
                 'rekenings' => collect(),
-                'transaksis' => collect()->paginate(50),
+                'transaksis' => $emptyPaginator,
                 'stats' => [
                     'total_debit' => 0,
                     'total_kredit' => 0,
