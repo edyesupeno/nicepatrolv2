@@ -112,11 +112,11 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-gray-900">Daftar Penerimaan Barang</h2>
                 <div class="flex items-center space-x-2">
-                    <button class="p-2 text-gray-400 hover:text-gray-600 transition">
-                        <i class="fas fa-download"></i>
-                    </button>
-                    <button class="p-2 text-gray-400 hover:text-gray-600 transition">
+                    <button onclick="printAllReports()" class="p-2 text-green-600 hover:text-green-800 transition" title="Cetak Semua Laporan">
                         <i class="fas fa-print"></i>
+                    </button>
+                    <button class="p-2 text-gray-400 hover:text-gray-600 transition" title="Download Excel">
+                        <i class="fas fa-download"></i>
                     </button>
                 </div>
             </div>
@@ -256,13 +256,16 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex items-center space-x-2">
-                                <button onclick="viewDetail('{{ $item->hash_id ?? 'sample' }}')" class="text-blue-600 hover:text-blue-900 transition">
+                                <button onclick="viewDetail('{{ $item->hash_id ?? 'sample' }}')" class="text-blue-600 hover:text-blue-900 transition" title="Lihat Detail">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button onclick="editItem('{{ $item->hash_id ?? 'sample' }}')" class="text-indigo-600 hover:text-indigo-900 transition">
+                                <button onclick="printReport('{{ $item->hash_id ?? 'sample' }}')" class="text-green-600 hover:text-green-900 transition" title="Cetak Laporan">
+                                    <i class="fas fa-print"></i>
+                                </button>
+                                <button onclick="editItem('{{ $item->hash_id ?? 'sample' }}')" class="text-indigo-600 hover:text-indigo-900 transition" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="deleteItem('{{ $item->hash_id ?? 'sample' }}')" class="text-red-600 hover:text-red-900 transition">
+                                <button onclick="deleteItem('{{ $item->hash_id ?? 'sample' }}')" class="text-red-600 hover:text-red-900 transition" title="Hapus">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -341,6 +344,58 @@ function viewDetail(hashId) {
 
 function editItem(hashId) {
     window.location.href = `{{ route('perusahaan.penerimaan-barang.index') }}/${hashId}/edit`;
+}
+
+function printReport(hashId) {
+    window.open(`{{ route('perusahaan.penerimaan-barang.index') }}/${hashId}/print`, '_blank');
+}
+
+function printAllReports() {
+    Swal.fire({
+        title: 'Cetak Semua Laporan?',
+        text: "Akan membuka tab baru untuk setiap laporan penyaluran",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#059669',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Cetak Semua!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Get all visible rows (not filtered out)
+            const visibleRows = document.querySelectorAll('#tableBody tr:not([style*="display: none"])');
+            let printCount = 0;
+            
+            visibleRows.forEach((row, index) => {
+                const printButton = row.querySelector('button[onclick*="printReport"]');
+                if (printButton) {
+                    const hashId = printButton.getAttribute('onclick').match(/'([^']+)'/)[1];
+                    if (hashId && hashId !== 'sample') {
+                        setTimeout(() => {
+                            window.open(`{{ route('perusahaan.penerimaan-barang.index') }}/${hashId}/print`, '_blank');
+                        }, index * 500); // Delay each print by 500ms
+                        printCount++;
+                    }
+                }
+            });
+            
+            if (printCount > 0) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: `Membuka ${printCount} laporan untuk dicetak`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Tidak Ada Data',
+                    text: 'Tidak ada laporan yang dapat dicetak',
+                });
+            }
+        }
+    });
 }
 
 function deleteItem(hashId) {

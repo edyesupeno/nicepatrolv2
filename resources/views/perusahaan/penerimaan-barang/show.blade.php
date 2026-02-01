@@ -39,6 +39,9 @@
                 </div>
                 
                 <div class="flex items-center space-x-3">
+                    <a href="{{ route('perusahaan.penerimaan-barang.print', $penerimaanBarang->hash_id) }}" target="_blank" class="px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition font-medium">
+                        <i class="fas fa-print mr-2"></i>Cetak Laporan
+                    </a>
                     <a href="{{ route('perusahaan.penerimaan-barang.edit', $penerimaanBarang->hash_id) }}" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition font-medium">
                         <i class="fas fa-edit mr-2"></i>Edit
                     </a>
@@ -235,7 +238,7 @@
                     </a>
                     
                     <button onclick="printDetail()" class="block w-full px-4 py-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition font-medium text-left">
-                        <i class="fas fa-print mr-3"></i>Cetak Detail
+                        <i class="fas fa-print mr-3"></i>Cetak Laporan Penyaluran
                     </button>
                     
                     <button onclick="deleteItem('{{ $penerimaanBarang->hash_id }}')" class="block w-full px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition font-medium text-left">
@@ -330,7 +333,7 @@ function closeImageModal() {
 }
 
 function printDetail() {
-    window.print();
+    window.open('{{ route('perusahaan.penerimaan-barang.print', $penerimaanBarang->hash_id) }}', '_blank');
 }
 
 // Close modal when clicking outside

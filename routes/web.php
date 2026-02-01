@@ -190,6 +190,7 @@ Route::middleware('auth')->group(function () {
 
         // Penerimaan Barang Routes
         Route::resource('penerimaan-barang', \App\Http\Controllers\Perusahaan\PenerimaanBarangController::class);
+        Route::get('penerimaan-barang/{hashId}/print', [\App\Http\Controllers\Perusahaan\PenerimaanBarangController::class, 'print'])->name('penerimaan-barang.print');
         Route::get('penerimaan-barang-areas/{project}', [\App\Http\Controllers\Perusahaan\PenerimaanBarangController::class, 'getAreasByProject'])->name('penerimaan-barang.areas-by-project');
         Route::get('penerimaan-barang-search-pos', [\App\Http\Controllers\Perusahaan\PenerimaanBarangController::class, 'searchPos'])->name('penerimaan-barang.search-pos');
 
@@ -719,6 +720,54 @@ Route::middleware('auth')->group(function () {
         
         // New report page for handover progress
         Route::get('penyerahan-perlengkapan/{penyerahan}/laporan', [\App\Http\Controllers\Perusahaan\PenyerahanPerlengkapanController::class, 'laporanPenyerahan'])->name('penyerahan-perlengkapan.laporan');
+        
+        // Keuangan Routes (Under Construction)
+        Route::prefix('keuangan')->name('keuangan.')->group(function () {
+            // Reimbursement Approval Routes (must be before resource routes)
+            Route::get('reimbursement/approval-data', [\App\Http\Controllers\Perusahaan\ReimbursementController::class, 'getApprovalData'])->name('reimbursement.approval-data');
+            Route::post('reimbursement/bulk-approve', [\App\Http\Controllers\Perusahaan\ReimbursementController::class, 'bulkApprove'])->name('reimbursement.bulk-approve');
+            Route::post('reimbursement/bulk-reject', [\App\Http\Controllers\Perusahaan\ReimbursementController::class, 'bulkReject'])->name('reimbursement.bulk-reject');
+            
+            // Reimbursement Routes
+            Route::resource('reimbursement', \App\Http\Controllers\Perusahaan\ReimbursementController::class);
+            Route::post('reimbursement/{reimbursement}/submit', [\App\Http\Controllers\Perusahaan\ReimbursementController::class, 'submit'])->name('reimbursement.submit');
+            Route::post('reimbursement/{reimbursement}/cancel', [\App\Http\Controllers\Perusahaan\ReimbursementController::class, 'cancel'])->name('reimbursement.cancel');
+            Route::get('reimbursement/{reimbursement}/download/{fileIndex}', [\App\Http\Controllers\Perusahaan\ReimbursementController::class, 'downloadFile'])->name('reimbursement.download-file');
+            Route::post('reimbursement/{reimbursement}/approve', [\App\Http\Controllers\Perusahaan\ReimbursementController::class, 'approve'])->name('reimbursement.approve');
+            Route::post('reimbursement/{reimbursement}/reject', [\App\Http\Controllers\Perusahaan\ReimbursementController::class, 'reject'])->name('reimbursement.reject');
+            
+            // Reimbursement Laporan Routes
+            Route::get('reimbursement-laporan', [\App\Http\Controllers\Perusahaan\ReimbursementLaporanController::class, 'index'])->name('reimbursement.laporan');
+            Route::get('reimbursement-laporan/export-pdf', [\App\Http\Controllers\Perusahaan\ReimbursementLaporanController::class, 'exportPdf'])->name('reimbursement.laporan.export-pdf');
+            
+            // Cash Advance Routes
+            Route::resource('cash-advance', \App\Http\Controllers\Perusahaan\CashAdvanceController::class);
+            Route::post('cash-advance/{cashAdvance}/approve', [\App\Http\Controllers\Perusahaan\CashAdvanceController::class, 'approve'])->name('cash-advance.approve');
+            Route::post('cash-advance/{cashAdvance}/reject', [\App\Http\Controllers\Perusahaan\CashAdvanceController::class, 'reject'])->name('cash-advance.reject');
+            Route::post('cash-advance/{cashAdvance}/activate', [\App\Http\Controllers\Perusahaan\CashAdvanceController::class, 'activate'])->name('cash-advance.activate');
+            Route::post('cash-advance/{cashAdvance}/return-balance', [\App\Http\Controllers\Perusahaan\CashAdvanceController::class, 'returnBalance'])->name('cash-advance.return-balance');
+            Route::get('cash-advance-karyawan-by-project', [\App\Http\Controllers\Perusahaan\CashAdvanceController::class, 'getKaryawanByProject'])->name('cash-advance.karyawan-by-project');
+            Route::get('cash-advance-search-karyawan', [\App\Http\Controllers\Perusahaan\CashAdvanceController::class, 'searchKaryawan'])->name('cash-advance.search-karyawan');
+            Route::post('cash-advance/{cashAdvance}/add-expense', [\App\Http\Controllers\Perusahaan\CashAdvanceController::class, 'addExpense'])->name('cash-advance.add-expense');
+            Route::post('cash-advance/{cashAdvance}/create-report', [\App\Http\Controllers\Perusahaan\CashAdvanceController::class, 'createReport'])->name('cash-advance.create-report');
+            Route::get('cash-advance/{cashAdvance}/print', [\App\Http\Controllers\Perusahaan\CashAdvanceController::class, 'printReport'])->name('cash-advance.print');
+            
+            // Rekening Routes
+            Route::resource('rekening', \App\Http\Controllers\Perusahaan\RekeningController::class);
+            Route::patch('rekening/{rekening}/toggle-status', [\App\Http\Controllers\Perusahaan\RekeningController::class, 'toggleStatus'])->name('rekening.toggle-status');
+            Route::patch('rekening/{rekening}/set-primary', [\App\Http\Controllers\Perusahaan\RekeningController::class, 'setPrimary'])->name('rekening.set-primary');
+            
+            // Transaksi Rekening Routes
+            Route::resource('transaksi-rekening', \App\Http\Controllers\Perusahaan\TransaksiRekeningController::class);
+            Route::post('transaksi-rekening/{transaksiRekening}/verify', [\App\Http\Controllers\Perusahaan\TransaksiRekeningController::class, 'verify'])->name('transaksi-rekening.verify');
+            Route::post('transaksi-rekening/{transaksiRekening}/unverify', [\App\Http\Controllers\Perusahaan\TransaksiRekeningController::class, 'unverify'])->name('transaksi-rekening.unverify');
+            
+            // Laporan Arus Kas Routes
+            Route::get('laporan-arus-kas', [\App\Http\Controllers\Perusahaan\LaporanArusKasController::class, 'index'])->name('laporan-arus-kas.index');
+            Route::get('laporan-arus-kas/{rekening}', [\App\Http\Controllers\Perusahaan\LaporanArusKasController::class, 'show'])->name('laporan-arus-kas.show');
+            Route::get('laporan-arus-kas/export/pdf', [\App\Http\Controllers\Perusahaan\LaporanArusKasController::class, 'exportPdf'])->name('laporan-arus-kas.export-pdf');
+            Route::get('laporan-arus-kas/export/excel', [\App\Http\Controllers\Perusahaan\LaporanArusKasController::class, 'exportExcel'])->name('laporan-arus-kas.export-excel');
+        });
     });
 });
 

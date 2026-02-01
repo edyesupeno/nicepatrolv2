@@ -461,6 +461,68 @@
                 <div class="section-divider my-4"></div>
                 <div class="flex items-center px-4 py-2">
                     <div class="text-xs font-bold text-blue-200 uppercase tracking-wider">
+                        Keuangan
+                    </div>
+                </div>
+
+                <!-- Reimbursement Menu (Collapsible) -->
+                <div class="mb-1">
+                    <button onclick="toggleSubmenu('reimbursement')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.keuangan.reimbursement.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                        <div class="flex items-center">
+                            <i class="fas fa-receipt w-5 text-center mr-3"></i>
+                            <span class="font-medium">Reimbursement</span>
+                        </div>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-reimbursement"></i>
+                    </button>
+                    <div id="submenu-reimbursement" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.keuangan.reimbursement.*') ? '' : 'hidden' }}">
+                        <a href="{{ route('perusahaan.keuangan.reimbursement.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.keuangan.reimbursement.index') || request()->routeIs('perusahaan.keuangan.reimbursement.create') || request()->routeIs('perusahaan.keuangan.reimbursement.show') || request()->routeIs('perusahaan.keuangan.reimbursement.edit') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-plus-circle w-5 text-center mr-3 text-xs"></i>
+                            <span>Pengajuan</span>
+                        </a>
+                        <a href="{{ route('perusahaan.keuangan.reimbursement.laporan') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.keuangan.reimbursement.laporan*') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-chart-bar w-5 text-center mr-3 text-xs"></i>
+                            <span>Laporan Reimbursement</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Cash Advance Menu (Collapsible) -->
+                <div class="mb-1">
+                    <button onclick="toggleSubmenu('cash-advance')" class="menu-item w-full flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.keuangan.cash-advance.*') ? 'bg-white bg-opacity-10' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                        <div class="flex items-center">
+                            <i class="fas fa-money-bill-alt w-5 text-center mr-3"></i>
+                            <span class="font-medium">Cash Advance</span>
+                        </div>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-300" id="icon-cash-advance"></i>
+                    </button>
+                    <div id="submenu-cash-advance" class="ml-4 mt-1 space-y-1 {{ request()->routeIs('perusahaan.keuangan.cash-advance.*') ? '' : 'hidden' }}">
+                        <a href="{{ route('perusahaan.keuangan.cash-advance.index') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.keuangan.cash-advance.index') || request()->routeIs('perusahaan.keuangan.cash-advance.show') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-list w-5 text-center mr-3 text-xs"></i>
+                            <span>Daftar Cash Advance</span>
+                        </a>
+                        <a href="{{ route('perusahaan.keuangan.cash-advance.create') }}" class="submenu-item flex items-center px-4 py-2.5 rounded-lg {{ request()->routeIs('perusahaan.keuangan.cash-advance.create') ? 'bg-white text-blue-600 font-semibold' : 'text-blue-100 hover:bg-white hover:bg-opacity-10' }} text-sm">
+                            <i class="fas fa-plus-circle w-5 text-center mr-3 text-xs"></i>
+                            <span>Pengajuan Baru</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Rekening Menu -->
+                <a href="{{ route('perusahaan.keuangan.rekening.index') }}" class="menu-item flex items-center px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.keuangan.rekening.*') ? 'active' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                    <i class="fas fa-university w-5 text-center mr-3"></i>
+                    <span class="font-medium">Rekening</span>
+                </a>
+
+                <!-- Laporan Arus Kas Menu -->
+                <a href="{{ route('perusahaan.keuangan.laporan-arus-kas.index') }}" class="menu-item flex items-center px-4 py-3 rounded-xl {{ request()->routeIs('perusahaan.keuangan.laporan-arus-kas.*') ? 'active' : 'text-white hover:bg-white hover:bg-opacity-10' }}">
+                    <i class="fas fa-chart-line w-5 text-center mr-3"></i>
+                    <span class="font-medium">Laporan Arus Kas</span>
+                </a>
+
+                <!-- Section Divider -->
+                <div class="section-divider my-4"></div>
+                <div class="flex items-center px-4 py-2">
+                    <div class="text-xs font-bold text-blue-200 uppercase tracking-wider">
                         Patrol Management
                     </div>
                 </div>

@@ -225,6 +225,20 @@ class PenerimaanBarangController extends Controller
         }
     }
 
+    public function print($hashId)
+    {
+        // Decode hash ID to get real ID
+        $id = \Vinkla\Hashids\Facades\Hashids::decode($hashId)[0] ?? null;
+        if (!$id) {
+            abort(404);
+        }
+        
+        $penerimaanBarang = PenerimaanBarang::with(['perusahaan', 'project', 'area', 'createdBy'])
+            ->findOrFail($id);
+        
+        return view('perusahaan.penerimaan-barang.print', compact('penerimaanBarang'));
+    }
+
     private function generateNomorPenerimaan()
     {
         $prefix = 'PB';

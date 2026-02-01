@@ -152,6 +152,11 @@ class Karyawan extends Model
         return $this->hasMany(JadwalShift::class);
     }
 
+    public function cashAdvances()
+    {
+        return $this->hasMany(CashAdvance::class);
+    }
+
     /**
      * Get status PTKP lengkap (TK/0, K/1, dll)
      */
